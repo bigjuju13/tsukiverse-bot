@@ -1020,7 +1020,7 @@ Used for marketing, buybacks, burns and community rewards. All on-chain 👁""",
 TRIGGERS = {
     "mohammed": [
         "mohammed who 💀 next topic",
-        "bro really typed that name in 2025 💀",
+        "bro really typed that name in 2026 💀",
         "nah we are not doing this again 😂",
         "that guy really thought he was gonna make it with that attitude 💀",
         "we liked him but he chose negativity. his loss honestly 😂",
@@ -1130,9 +1130,6 @@ def check_triggers(text: str) -> str | None:
 
     return None
 
-def is_question(text: str) -> bool:
-    return "?" in text and len(text.split()) >= 3
-
 def answer_from_lore(question: str) -> str | None:
     lower = question.lower()
     for keywords, responses in LORE_QA.items():
@@ -1206,7 +1203,7 @@ def next_post():
 
 def build_summary(messages):
     if not messages:
-        return "**Tsukiverse Catch-Up** 🌙\n\n**What Happened**\n• all quiet this window. check back soon 🐈‍⬛"
+        return "*Tsukiverse Catch-Up* 🌙\n\n*What Happened*\n• all quiet this window. check back soon 🐈‍⬛"
 
     chat_log = "\n".join(
         f"[{m['full_name']} (@{m['username'] or 'anon'})]: {m['text']}"
@@ -1215,19 +1212,19 @@ def build_summary(messages):
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=700,
-        system="""You write 8-hour chat summaries for a Telegram group called Tsuki x RWA. It's a crypto community.
+        system="""You write 8-hour chat summaries for a Telegram group called Tsuki x RWA. It's a crypto community. The current year is 2026.
 
-Use this exact format using Telegram bold markdown:
+Use this exact format. Bold text uses *single asterisks* for Telegram Markdown:
 
-**Tsukiverse Catch-Up** 🌙
+*Tsukiverse Catch-Up* 🌙
 
-**What Happened**
-• [one sentence with enough detail that someone who missed it knows what actually happened]
+*What Happened*
+• [one sentence with enough detail that someone who missed it knows what happened]
 • [one sentence]
 • [one sentence]
 • [one sentence, max 5 points, each on its own line]
 
-🔥 **Highlights**
+🔥 *Highlights*
 • [name]: "[exact quote or close paraphrase]"
 • [name]: "[exact quote or close paraphrase]"
 • [name]: "[exact quote or close paraphrase]"
@@ -1235,16 +1232,16 @@ Use this exact format using Telegram bold markdown:
 [one short casual sign-off, vary it each time] 🐈‍⬛
 
 Rules:
+- use *single asterisks* for bold headings only, nowhere else
 - each bullet point on its own new line
-- no separator lines, no dividers, no dashes between sections
-- bullet points only, no arrows, no numbered lists
-- one idea per bullet but give enough detail — names, numbers, context
-- headings bold, sentence case only
+- no separator lines, no dividers
+- bullet points only, no arrows
+- one idea per bullet with enough detail — names, numbers, context
 - no emoji except 🌙 in the heading, 🔥 before Highlights, 🐈‍⬛ at the end
-- no AI words: pivotal, notable, robust, seamless, transformative, innovative, groundbreaking, crucial, significant
+- no AI words: pivotal, notable, robust, seamless, transformative, innovative
 - no self-narration: no "here's the thing", "this highlights", "the key takeaway"
 - no filler sign-offs like "stay locked in" or "we hold strong"
-- quotes in highlights must sound like real people
+- quotes in highlights must sound like real people talking
 - if chat was quiet, say so in one bullet under What Happened and skip Highlights""",
         messages=[{"role": "user", "content": f"Chat log:\n\n{chat_log}"}],
     )
@@ -1272,8 +1269,8 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text(trigger_response)
         return
 
-    # Lore Q&A — answer questions if covered in lore, fire ~70% of the time
-    if is_question(text) and random.random() < 0.7:
+    # Lore Q&A — fires 90% of the time when a keyword matches, no ? required
+    if len(text.split()) >= 2 and random.random() < 0.9:
         answer = answer_from_lore(text)
         if answer:
             await msg.reply_text(answer)
@@ -1281,21 +1278,21 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_summary(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("pulling the last 8 hours... 🐈‍⬛")
     messages = get_messages_since(update.effective_chat.id, hours=8)
-    await update.message.reply_text(build_summary(messages), parse_mode="HTML")
+    await update.message.reply_text(build_summary(messages), parse_mode="Markdown")
 
 async def cmd_chatid(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        f"Chat ID: `{update.effective_chat.id}`", parse_mode="HTML"
+        f"Chat ID: `{update.effective_chat.id}`", parse_mode="Markdown"
     )
 
 async def job_summary(app):
     log.info("Posting 8h summary")
     messages = get_messages_since(TARGET_CHAT_ID, hours=8)
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=build_summary(messages), parse_mode="HTML")
+    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=build_summary(messages), parse_mode="Markdown")
 
 async def job_post(app):
     log.info("Posting rotating message")
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=next_post(), parse_mode="HTML")
+    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=next_post(), parse_mode="Markdown")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -1324,4 +1321,3 @@ if __name__ == "__main__":
         print("STARTUP ERROR:", e)
         traceback.print_exc()
 
-# error wrapper already exists above - adding traceback import at top
