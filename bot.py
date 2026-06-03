@@ -1281,21 +1281,21 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_summary(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("pulling the last 8 hours... 🐈‍⬛")
     messages = get_messages_since(update.effective_chat.id, hours=8)
-    await update.message.reply_text(build_summary(messages), parse_mode="Markdown")
+    await update.message.reply_text(build_summary(messages), parse_mode="HTML")
 
 async def cmd_chatid(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        f"Chat ID: `{update.effective_chat.id}`", parse_mode="Markdown"
+        f"Chat ID: `{update.effective_chat.id}`", parse_mode="HTML"
     )
 
 async def job_summary(app):
     log.info("Posting 8h summary")
     messages = get_messages_since(TARGET_CHAT_ID, hours=8)
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=build_summary(messages), parse_mode="Markdown")
+    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=build_summary(messages), parse_mode="HTML")
 
 async def job_post(app):
     log.info("Posting rotating message")
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=next_post(), parse_mode="Markdown")
+    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=next_post(), parse_mode="HTML")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -1314,3 +1314,14 @@ def main():
     scheduler.start()
 
     log.info("Bot running")
+    app.run_polling(allowed_updates=["message"])
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        print("STARTUP ERROR:", e)
+        traceback.print_exc()
+
+# error wrapper already exists above - adding traceback import at top
