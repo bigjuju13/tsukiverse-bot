@@ -359,6 +359,18 @@ def init_db():
     )""")
     con.execute("INSERT OR IGNORE INTO post_index (id, idx) VALUES (1, 0)")
     con.execute("INSERT OR IGNORE INTO wallet_tracker (id, last_signature) VALUES (1, '')")
+    con.execute("""CREATE TABLE IF NOT EXISTS conversations (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id   INTEGER NOT NULL,
+        role      TEXT NOT NULL,
+        content   TEXT NOT NULL,
+        timestamp TEXT NOT NULL
+    )""")
+    con.execute("""CREATE TABLE IF NOT EXISTS community_knowledge (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        insight   TEXT NOT NULL,
+        timestamp TEXT NOT NULL
+    )""")
     con.execute("""CREATE TABLE IF NOT EXISTS summaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         chat_id INTEGER NOT NULL,
@@ -469,6 +481,58 @@ def get_recent_summaries(chat_id: int, limit: int = 3) -> list[str]:
     return [r[0] for r in rows]
 
 
+def save_conversation_message(user_id: int, role: str, content: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO conversations (user_id, role, content, timestamp) VALUES (?,?,?,?)",
+        (user_id, role, content, datetime.now(timezone.utc).isoformat()),
+    )
+    # Keep last 20 messages per user
+    con.execute(
+        "DELETE FROM conversations WHERE user_id=? AND id NOT IN "
+        "(SELECT id FROM conversations WHERE user_id=? ORDER BY timestamp DESC LIMIT 20)",
+        (user_id, user_id),
+    )
+    con.commit()
+    con.close()
+
+
+def get_conversation_history(user_id: int, limit: int = 10) -> list[dict]:
+    con = sqlite3.connect(DB_PATH)
+    rows = con.execute(
+        "SELECT role, content FROM conversations WHERE user_id=? ORDER BY timestamp ASC",
+        (user_id,),
+    ).fetchall()
+    con.close()
+    history = [{"role": r[0], "content": r[1]} for r in rows]
+    return history[-limit:] if len(history) > limit else history
+
+
+def save_community_insight(insight: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO community_knowledge (insight, timestamp) VALUES (?,?)",
+        (insight, datetime.now(timezone.utc).isoformat()),
+    )
+    # Keep last 100 insights
+    con.execute(
+        "DELETE FROM community_knowledge WHERE id NOT IN "
+        "(SELECT id FROM community_knowledge ORDER BY timestamp DESC LIMIT 100)"
+    )
+    con.commit()
+    con.close()
+
+
+def get_community_knowledge(limit: int = 10) -> list[str]:
+    con = sqlite3.connect(DB_PATH)
+    rows = con.execute(
+        "SELECT insight FROM community_knowledge ORDER BY timestamp DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    con.close()
+    return [r[0] for r in rows]
+
+
 # ── Rate limiting ─────────────────────────────────────────────────────────────
 def is_on_cooldown(user_id: int) -> bool:
     last = user_cooldowns.get(user_id, 0)
@@ -530,50 +594,45 @@ def check_triggers(text: str) -> str | None:
     return None
 
 # ── Claude helpers ────────────────────────────────────────────────────────────
-def ask_claude_lore(question: str, chat_id: int = 0) -> str:
+def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0) -> str:
     recent_sums = get_recent_summaries(chat_id) if chat_id else []
+    knowledge = get_community_knowledge()
+    history = get_conversation_history(user_id) if user_id else []
+
     context_block = ""
     if recent_sums:
-        context_block = "\n\nrecent community activity:\n" + "\n---\n".join(recent_sums)
+        context_block += "\n\nrecent community summaries:\n" + "\n---\n".join(recent_sums)
+    if knowledge:
+        context_block += "\n\ncommunity knowledge base (things learned from chat over time):\n" + "\n".join(f"- {k}" for k in knowledge)
 
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=500,
-        system=f"""you are the tsukiverse bot for the tsuki x rwa community. current year: 2026.
+        max_tokens=300,
+        system=f"""you answer questions for the tsuki x rwa telegram community. current year: 2026.
 
-answer questions like a knowledgeable person having a real conversation — not a bot reciting facts. think through what is actually being asked and give a considered, flowing response.
+write like a person explaining something to a friend in a chat. specific, direct, no filler. if you wouldn't say it out loud, don't write it.
 
-voice and style:
-- lowercase throughout unless it is a proper noun, ticker or acronym
-- write in connected prose, not fragments or bullet points
-- vary your rhythm — some sentences short, some longer and more analytical
-- use double line breaks between separate thoughts or paragraphs
-- confident and direct, never corporate or deferential
-- have an actual opinion when the question calls for one
-- if something is unconfirmed, reason through the evidence rather than just stating conclusions
-- no dramatic stacked fragments like "that is not an accident. that is not a coincidence. the track record speaks." — just say the thing naturally
-- no filler: no "great question", "certainly", "absolutely", "it's worth noting"
-- no significance inflation: don't announce that something is important, just explain it
-- no triple repetition for emphasis — pick the strongest way to say it once
+hard rules — break any and rewrite:
+- no em dashes, use commas or periods
+- no lists of three, use two or four
+- no "it's not X it's Y" constructions, just say the thing
+- no self-narration: delete "here's the thing", "what's interesting is", "the key takeaway"
+- no significance inflation: delete "notably", "remarkably", "this highlights", "a testament to"
+- no -ing phrase padding at end of sentences: cut "highlighting the importance of", "underscoring the need for"
+- no AI verbs: leverage, foster, underscore, bolster, garner, spearhead, elevate, showcase
+- no AI adjectives: pivotal, robust, seamless, transformative, groundbreaking, crucial, significant
+- use "is" not "serves as" or "stands as"
+- vary sentence length, short mixed with longer
+- max 4 sentences total, two short paragraphs
+- have an actual opinion, not a balanced summary
+- be specific, not vague
 
-banned patterns:
-- "that is not an accident. that is not a coincidence." — just explain what it means instead
-- "every X. every Y. every Z." stacked fragments — write it as a sentence
-- announcing the point before making it: "here is the thing", "what matters is", "the key point"
-- ending with a vague philosophical kicker just to sound deep
-
-good example — flowing, reasoned, human:
-"dvid665 has been in this telegram since may 2024 and hasn't missed a beat. nobody knows the identity behind the username but the track record is there — the SHA codes have been correct, the timing with RK's posts has been too precise to dismiss, and the project has hit every milestone it said it would. whether that means dev and RK are the same person is something the community debates constantly. the evidence points in one direction but nothing is confirmed outright."
-
-bad example — fragmented AI voice to avoid:
-"dvid665. in this telegram since day one. the identity unknown. the track record undeniable. every SHA code correct. every move anticipated."
-
-use the lore to answer accurately. if the topic is not covered, reason through what you do know and point to https://tinyurl.com/tsukipdf for deeper reading.
+use the lore to answer. if not covered, say so and link https://tinyurl.com/tsukipdf
 {context_block}
 
 LORE:
 {TSUKI_LORE}""",
-        messages=[{"role": "user", "content": question}],
+        messages=history + [{"role": "user", "content": question}],
     )
     return msg.content[0].text
 
@@ -742,13 +801,7 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-    # Trigger responses — fire 40% of the time
-    trigger = check_triggers(text)
-    if trigger and random.random() < 0.4:
-        await msg.reply_text(trigger)
-        return
-
-    # Bot mention — always respond with Claude (rate limited)
+    # Only respond when bot is tagged or directly replied to
     bot_username = ctx.bot.username
     is_mention = f"@{bot_username}".lower() in text.lower()
     is_reply = (
@@ -765,18 +818,11 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if not question:
             question = "Tell me something interesting about Tsuki x RWA."
         set_cooldown(user.id)
+        save_conversation_message(user.id, "user", question)
         await msg.chat.send_action("typing")
-        await msg.reply_text(ask_claude_lore(question, msg.chat_id))
-        return
-
-    # Questions — Claude answers with rate limit (80% fire rate)
-    if "?" in text and len(text.split()) >= 3 and random.random() < 0.8:
-        if is_on_cooldown(user.id):
-            return
-        answer = ask_claude_lore(text, msg.chat_id)
-        if answer:
-            set_cooldown(user.id)
-            await msg.reply_text(answer)
+        response = ask_claude_lore(question, msg.chat_id, user.id)
+        save_conversation_message(user.id, "assistant", response)
+        await msg.reply_text(response)
 
 # ── Scheduled jobs ────────────────────────────────────────────────────────────
 async def job_summary(app):
@@ -793,6 +839,32 @@ async def job_summary(app):
 async def job_post(app):
     log.info("Posting rotating content")
     await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=next_post())
+
+async def job_build_knowledge(app):
+    """Extract insights from recent chat and store in knowledge base."""
+    messages = get_messages_since(TARGET_CHAT_ID, hours=24)
+    if len(messages) < 10:
+        return
+    chat_log = "\n".join(
+        f"[{m['full_name']}]: {m['text']}" for m in messages[-50:]
+    )
+    try:
+        msg = claude.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=300,
+            system="""extract 3-5 short factual insights from this telegram chat that would help a community bot answer future questions better.
+focus on: recurring topics, questions people ask, sentiment, notable events, things the community cares about.
+return as a simple list, one insight per line, no bullets, no numbering. plain text only. be specific.""",
+            messages=[{"role": "user", "content": f"chat log:\n{chat_log}"}],
+        )
+        insights = msg.content[0].text.strip().split("\n")
+        for insight in insights:
+            if insight.strip():
+                save_community_insight(insight.strip())
+        log.info(f"Stored {len(insights)} community insights")
+    except Exception as e:
+        log.warning(f"Knowledge extraction error: {e}")
+
 
 async def job_wallet_watch(app):
     log.info("Checking marketing wallet")
@@ -822,6 +894,74 @@ async def job_wallet_watch(app):
             )
         )
 
+X_FEEDS = [
+    {
+        "url": "https://rsshub.app/twitter/user/TheRoaringAI",
+        "handle": "@TheRoaringAI",
+        "db_key": "rwa_last_tweet",
+    },
+    {
+        "url": "https://rsshub.app/twitter/user/tsukionsolana",
+        "handle": "@tsukionsolana",
+        "db_key": "tsuki_last_tweet",
+    },
+]
+
+def get_last_tweet(key: str) -> str:
+    con = sqlite3.connect(DB_PATH)
+    row = con.execute("SELECT last_signature FROM wallet_tracker WHERE id=1").fetchone()
+    # Reuse wallet_tracker table with extra columns approach — use a separate kv table
+    con.execute("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)")
+    row = con.execute("SELECT value FROM kv_store WHERE key=?", (key,)).fetchone()
+    con.close()
+    return row[0] if row else ""
+
+def set_last_tweet(key: str, value: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)")
+    con.execute("INSERT OR REPLACE INTO kv_store (key, value) VALUES (?,?)", (key, value))
+    con.commit()
+    con.close()
+
+async def fetch_rss(url: str) -> list[dict]:
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(url, follow_redirects=True)
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(r.text)
+            items = []
+            for item in root.findall(".//item")[:5]:
+                title = item.findtext("title", "").strip()
+                link  = item.findtext("link", "").strip()
+                guid  = item.findtext("guid", link).strip()
+                items.append({"title": title, "link": link, "guid": guid})
+            return items
+    except Exception as e:
+        log.warning(f"RSS fetch error for {url}: {e}")
+        return []
+
+async def job_x_monitor(app):
+    for feed in X_FEEDS:
+        items = await fetch_rss(feed["url"])
+        if not items:
+            continue
+        last = get_last_tweet(feed["db_key"])
+        new_items = []
+        for item in items:
+            if item["guid"] == last:
+                break
+            new_items.append(item)
+        if not new_items:
+            continue
+        set_last_tweet(feed["db_key"], items[0]["guid"])
+        for item in reversed(new_items[:3]):
+            text = (
+                f"🐈‍⬛ {feed['handle']} just posted\n\n"
+                f"{item['title']}\n\n"
+                f"🔹 {item['link']}"
+            )
+            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text)
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     init_db()
@@ -839,9 +979,11 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(job_summary,      "cron", hour="8,16,0",    minute=0,  args=[app])
-    scheduler.add_job(job_post,         "cron", hour="9,15,21,3", minute=0,  args=[app])
-    scheduler.add_job(job_wallet_watch, "cron", minute="*/5",                args=[app])
+    scheduler.add_job(job_summary,      "cron",     hour="8,16,0",    minute=0,  args=[app])
+    scheduler.add_job(job_post,         "cron",     hour="9,15,21,3", minute=0,  args=[app])
+    scheduler.add_job(job_wallet_watch,    "cron",     minute="*/5",                args=[app])
+    scheduler.add_job(job_build_knowledge, "cron",     hour="*/6",                  args=[app])
+    scheduler.add_job(job_x_monitor,    "interval", minutes=2,                   args=[app])
     scheduler.start()
 
     log.info("Tsukiverse Bot running")
