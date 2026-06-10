@@ -1070,9 +1070,7 @@ def main():
     app.run_polling(allowed_updates=["message"])
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
+    main()
          import traceback
         print("STARTUP ERROR:", e)
         traceback.print_exc()
