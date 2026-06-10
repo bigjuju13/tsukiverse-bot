@@ -1071,7 +1071,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-         import traceback
-        print("STARTUP ERROR:", e)
-        traceback.print_exc()
-
