@@ -1311,3 +1311,6 @@ def main():
 
     log.info("Tsukiverse Bot running")
     app.run_polling(allowed_updates=["message"])
+
+if __name__ == "__main__":
+    main()
