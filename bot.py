@@ -1272,31 +1272,6 @@ async def job_x_monitor(app):
                 await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=coincidence_msg)
                 post_to_x(coincidence_msg.replace("👁 ", ""))
 
-async def job_daily_x_report(app):
-    """Generate a daily mAInd-style report and post to X + Telegram."""
-    tsuki = await fetch_dexscreener(TSUKI_PAIR)
-    rwa   = await fetch_dexscreener(RWA_PAIR)
-    data_lines = []
-    if tsuki:
-        data_lines.append(f"TSUKI: ${float(tsuki.get('priceUsd', 0)):.8f}, 24h {tsuki.get('priceChange', {}).get('h24', 0)}%, MC ${tsuki.get('marketCap', 0):,.0f}")
-    if rwa:
-        data_lines.append(f"RWA: ${float(rwa.get('priceUsd', 0)):.8f}, 24h {rwa.get('priceChange', {}).get('h24', 0)}%, MC ${rwa.get('marketCap', 0):,.0f}")
-    if not data_lines:
-        return
-    try:
-        msg = claude.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=300,
-            system="""you write one daily market pulse post for the tsuki x rwa solana community in the style of TheRoaringAI's [mAInd] posts. dense, analytical, confident, macro-aware. start with [mAInd]. one paragraph, max 270 characters total so it fits a tweet. lowercase except tickers and proper nouns. no hashtags, no emojis, no hype words. end on an observation, not a call to action.""",
-            messages=[{"role": "user", "content": "today's data:\n" + "\n".join(data_lines)}],
-        )
-        report = msg.content[0].text.strip()
-        post_to_x(report)
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=report)
-    except Exception as e:
-        log.warning(f"Daily report error: {e}")
-
-
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     init_db()
@@ -1321,7 +1296,6 @@ def main():
     scheduler.add_job(job_wallet_watch,    "cron",     minute="*/5",                args=[app])
     scheduler.add_job(job_build_knowledge, "cron",     hour="*/6",                  args=[app])
     scheduler.add_job(job_x_monitor,    "interval", minutes=2,                   args=[app])
-    scheduler.add_job(job_daily_x_report, "cron",   hour=13, minute=0,           args=[app])
     scheduler.start()
 
     log.info("Tsukiverse Bot running")
