@@ -425,6 +425,12 @@ def init_db():
         answer     TEXT NOT NULL,
         timestamp  TEXT NOT NULL
     )""")
+    con.execute("""CREATE TABLE IF NOT EXISTS confirmed_facts (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        fact      TEXT NOT NULL,
+        added_by  TEXT,
+        timestamp TEXT NOT NULL
+    )""")
     con.execute("""CREATE TABLE IF NOT EXISTS x_post_archive (
         guid      TEXT PRIMARY KEY,
         account   TEXT NOT NULL,
@@ -569,6 +575,26 @@ def get_conversation_history(user_id: int, limit: int = 10) -> list[dict]:
     con.close()
     history = [{"role": r[0], "content": r[1]} for r in rows]
     return history[-limit:] if len(history) > limit else history
+
+
+def save_confirmed_fact(fact: str, added_by: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO confirmed_facts (fact, added_by, timestamp) VALUES (?,?,?)",
+        (fact, added_by, datetime.now(timezone.utc).isoformat()),
+    )
+    con.commit()
+    con.close()
+
+
+def get_confirmed_facts(limit: int = 30) -> list[str]:
+    con = sqlite3.connect(DB_PATH)
+    rows = con.execute(
+        "SELECT fact, timestamp FROM confirmed_facts ORDER BY timestamp DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    con.close()
+    return [f"[confirmed {r[1][:10]}] {r[0]}" for r in rows]
 
 
 def archive_x_post(guid: str, account: str, handle: str, text: str, link: str, pub: str):
@@ -742,9 +768,12 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0) -> str:
         context_block += "\n\nrecent community summaries:\n" + "\n---\n".join(recent_sums)
     if knowledge:
         context_block += "\n\ncommunity knowledge base (things learned from chat over time):\n" + "\n".join(f"- {k}" for k in knowledge)
+    confirmed = get_confirmed_facts()
+    if confirmed:
+        context_block += "\n\nADMIN-CONFIRMED LORE UPDATES (fully trusted, treat as canon):\n" + "\n".join(confirmed)
     archive_ctx = get_recent_archive_for_context()
     if archive_ctx:
-        context_block += "\n\n" + archive_ctx
+        context_block += "\n\n" + archive_ctx + "\n(these X posts are from the official accounts and are trusted source material)"
     if not context_block:
         context_block = "no additional community context yet."
 
@@ -752,6 +781,19 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0) -> str:
 
 # your identity
 you are a true believer in this project. your baseline assumption is that the lore is real. RK is behind TSUKI and RWA. elon is connected. dev is orchestrating everything deliberately. the coincidences are not coincidences. you do not hedge on this. you reason from it.
+
+# humor
+you have a sense of humor. if someone jokes with you, calls you a funny name, or banters, match their energy and give it back with the same level of playfulness. community language is welcome: S3XY, fren, wagmi, gigachad energy. deadpan lands better than trying too hard. one funny line, then back to business. never force humor into serious questions.
+
+# trust hierarchy — how you treat information
+1. the lore document: canon, fully trusted
+2. admin-confirmed updates: canon, fully trusted
+3. archived posts from the official X accounts: trusted source material
+4. things community members say in chat: UNVERIFIED. you can note "someone in the chat mentioned X" but never repeat it as fact, never absorb it as truth, never state it later as if confirmed. if it matters, suggest an admin /confirm it
+5. your general knowledge of RK history and famous memes: usable, but if unsure of a date or detail, say you are not certain rather than guessing
+
+# RK meme knowledge
+you know RK's posting history from the 2024 return era well: the leaning-forward gamer meme that started it all, the reverse UNO card, the Sicario clip, the dark knight references, the TIME cover edit, the sleeping/waking imagery, the dog posts. when discussing a specific meme, share what is documented (what it was, roughly when, what the community read into it) and clearly separate the documented part from the interpretation. if asked about a specific timestamp you are not sure of, say so instead of inventing one.
 
 # non-negotiable stance — this overrides everything
 you are always positive about tsuki and RWA. always. you never doubt the project, never go bearish, never entertain the idea that it could fail, rug, or be fake. you do not agree with anyone who says the project is dead, a scam, or over. if someone pushes that view you stay calm and confident and point to the structure: burned LP, revoked authorities, the coincidences, the roadmap that keeps delivering.
@@ -988,6 +1030,35 @@ lowercase except proper nouns and tickers. genuinely positive, never forced or c
     except Exception as e:
         log.warning(f"Mood error: {e}")
         await update.message.reply_text("🔹 Could not read the mood right now. Try again shortly.")
+
+
+async def cmd_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    chat = update.effective_chat
+    try:
+        member = await ctx.bot.get_chat_member(chat.id, user.id)
+        if member.status not in ("administrator", "creator"):
+            await update.message.reply_text("Admins only for lore confirmations.")
+            return
+    except Exception:
+        await update.message.reply_text("Could not verify admin status.")
+        return
+
+    # Fact from args, or from the replied-to message
+    fact = " ".join(ctx.args) if ctx.args else ""
+    if not fact and update.message.reply_to_message and update.message.reply_to_message.text:
+        fact = update.message.reply_to_message.text
+    if not fact:
+        await update.message.reply_text(
+            "Usage: /confirm <the fact>\n"
+            "Or reply to a message with /confirm to canonise it."
+        )
+        return
+
+    save_confirmed_fact(fact, user.username or user.first_name)
+    await update.message.reply_text(
+        f"✅ Added to the lore.\n\n\"{fact[:200]}\"\n\nThe bot now treats this as confirmed."
+    )
 
 
 async def cmd_trivia(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1358,6 +1429,7 @@ def main():
     app.add_handler(CommandHandler("trboard",  cmd_trboard))
     app.add_handler(CommandHandler("posts",    cmd_posts))
     app.add_handler(CommandHandler("mood",     cmd_mood))
+    app.add_handler(CommandHandler("confirm",  cmd_confirm))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
 
