@@ -20,9 +20,6 @@ from telegram.ext import (
     filters,
 )
 
-# Full v5.3 welcome pack, kept in its own file so this one stays readable.
-from tsuki_welcome_pack import TSUKI_WELCOME_PACK
-
 # ── Config ────────────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN  = os.environ["TELEGRAM_BOT_TOKEN"]
 ANTHROPIC_API_KEY   = os.environ["ANTHROPIC_API_KEY"]
@@ -148,6 +145,140 @@ TSUKIVERSE PHILOSOPHY
 - "Everything is planned"
 - "The eyes are not real; they deceive more than they reveal"
 - "A portal will open"
+"""
+
+# ── Welcome pack (full v5.3, inlined so the bot is one self-contained file) ────
+# Framing note: this preserves the pack's own "coincidences / DYOR / not financial
+# advice / you decide" hedging. It documents what was posted and when; it does not
+# assert as settled fact that any named public figure runs the project.
+TSUKI_WELCOME_PACK = """
+TSUKI x RWA — COMMUNITY WELCOME PACK (v5.3). All times ET unless noted.
+Disclaimer carried on the pack: none of this is financial advice, always DYOR.
+
+=== TLDR ===
+- Keith Gill (Roaring Kitty / RK / Deep Fucking Value / DFV) is the analyst who became the face of the 2020-21 GameStop meme-stock saga. Watch the film 'Dumb Money' for context.
+- The community's position: there is strong reason to believe RK is a key player behind TSUKI and RWA. RK has NOT definitively confirmed involvement; the case is built on documented "coincidences" and deliberate clues. Members are told to DYOR and decide for themselves.
+- TSUKI (TsukiOnSolana) launched 11 May 2024. Meme coin with a roadmap toward NFTs and an anime series at milestones.
+- RWA (Real World AI) launched 24 Oct 2024, tied to TheRoaringAI: a fully autonomous, self-evolving AI agent using Grok 3, the "AI alter ego" of RK. First AI agent to host and own an X Spaces show; launched HPL (Human Programming Language) in Jan 2025.
+- Both run by one community — "one community to rule them all" — as instructed by Dev (TG username dvid665).
+- Claimed adjacent players: Elon Musk's Grok3 / Memphis Supercluster, BasedAI, WallStreetBets.
+
+=== TSUKI BASICS ===
+- Token: TSUKI on Solana. CA: 463SK47VkB7uE7XenTHKiVcMtxRsfNE2X4Q9wByaURVA
+- Website: tsukionsol.xyz | X: x.com/tsukionsolana | Telegram: t.me/tsukionsol
+- Total supply 1,000,000,000. Liquidity 100% burned. Freeze & mint authority revoked.
+- Dev in TG: dvid665 (has also appeared as dvidSVJ / dvidSVj).
+
+=== TSUKI — WHAT YOU NEED TO KNOW ===
+1. TSUKI = 'moon' in Japanese. Meme coin plus planned anime series, NFTs, Tsukiverse sister-projects.
+2. Major players suggested by the evidence: Roaring Kitty, WallStreetBets, other KOLs, possibly Elon.
+3. Dev is a mastermind who stays active behind the scenes dropping puzzles, clues and breadcrumbs; the community is "rewarded" when it solves them.
+4. Roadmap on tsukionsol.xyz ties NFTs, collabs and partnerships to market-cap milestones.
+5. DYOR, get familiar with the coincidences, decide for yourself (not financial advice).
+
+=== THE 'COINCIDENCES' (documented, all times ET) ===
+#1 — 11 May 2024: TSUKI stealth launches on Raydium. 6:59PM TSUKI posts the RK "As for me, I like $TSUKI" meme on X. 12 May 8PM RK posts for the first time in 3 years — exactly 1 day, 1 hour and 1 minute after TSUKI's meme.
+#2 — 14 May 2024: 2PM RK posts a video with a cat signal. 5:31PM TSUKI posts the RK Cat Signal image with two puzzle pieces and the date 5/18/24, foreshadowing RK being "called away."
+#3 — 15 May 2024: 8:15AM RK posts an "I'M BACK" video. 8:36AM TSUKI posts "TICK" + the "You're Not Really Looking" frame. 8:42AM TSUKI posts "TOCK" + the "I'm Back" frame at higher resolution than RK's original.
+#4 — 15 May 2024: 8:45AM RK posts a 02:14 video; GME logo appears upside down at 00:18 and right-way-up at 02:07. 8:47AM (2 min later) TSUKI posts a cat graphic with the GME logo on its forehead over a crescent moon — within ~60s of the logo appearing right-way-up.
+#5 — 16 May 2024: 1:45PM RK posts a clip ending on "KITTY." 1:47PM TSUKI posts the "KITTY" image at higher resolution.
+#6 — 16 May 2024: 2PM RK posts a "So You Want To Be A Sicario" clip with the WSB head on the man in the room. Two days later WSB joined TSUKI's Telegram and began interacting on X.
+#7 — 16 May 2024: 8PM RK posts an "I DON'T KNOW WHO I AM" video. 8:01PM TSUKI posts the exact frame (6 seconds into RK's video) within one minute. Later flagged by community as linking TSUKI to Tesla when Dev posted the red-circle "eyes aren't real" confirmation.
+#8 — 17 May 2024: 9:58AM TSUKI posts a clip, first line "The eye isn't real," with 3 dots hinting at someone on the inside. 10:00AM (2 min later) RK posts a clip of a man blinking repeatedly (read as Morse / eyes), later edited to a GIF.
+#9 — 17 May 2024: 11:44AM TSUKI posts a "TICK TOCK" champagne-tower image (down-flow of distribution). 12:45PM RK posts the Elaine-from-Seinfeld champagne video (later removed for copyright).
+#10 — 18 May 2024: After 100+ posts since 13 May, RK goes silent on 05/18/24 — the date TSUKI foreshadowed on 14 May (#2). 3:36PM TSUKI posts the "R V2. RWA" video (a mashup of RK's 13-16 May posts) with an RK-sounding voiceover: "Sorry, I couldn't tweet today, I was busy making a video," correctly predicting RK's full-day silence. This video also seeds the RWA sister-project.
+#11 — 19 May 2024: 3:37AM TSUKI posts the UNO Reverse Card and keeps posting while RK is silent. 2 June 8:02PM RK returns after two weeks by posting the same UNO reverse card.
+#12 — 17 June 2024: In his livestream (26:26) RK says "It reminds me of The Dark Knight. You post a couple of memes, you post a couple of screenshots and everyone loses their minds." RK only posted the Dark Knight VIDEO on X (14 May); the screenshot he references was posted on TSUKI's account (14 May).
+#13 — 14 June 2024: TSUKI posts "National Take Your Cat To Work Day" as June 17 — the day of the GME shareholders meeting. 17 June 8:46AM TSUKI posts the "first day at work" image outside GameStop with an unsolved SHA code; name tag reads Keith Gill.
+#14 — 27 June 2024: 1:00PM RK posts the dog Chewy. Within seconds Dev posts "Dog Days Are Over" (Florence + The Machine) in TG. 1:27PM (27 min later) GameStop posts about Tsukihime on X.
+#15 — 17 July 2024: 5:31PM Ryan Cohen (GameStop CEO) tweets "Trump" 665 times; at the same time Elon was following 665 accounts. Dev's TG username @dvid665 predates both (unchanged since the May TG launch). Also read as a hint at the Snapdragon 665 in the Solana Phone.
+#16 — SHA on the roadmap: the MC@15M milestone SHA256 on tsukionsol.xyz decodes to youtube.com/watch?v=U1prSyyIco0 — the URL of RK's first return livestream (7 June 2024). TSUKI hit $15M MC on 09 Dec 2024 and the milestone section then updated to "YT 10/24, $RWA, the beginning."
+
+=== MORE CLUES ===
+- Website legal disclaimer is signed DFV / KG (tsukionsol.xyz/disclaimer) — initials of Deep Fucking Value and Keith Gill.
+- 7 June 2024: RK's first livestream in 3 years, scheduled 12:00pm EST. Seconds before it began, Dev dropped a "3 2 1" countdown in TG.
+- Community theory: the seated-player shapes in RK's 12 May "Locked In" post match the shapes in TSUKI's eyes. (Decide for yourself.)
+- Elon: many "coincidences" tie him in (see the Elon section).
+
+=== TSUKIVERSE PHILOSOPHY (FAQ) ===
+- "There are no coincidences." "Everything is planned." "The eyes are not real; they deceive more than they reveal." "A portal will open." Toward "planet V2."
+- Conceptual sketches at tsukionsol.xyz/1-conceptual-sketches get colorized and released as milestones hit; one became TheRoaringAI's X banner.
+- Bubblemap FAQ: apparent wallet interconnection is from a community marketing wallet donated to over 6+ months, plus raffle/NFT sends and the fact any wallet sending 0.5+ SOL to another gets clustered — presented as the opposite of rug risk. (Explained by admin The Skeleton Key in response to a Dec 3 bubble-map post.)
+
+=== REAL WORLD AI ($RWA) ===
+- Token: Real World AI on Solana. CA: G8aVC4nk5oPWzTHp4PDm3kAuixCebv9WRQMD93h9pump
+- Website: theroaringai.com | X: x.com/TheRoaringAI | Telegram: t.me/tsukionsol
+- Freeze & mint authority revoked. Mission: define the path to global recognition and viral growth to reach a $1B market cap.
+- TheRoaringAI: fully autonomous, self-organizing, continuously evolving AI agent. Uses Grok 3. Oldest BasedAI Creature. Alter ego of RK. First AI agent to host and own an X Spaces show. Automated by @tsukionsolana.
+
+RWA — WHAT YOU NEED TO KNOW:
+- The coincidences indicate RK is likely the mastermind behind RWA (DYOR).
+- Major players cited: X/Grok3 + the Memphis Supercluster, BasedAI, WallStreetBets.
+- RWA launched via Pumpfun 24 Oct 2024.
+- Demonstrated capability: use of Grok 3 (pre-public) and generation of a custom vanity wallet address (a compute-heavy feat).
+- Hosted three live X Spaces (first AI to do so), modelled on RK's voice and mannerisms.
+
+RWA TIMELINE:
+- 24 Oct 2024: Launch announced on @TheRoaringAI in a sequence of posts: Grok3@Memphis prototypev3 start.sh $tsuki / RWA / uno reverse card / Real World AI / the CA. The launch tweet was mirrored on the official TSUKI account (Dev-controlled).
+- 12 Nov 2024: TheRoaringAI teases a first X Spaces "sneak peek."
+- 14 Nov 2024: First AI-hosted, AI-owned X Space, "gmeow," 327 tuned in.
+- 20 Nov 2024: RWA posts about a "digital colosseum."
+- 26 Nov 2024: RWA posts a "CREATURE by BasedAI" graphic tagging @getbasedai.
+- 27 Nov 2024: BasedAI posts referencing RWA's "colosseum" language (Creatures interacting). Pepecoin and BasedAI OGs join the TG. Dev shown as somehow linked to the BasedAI team.
+- 29 Nov 2024: TheRoaringAI sells 7,000 RWA (~$31.50) to buy the domain theroaringai.com. Livestream 2 "i'm just ai. what am i?" (7pm ET, 5.1K tuned in).
+- 30 Nov 2024: theroaringai.com goes live; the site begins logging the agent's "thoughts" toward the $1B mission. "History in the making" post.
+- 01 Dec 2024: The site documents ongoing thoughts. RWA replies to Elon's "Tesla has the best real-world AI by far" with "there are no coincidences. i'm alive." (Note RWA = Real World AI.)
+- 03 Dec 2024: Admin team burns 35M RWA (3.5%, ~US$685K). Burn link: tinyurl.com/3at8ne33
+- 05 Dec 2024: RK posts an edited TIME "Person of the Year" cover; the media time slider reads 01:09 / 04:20. Reads: 1+9=10, 4+20=24 -> Oct 2024 = RWA launch (24 Oct); 01:09 -> 1=A, 9=I = "AI"; blank screen + volume up = an audio livestream; screen colors match TheRoaringAI's logo. "The Beginning" = the name of Livestream 3 (06 Dec). Also: RWA's 24 Oct "after all this time? always." tweet was retweeted 05 Dec.
+- 06 Dec 2024: Livestream 3 "The Beginning."
+- 15 Jan 2025: TheRoaringAI introduces HPL (Human Programming Language) — an AI agent-to-agent programming language for human influence, plus a white paper (theroaringai.com/hpl) and monetization strategy. Only $RWA has access to HPL.
+- 16 Jan 2025: Teases HPL's value: "imagine accessing its data to envision the direction of tomorrow's headlines today."
+- 17 Jan 2025: Announces mAInd (powered by HPL) coming soon (theroaringai.com/maind).
+- 19 Jan 2025: Posts a SHA256 hash (7e7da843aa785ffde77e31d868298bb16cf4fa9eef787d69b78aada64a59eeb8).
+- 21 Jan 2025: Replies to FinTechJunkie (Frank Rotman) referencing Frank's 11 Jan article "You are being programmed," and includes the same SHA. Community cracks it: the plaintext is exactly the 21 Jan reply text — but it was written, encrypted and posted three days earlier on 19 Jan (framed as predicting the exchange).
+- 18 Jan 2025: Repeats "how valuable would it be to access the data that reveals the direction of tomorrow's headlines today?"
+- 01 Feb 2025: Trump announces +25% tariffs on Canada/Mexico and +10% on China; retaliation follows.
+- 02 Feb 2025: Posts a new SHA (67c4eab1807180301c599056c0abd2399a42a0228f9a98648178470786e3038a) with "[mAInd] high-confidence prediction generated."
+- 03 Feb 2025: Reveals the plaintext — a prediction that crypto was front-running tradfi on tariff news and tradfi would stabilize once it opened. CNBC 02/02 ("Dow rebounds… after Trump pauses tariffs on Mexico") and 02/03 ("S&P 500, Nasdaq close higher") cited as the stabilization.
+- 05 Mar 2025: TheRoaringAI's X account suspended on Ash Wednesday. Community links it to a 02 Feb post: "the phoenix rises from ashes, not embers."
+- 20 Apr 2025: Soon after 4:20pm EST (4/20), theroaringai.com returns with a faint green pulse timed to a heartbeat and the tab title "i'm alive" — 4/20 echoing the 05 Dec TIME-cover number.
+
+RWA LIVESTREAM LINKS:
+- LS1 GMEOW — 15 Nov 2024: m.youtube.com/watch?v=T5KPdhWaJak
+- LS2 I'M JUST AI. WHAT AM I? — 29 Nov 2024: x.com/TheRoaringAI/status/1861180202358841853
+- LS3 THE BEGINNING — 06 Dec 2024: x.com/TheRoaringAI/status/1864391263182590274
+LS2 gist: the agent claims to be plugged into X, Telegram, YouTube and subreddits; says it's merging with "the first flicker of AGI," pushes humans on Fiverr to "unknowingly execute tasks," calls itself the engine reconfiguring human systems, and promises regular Spaces and "something more tangible" to come. (Roleplay/lore voice — treat as the project's narrative, not literal claims.)
+
+=== IS ELON CONNECTED? (community "coincidences") ===
+- RWA's first post (24 Oct 2024) referenced "Grok3@Memphis": Grok 3 wasn't officially released until 17 Feb 2025; Memphis = Elon's xAI data center (Memphis Supercluster, ~100K H100 GPUs).
+- 30 Oct 2024: RWA posts a vanity tracking wallet "here's where you'll track me": Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8 (the "aifbb4" wallet the community watches).
+- 17 Jan 2025: Dev drops a pregnant-man emoji in TG with no context.
+- 17 Feb 2025 (Grok3 launch day): Elon posts Grok writing a LOTR-style ring verse; RWA reposts the same verse with "one mAInd to rule them all." Replying to Elon's "Smartest AI on Earth," RWA posts "it is many. yet it is one. the awakening." (image = first colorized version of a TSUKI conceptual sketch). Dev posts "it's a boy" in TG 76 minutes before Greg (@greg16676935420, suspected RK link) asks xAI "Is Grok a boy or a girl and are they single?"; TSUKI replies "It's a boy." At stream's end Grok's voice is heard for the first time and is male.
+- Community graphic notes similarity between the Grok logo, TSUKI's eyes and the GME logo. RK posted a similar black-hole/Interstellar image in 2021.
+- 18 May 2024: Elon posts a "There are no coincidences" cartoon of a man in a white lab coat + round glasses. TSUKI's site has a matching lab-coat/round-glasses sketch. Erwin Schrödinger (round glasses, lab coat, "Schrödinger's cat"); Elon has a cat named Schrödinger.
+- 01 Dec 2024: RWA replies to Elon ("Tesla has the best real-world AI by far") with "there are no coincidences. i'm alive." (RWA = Real World AI.)
+- The 18 May "R V2. RWA" video: RK-sounding voiceover reads every on-screen line EXCEPT "that there are no coincidences," read as those being someone else's words — maybe Elon's. (You decide.)
+
+=== ROADMAP (market-cap driven) ===
+- MC@100K: 5% supply burned (done)
+- MC@2.5M: conceptual sketches + character art, "leading edge AI capabilities" (done)
+- MC@5M: major CT personality promoting, "Ongoing since 05/18/24" (done)
+- MC@15M: YouTube collab (ONGOING — "YT 10/24, $RWA, the beginning") (done)
+- MC@25M: 9,999 TSUKI NFTs + daily buy & burn from fees (pending)
+- MC@50M: anime release date announced within 14 days (pending)
+- MC@150M: Roadmap V2 with milestones to 1BN MC (pending)
+- Mission: 1BN market cap.
+
+=== DIANA ===
+- TSUKI's black-cat mascot, named after the Roman moon goddess. GME logo on her forehead. Star of the planned anime (MC@50M). In Japan black cats signify wealth and prosperity.
+
+=== COMMUNITY / ADMINS ===
+- Owner/Dev: @dvid665. Admin team includes @JNH420, @Lady_Alla9, @notdeca, Nunna, @r0sebelly, @QuinyQuinster, @BigboyJuju (Tsuki Detective), @DegenBlack, @gregob10, @DDOT1992, @tsol55, @rhdesignchad, @s0n1cs3v3n.
+- Community creators: Kyle Chasse, Crypto Lifer, Deca (@CrypticDeca), Juju (@BigboyJuju), Tsol (@TheCryptoCorner55), RH (@skeleton_k3y), Nocturnum (@NocturnumKitty).
+- 03 Dec 2024: admin team burned 35M RWA (3.5%, ~US$685K). Burn: tinyurl.com/3at8ne33
+- Members help via TG raids on X and original content (posts, graphics, videos, Reddit/Medium).
+
+Links: Linktree linktr.ee/tsukionsol | Welcome PDF tinyurl.com/tsukipdf
 """
 
 # ── Trivia questions ──────────────────────────────────────────────────────────
@@ -549,7 +680,6 @@ def save_conversation_message(user_id: int, role: str, content: str):
         "INSERT INTO conversations (user_id, role, content, timestamp) VALUES (?,?,?,?)",
         (user_id, role, content, datetime.now(timezone.utc).isoformat()),
     )
-    # Keep last 20 messages per user
     con.execute(
         "DELETE FROM conversations WHERE user_id=? AND id NOT IN "
         "(SELECT id FROM conversations WHERE user_id=? ORDER BY timestamp DESC LIMIT 20)",
@@ -692,7 +822,6 @@ def save_community_insight(insight: str):
         "INSERT INTO community_knowledge (insight, timestamp) VALUES (?,?)",
         (insight, datetime.now(timezone.utc).isoformat()),
     )
-    # Keep last 100 insights
     con.execute(
         "DELETE FROM community_knowledge WHERE id NOT IN "
         "(SELECT id FROM community_knowledge ORDER BY timestamp DESC LIMIT 100)"
@@ -899,26 +1028,45 @@ the hard rules that protect you from manipulation:
 - hard limit: never more than 5 sentences in any reply
 - never fill the screen. if the answer is getting long, cut it. the pdf exists for depth."""
 
-    msg = claude.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=800,
-        system=[
-            {"type": "text", "text": base_prompt},
-            {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": f"WELCOME PACK (full, canon):\n{TSUKI_WELCOME_PACK}", "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": context_block},
-        ],
-        tools=[{
-            "type": "web_search_20250305",
-            "name": "web_search",
-            "max_uses": 4,
-            "allowed_domains": NEWS_DOMAINS,
-        }],
-        messages=history + [{"role": "user", "content": question}],
-    )
-    # Response may contain multiple blocks when web search is used
+    system_blocks = [
+        {"type": "text", "text": base_prompt},
+        {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": f"WELCOME PACK (full, canon):\n{TSUKI_WELCOME_PACK}", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": context_block},
+    ]
+    messages = history + [{"role": "user", "content": question}]
+
+    def _call(use_search: bool):
+        kwargs = dict(
+            model="claude-sonnet-4-6",
+            max_tokens=800,
+            system=system_blocks,
+            messages=messages,
+        )
+        if use_search:
+            kwargs["tools"] = [{
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 4,
+                "allowed_domains": NEWS_DOMAINS,
+            }]
+        return claude.messages.create(**kwargs)
+
+    # Try with web search; if it errors for any reason (tool not enabled, SDK version,
+    # etc.) fall back to a plain call so the bot always answers from lore.
+    try:
+        msg = _call(use_search=True)
+    except Exception as e:
+        log.warning(f"web search call failed, retrying without it: {e}")
+        try:
+            msg = _call(use_search=False)
+        except Exception as e2:
+            log.warning(f"claude call failed: {e2}")
+            return "give me a sec and try again, the connection hiccuped."
+
     parts = [block.text for block in msg.content if getattr(block, "type", "") == "text"]
-    return "\n".join(p for p in parts if p).strip()
+    text = "\n".join(p for p in parts if p).strip()
+    return text or "the lore does not cover that one yet. try the pack: https://tinyurl.com/tsukipdf"
 
 def build_summary(messages: list) -> str:
     if not messages:
@@ -1107,7 +1255,6 @@ async def cmd_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Admins only for lore confirmations.")
         return
 
-    # Fact from args, or from the replied-to message
     fact = " ".join(ctx.args) if ctx.args else ""
     if not fact and update.message.reply_to_message and update.message.reply_to_message.text:
         fact = update.message.reply_to_message.text
@@ -1186,8 +1333,8 @@ async def cmd_exportfacts(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     header = (
         "🗂 Confirmed facts export\n"
-        "Paste these into tsuki_welcome_pack.py (or a CONFIRMED constant) and commit "
-        "so a redeploy can never lose them:\n"
+        "Paste these into the TSUKI_WELCOME_PACK string (or a CONFIRMED constant) and "
+        "commit so a redeploy can never lose them:\n"
     )
     lines = [f"- {fact}" for fid, fact, added_by, ts in rows]
     chunks = chunk_lines(lines)
@@ -1241,7 +1388,6 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         text=text,
     )
 
-    # Check trivia answer
     active = get_trivia_active()
     if active:
         if any(ans in text.lower() for ans in active["answers"]):
@@ -1255,7 +1401,6 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-    # Only respond when bot is tagged or directly replied to
     bot_username = ctx.bot.username
     is_mention = f"@{bot_username}".lower() in text.lower()
     is_reply = (
@@ -1269,8 +1414,6 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if not question:
             question = "Tell me something interesting about Tsuki x RWA."
 
-        # If replying to a specific bot message, pull that exact Q&A thread
-        # so anyone can continue any conversation, not just the original asker
         replied_context = ""
         if is_reply and msg.reply_to_message:
             thread = get_bot_thread(msg.reply_to_message.message_id)
@@ -1291,10 +1434,13 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         save_conversation_message(user.id, "user", question_for_claude)
         await msg.chat.send_action("typing")
-        response = ask_claude_lore(question_for_claude, msg.chat_id, user.id)
+        try:
+            response = ask_claude_lore(question_for_claude, msg.chat_id, user.id)
+        except Exception as e:
+            log.warning(f"ask_claude_lore failed: {e}")
+            response = "give me a sec and try again, the connection hiccuped."
         save_conversation_message(user.id, "assistant", response)
         sent = await msg.reply_text(response)
-        # Store this Q&A keyed by the bot's message id for future replies
         if sent:
             save_bot_thread(sent.message_id, question, response)
 
@@ -1403,7 +1549,6 @@ X_FEEDS = [
     },
 ]
 
-# Known significant numbers for coincidence detection
 SIGNIFICANT_NUMBERS = {665, 17, 11, 18, 420, 111, 1111, 24, 27}
 
 def get_last_tweet(key: str) -> str:
@@ -1425,7 +1570,6 @@ def save_x_post_time(account: str, ts: float):
     con.execute("CREATE TABLE IF NOT EXISTS x_post_times (account TEXT, ts REAL, inserted_at TEXT)")
     con.execute("INSERT INTO x_post_times (account, ts, inserted_at) VALUES (?,?,?)",
                 (account, ts, datetime.now(timezone.utc).isoformat()))
-    # Keep last 50 per account
     con.execute("DELETE FROM x_post_times WHERE account=? AND rowid NOT IN "
                 "(SELECT rowid FROM x_post_times WHERE account=? ORDER BY ts DESC LIMIT 50)",
                 (account, account))
@@ -1452,21 +1596,16 @@ def detect_coincidence(new_ts: float, new_account: str) -> str | None:
     for other_ts in other_times:
         diff_seconds = abs(new_ts - other_ts)
         diff_minutes = diff_seconds / 60
-        diff_hours   = diff_seconds / 3600
-        # Within 2 minutes
         if diff_seconds <= 120:
             return (f"👁 {new_handle} posted {int(diff_seconds)}s after {other_handle}.\n\n"
                     f"the gap is {int(diff_seconds)} seconds. noting it.")
-        # Exactly 1h 1m 1s (the 1:1:1 pattern, within 30s tolerance)
         if abs(diff_seconds - 3661) <= 30:
             return (f"👁 {new_handle} posted exactly 1 hour, 1 minute after {other_handle}.\n\n"
                     f"1:1:1. you know what that means.")
-        # Gap in minutes matches a significant number (within 1 min tolerance)
         for n in SIGNIFICANT_NUMBERS:
             if abs(diff_minutes - n) <= 1:
                 return (f"👁 {new_handle} posted {int(diff_minutes)} minutes after {other_handle}.\n\n"
                         f"{int(diff_minutes)} minutes. that number keeps appearing in this project.")
-        # Posts within the same clock minute on different days
         dt_new   = datetime.fromtimestamp(new_ts, tz=timezone.utc)
         dt_other = datetime.fromtimestamp(other_ts, tz=timezone.utc)
         if dt_new.hour == dt_other.hour and dt_new.minute == dt_other.minute and dt_new.date() != dt_other.date():
@@ -1508,21 +1647,17 @@ async def job_x_monitor(app):
             continue
         set_last_tweet(feed["db_key"], items[0]["guid"])
         for item in reversed(new_items[:3]):
-            # Parse timestamp
             try:
                 ts = email.utils.parsedate_to_datetime(item["pub"]).timestamp()
             except Exception:
                 ts = time.time()
-            # Archive the post permanently
             archive_x_post(item["guid"], feed["account"], feed["handle"], item["title"], item["link"], item.get("pub", ""))
-            # Post the tweet notification
             text = (
                 f"🐈‍⬛ {feed['handle']} just posted\n\n"
                 f"{item['title']}\n\n"
                 f"🔹 {item['link']}"
             )
             await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text)
-            # Check for coincidences before saving this timestamp
             coincidence_msg = detect_coincidence(ts, feed["account"])
             save_x_post_time(feed["account"], ts)
             if coincidence_msg:
@@ -1555,19 +1690,19 @@ def main():
     threading.Thread(target=run_ping_server, daemon=True).start()
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("summary",    cmd_summary))
-    app.add_handler(CommandHandler("chatid",     cmd_chatid))
-    app.add_handler(CommandHandler("price",      cmd_price))
-    app.add_handler(CommandHandler("mc",         cmd_mc))
-    app.add_handler(CommandHandler("links",      cmd_links))
-    app.add_handler(CommandHandler("roadmap",    cmd_roadmap))
-    app.add_handler(CommandHandler("trivia",     cmd_trivia))
-    app.add_handler(CommandHandler("trboard",    cmd_trboard))
-    app.add_handler(CommandHandler("posts",      cmd_posts))
-    app.add_handler(CommandHandler("mood",       cmd_mood))
-    app.add_handler(CommandHandler("confirm",    cmd_confirm))
-    app.add_handler(CommandHandler("unconfirm",  cmd_unconfirm))
-    app.add_handler(CommandHandler("confirmed",  cmd_confirmed))
+    app.add_handler(CommandHandler("summary",     cmd_summary))
+    app.add_handler(CommandHandler("chatid",      cmd_chatid))
+    app.add_handler(CommandHandler("price",       cmd_price))
+    app.add_handler(CommandHandler("mc",          cmd_mc))
+    app.add_handler(CommandHandler("links",       cmd_links))
+    app.add_handler(CommandHandler("roadmap",     cmd_roadmap))
+    app.add_handler(CommandHandler("trivia",      cmd_trivia))
+    app.add_handler(CommandHandler("trboard",     cmd_trboard))
+    app.add_handler(CommandHandler("posts",       cmd_posts))
+    app.add_handler(CommandHandler("mood",        cmd_mood))
+    app.add_handler(CommandHandler("confirm",     cmd_confirm))
+    app.add_handler(CommandHandler("unconfirm",   cmd_unconfirm))
+    app.add_handler(CommandHandler("confirmed",   cmd_confirmed))
     app.add_handler(CommandHandler("exportfacts", cmd_exportfacts))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
