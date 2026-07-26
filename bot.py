@@ -7,8 +7,6 @@ Changes in this version:
     updating last_ts, which then looked like a 48h gap the next day and reset
     the streak. Rolling windows have no boundary to fall through.
   • One-time restore migration so nobody who was burned by that starts over.
-  • Streak freezes, so a missed day never nukes a long run outright.
-  • Unified XP ledger + ranks across GM and trivia.
   • No raid commands. The verified-raid system and the simple /raid call are
     both removed. Their tables are left in place so nothing already collected
     is lost and turning it back on is a code change, not a migration.
@@ -83,30 +81,12 @@ DEV_USERNAME = "dvid665"
 # Streaks are rolling. No calendar boundaries, no timezone traps.
 #   under GM_SAME_WINDOW_HOURS since your last counted GM -> same GM
 #   between that and GM_GRACE_HOURS                       -> streak continues
-#   past GM_GRACE_HOURS                                   -> freeze, or reset
+#   past GM_GRACE_HOURS                                   -> streak resets
 GM_SAME_WINDOW_HOURS = 20
 GM_GRACE_HOURS       = 48
-FREEZE_EARN_EVERY    = 14   # earn a spare freeze every N consecutive days
-MAX_FREEZES          = 3
 
 # ── X reading ─────────────────────────────────────────────────────────────────
 THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
-
-# ── XP economy ────────────────────────────────────────────────────────────────
-XP_GM            = 10
-XP_GM_STREAK_CAP = 30      # streak bonus caps here so day 400 isn't absurd
-XP_GM_FIRST      = 15
-XP_TRIVIA        = 25
-
-RANKS = [
-    (0,     "🐾 Stray Kitten"),
-    (250,   "🐈‍⬛ Alley Cat"),
-    (750,   "🌙 Nightwalker"),
-    (1750,  "👁 Pattern Reader"),
-    (3500,  "🌕 Moon Cat"),
-    (7000,  "🔥 Diana's Chosen"),
-    (15000, "😎 Sexy Dev Adjacent"),
-]
 
 logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
 log = logging.getLogger("tsuki-bot")
@@ -295,7 +275,6 @@ There are over 40.
 ▪️ /price — TSUKI + RWA
 ▪️ /mc — market caps + milestone progress
 ▪️ /gm — streak
-▪️ /rank — your XP and rank
 ▪️ /read <x link> — I'll read it and tell you what I think
 ▪️ /trivia — test your lore
 
@@ -527,14 +506,13 @@ def init_db():
 
     con.execute("""CREATE TABLE IF NOT EXISTS tweet_cache (
         tweet_id TEXT PRIMARY KEY, handle TEXT, name TEXT, text TEXT,
-        created_at TEXT, likes INTEGER, retweets INTEGER,
-        replying_to TEXT, replying_to_id TEXT, url TEXT, fetched_at TEXT NOT NULL
+        created_at TEXT, replying_to TEXT, replying_to_id TEXT,
+        url TEXT, fetched_at TEXT NOT NULL
     )""")
 
     # ── Columns added over time ───────────────────────────────────────────────
     for stmt in (
         "ALTER TABLE gm_streaks ADD COLUMN last_ts TEXT",
-        "ALTER TABLE gm_streaks ADD COLUMN freezes INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE gm_streaks ADD COLUMN best_streak INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE tweet_cache ADD COLUMN quote_handle TEXT",
         "ALTER TABLE tweet_cache ADD COLUMN quote_text TEXT",
@@ -553,28 +531,9 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL, username TEXT,
         ts TEXT NOT NULL, day_key TEXT NOT NULL,
-        streak_after INTEGER, froze INTEGER NOT NULL DEFAULT 0
+        streak_after INTEGER
     )""")
     con.execute("CREATE INDEX IF NOT EXISTS idx_gm_log_user ON gm_log(user_id, ts)")
-
-    # ── XP ledger ─────────────────────────────────────────────────────────────
-    con.execute("""CREATE TABLE IF NOT EXISTS xp (
-        user_id INTEGER PRIMARY KEY,
-        username TEXT,
-        xp INTEGER NOT NULL DEFAULT 0,
-        updated TEXT
-    )""")
-    con.execute("""CREATE TABLE IF NOT EXISTS xp_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL, amount INTEGER NOT NULL,
-        reason TEXT, ts TEXT NOT NULL
-    )""")
-
-    # ── X handle links ────────────────────────────────────────────────────────
-    con.execute("""CREATE TABLE IF NOT EXISTS x_handles (
-        user_id INTEGER PRIMARY KEY, username TEXT, x_handle TEXT NOT NULL,
-        verified INTEGER NOT NULL DEFAULT 0, linked_at TEXT
-    )""")
 
     # ── Watched X accounts ────────────────────────────────────────────────────
     # Whose links the bot will comment on unprompted. Managed live via /watch.
@@ -825,28 +784,25 @@ def do_gm(user_id: int, username: str) -> dict:
     THE FIX: no boundaries at all.
         under 20h since your last counted GM -> same GM, doesn't count twice
         20h to 48h                           -> streak continues
-        over 48h                             -> burn a freeze, else reset
+        over 48h                             -> streak resets
     """
     now = datetime.now(timezone.utc)
     today = gm_day_key()
-    froze = False
 
     con = db()
     row = con.execute(
-        "SELECT streak, total, last_date, last_ts, freezes, best_streak "
-        "FROM gm_streaks WHERE user_id=?",
+        "SELECT streak, total, last_date, last_ts, best_streak FROM gm_streaks WHERE user_id=?",
         (user_id,),
     ).fetchone()
 
     if not row:
-        streak, total, freezes, best = 1, 1, 1, 1
+        streak, total, best = 1, 1, 1
     else:
         prev_streak = row[0] or 0
         prev_total  = row[1] or 0
         last_date   = row[2]
         prev        = _parse_ts(row[3])
-        freezes     = row[4] if row[4] is not None else 1
-        best        = row[5] or 0
+        best        = row[4] or 0
 
         elapsed_h = (now - prev).total_seconds() / 3600 if prev else None
 
@@ -855,53 +811,40 @@ def do_gm(user_id: int, username: str) -> dict:
             # missing data. Continue, and start tracking properly from here.
             if last_date == today:
                 con.close()
-                return {"streak": prev_streak, "total": prev_total, "already": True,
-                        "hours_left": None, "froze": False, "freezes": freezes}
+                return {"streak": prev_streak, "total": prev_total,
+                        "already": True, "hours_left": None}
             streak, total = prev_streak + 1, prev_total + 1
 
         elif elapsed_h < GM_SAME_WINDOW_HOURS:
-            # Same window. Note we deliberately do NOT move last_ts here, so
+            # Same window. We deliberately do NOT move last_ts here, so
             # creeping earlier each day never walks you out of the window.
             con.close()
             return {"streak": prev_streak, "total": prev_total, "already": True,
-                    "hours_left": GM_SAME_WINDOW_HOURS - elapsed_h,
-                    "froze": False, "freezes": freezes}
+                    "hours_left": GM_SAME_WINDOW_HOURS - elapsed_h}
 
         elif elapsed_h <= GM_GRACE_HOURS:
             streak, total = prev_streak + 1, prev_total + 1
 
         else:
-            # Genuinely missed a day. Spend a freeze if they've got one and the
-            # streak was worth protecting.
-            if freezes > 0 and prev_streak >= 3:
-                freezes -= 1
-                streak, total = prev_streak + 1, prev_total + 1
-                froze = True
-            else:
-                streak, total = 1, prev_total + 1
-
-        # Earn a freeze back every FREEZE_EARN_EVERY consecutive days
-        if streak % FREEZE_EARN_EVERY == 0 and freezes < MAX_FREEZES:
-            freezes += 1
+            streak, total = 1, prev_total + 1
 
         best = max(best, streak)
 
     con.execute(
-        "INSERT INTO gm_streaks (user_id, username, streak, total, last_date, last_ts, freezes, best_streak) "
-        "VALUES (?,?,?,?,?,?,?,?) "
+        "INSERT INTO gm_streaks (user_id, username, streak, total, last_date, last_ts, best_streak) "
+        "VALUES (?,?,?,?,?,?,?) "
         "ON CONFLICT(user_id) DO UPDATE SET username=excluded.username, streak=excluded.streak, "
         "total=excluded.total, last_date=excluded.last_date, last_ts=excluded.last_ts, "
-        "freezes=excluded.freezes, best_streak=excluded.best_streak",
-        (user_id, username or "anon", streak, total, today, now.isoformat(), freezes, max(best, streak)),
+        "best_streak=excluded.best_streak",
+        (user_id, username or "anon", streak, total, today, now.isoformat(), max(best, streak)),
     )
     con.execute(
-        "INSERT INTO gm_log (user_id, username, ts, day_key, streak_after, froze) VALUES (?,?,?,?,?,?)",
-        (user_id, username or "anon", now.isoformat(), today, streak, 1 if froze else 0),
+        "INSERT INTO gm_log (user_id, username, ts, day_key, streak_after) VALUES (?,?,?,?,?)",
+        (user_id, username or "anon", now.isoformat(), today, streak),
     )
     con.commit()
     con.close()
-    return {"streak": streak, "total": total, "already": False,
-            "hours_left": None, "froze": froze, "freezes": freezes}
+    return {"streak": streak, "total": total, "already": False, "hours_left": None}
 
 
 def set_user_streak(username: str, streak: int) -> bool:
@@ -950,49 +893,6 @@ def is_first_gm_today() -> bool:
     count = con.execute("SELECT COUNT(*) FROM gm_streaks WHERE last_date=?", (today,)).fetchone()[0]
     con.close()
     return count <= 1  # caller is already recorded, so 1 means they're first
-
-
-# ── XP ────────────────────────────────────────────────────────────────────────
-def award_xp(user_id: int, username: str, amount: int, reason: str) -> int:
-    con = db()
-    con.execute(
-        "INSERT INTO xp (user_id, username, xp, updated) VALUES (?,?,?,?) "
-        "ON CONFLICT(user_id) DO UPDATE SET xp=xp+excluded.xp, username=excluded.username, updated=excluded.updated",
-        (user_id, username or "anon", amount, datetime.now(timezone.utc).isoformat()),
-    )
-    con.execute(
-        "INSERT INTO xp_log (user_id, amount, reason, ts) VALUES (?,?,?,?)",
-        (user_id, amount, reason, datetime.now(timezone.utc).isoformat()),
-    )
-    total = con.execute("SELECT xp FROM xp WHERE user_id=?", (user_id,)).fetchone()[0]
-    con.commit()
-    con.close()
-    return total
-
-
-def get_xp(user_id: int) -> int:
-    con = db()
-    row = con.execute("SELECT xp FROM xp WHERE user_id=?", (user_id,)).fetchone()
-    con.close()
-    return row[0] if row else 0
-
-
-def rank_for(xp_amount: int) -> tuple[str, int | None, str | None]:
-    """Returns (current rank name, xp needed for next, next rank name)."""
-    current = RANKS[0][1]
-    for threshold, name in RANKS:
-        if xp_amount >= threshold:
-            current = name
-        else:
-            return current, threshold - xp_amount, name
-    return current, None, None
-
-
-def get_xp_leaderboard(limit: int = 10) -> list:
-    con = db()
-    rows = con.execute("SELECT username, xp FROM xp ORDER BY xp DESC LIMIT ?", (limit,)).fetchall()
-    con.close()
-    return rows
 
 
 # ── Misc storage ──────────────────────────────────────────────────────────────
@@ -1136,12 +1036,12 @@ def cache_tweet(t: dict):
     con = db()
     con.execute(
         "INSERT OR REPLACE INTO tweet_cache "
-        "(tweet_id, handle, name, text, created_at, likes, retweets, replying_to, replying_to_id, "
+        "(tweet_id, handle, name, text, created_at, replying_to, replying_to_id, "
         "url, fetched_at, quote_handle, quote_text, created_ts) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         (t["id"], t.get("handle"), t.get("name"), t.get("text"), t.get("created_at"),
-         t.get("likes", 0), t.get("retweets", 0), t.get("replying_to"),
-         t.get("replying_to_id"), t.get("url"), datetime.now(timezone.utc).isoformat(),
+         t.get("replying_to"), t.get("replying_to_id"), t.get("url"),
+         datetime.now(timezone.utc).isoformat(),
          t.get("quote_handle"), t.get("quote_text"), t.get("created_ts")),
     )
     con.commit()
@@ -1151,21 +1051,20 @@ def cache_tweet(t: dict):
 def get_cached_tweet(tweet_id: str, max_age_minutes: int = 30) -> dict | None:
     con = db()
     row = con.execute(
-        "SELECT tweet_id, handle, name, text, created_at, likes, retweets, replying_to, "
-        "replying_to_id, url, fetched_at, quote_handle, quote_text, created_ts "
-        "FROM tweet_cache WHERE tweet_id=?",
+        "SELECT tweet_id, handle, name, text, created_at, replying_to, replying_to_id, "
+        "url, fetched_at, quote_handle, quote_text, created_ts FROM tweet_cache WHERE tweet_id=?",
         (tweet_id,),
     ).fetchone()
     con.close()
     if not row:
         return None
-    fetched = _parse_ts(row[10])
+    fetched = _parse_ts(row[8])
     if fetched and (datetime.now(timezone.utc) - fetched).total_seconds() > max_age_minutes * 60:
         return None  # stale, refetch so like/RT counts stay honest
     return {"id": row[0], "handle": row[1], "name": row[2], "text": row[3],
-            "created_at": row[4], "likes": row[5], "retweets": row[6],
-            "replying_to": row[7], "replying_to_id": row[8], "url": row[9],
-            "quote_handle": row[11], "quote_text": row[12], "created_ts": row[13]}
+            "created_at": row[4], "replying_to": row[5], "replying_to_id": row[6],
+            "url": row[7], "quote_handle": row[9], "quote_text": row[10],
+            "created_ts": row[11]}
 
 
 async def _fetch_tweet_official(tweet_id: str) -> dict | None:
@@ -1177,7 +1076,7 @@ async def _fetch_tweet_official(tweet_id: str) -> dict | None:
                 f"https://api.twitter.com/2/tweets/{tweet_id}",
                 headers={"Authorization": f"Bearer {X_BEARER_TOKEN}"},
                 params={
-                    "tweet.fields": "created_at,public_metrics,referenced_tweets,conversation_id,author_id",
+                    "tweet.fields": "created_at,referenced_tweets,conversation_id,author_id",
                     "expansions": "author_id,referenced_tweets.id.author_id",
                     "user.fields": "username,name",
                 },
@@ -1189,7 +1088,6 @@ async def _fetch_tweet_official(tweet_id: str) -> dict | None:
             d = data.get("data") or {}
             users = {u["id"]: u for u in data.get("includes", {}).get("users", [])}
             author = users.get(d.get("author_id"), {})
-            metrics = d.get("public_metrics", {})
             replying_to_id, replying_to = None, None
             for ref in d.get("referenced_tweets", []) or []:
                 if ref.get("type") == "replied_to":
@@ -1206,8 +1104,6 @@ async def _fetch_tweet_official(tweet_id: str) -> dict | None:
                 "text": d.get("text", ""),
                 "created_at": d.get("created_at", ""),
                 "created_ts": (lambda v: v.timestamp() if v else None)(_parse_ts(d.get("created_at"))),
-                "likes": metrics.get("like_count", 0),
-                "retweets": metrics.get("retweet_count", 0),
                 "replying_to": replying_to,
                 "replying_to_id": replying_to_id,
                 "url": f"https://x.com/{author.get('username','i')}/status/{tweet_id}",
@@ -1240,8 +1136,6 @@ async def _fetch_tweet_fx(tweet_id: str) -> dict | None:
                 "text": tw.get("text", ""),
                 "created_at": created,
                 "created_ts": float(tw["created_timestamp"]) if tw.get("created_timestamp") else None,
-                "likes": tw.get("likes", 0),
-                "retweets": tw.get("retweets", 0),
                 "replying_to": tw.get("replying_to"),
                 "replying_to_id": tw.get("replying_to_status"),
                 "url": tw.get("url") or f"https://x.com/i/status/{tweet_id}",
@@ -1266,8 +1160,6 @@ async def _fetch_tweet_vx(tweet_id: str) -> dict | None:
                 "text": tw.get("text", ""),
                 "created_at": tw.get("date", ""),
                 "created_ts": float(tw["date_epoch"]) if tw.get("date_epoch") else None,
-                "likes": tw.get("likes", 0),
-                "retweets": tw.get("retweets", 0),
                 "quote_handle": (tw.get("qrt") or {}).get("user_screen_name") if tw.get("qrt") else None,
                 "quote_text": (tw.get("qrt") or {}).get("text") if tw.get("qrt") else None,
                 "replying_to": (tw.get("replyingTo") or None),
@@ -1475,13 +1367,6 @@ def format_tweet(t: dict, max_len: int = 600) -> str:
     if t.get("quote_text"):
         qt = t["quote_text"][:220] + ("…" if len(t["quote_text"]) > 220 else "")
         lines += ["", f"💬 quoting @{t.get('quote_handle','?')}:", f"   {qt}"]
-    stats = []
-    if t.get("likes"):
-        stats.append(f"♥ {t['likes']:,}")
-    if t.get("retweets"):
-        stats.append(f"🔁 {t['retweets']:,}")
-    if stats:
-        lines += ["", "  ".join(stats)]
     if t.get("created_at"):
         lines.append(f"🕐 {t['created_at']}")
     return "\n".join(lines)
@@ -1511,8 +1396,8 @@ async def describe_tweet(t: dict, depth: int = 0, ancestors: int = 1) -> str:
     turn one link into fifteen fetches."""
     rep = f" (a reply to @{t['replying_to']})" if t.get("replying_to") else ""
     block = (
-        f"tweet by @{t['handle']}{rep}, posted {t.get('created_at','unknown time')}, "
-        f"{t.get('likes',0)} likes / {t.get('retweets',0)} reposts:\n\"{t['text']}\""
+        f"tweet by @{t['handle']}{rep}, posted {t.get('created_at','unknown time')}:"
+        f"\n\"{t['text']}\""
     )
     if t.get("quote_text"):
         block += (f"\n\n  ...and it quote-tweets @{t.get('quote_handle','unknown')}, "
@@ -2069,8 +1954,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🌙 Daily\n"
         "🔹 /gm — say GM, keep your streak\n"
         "🔹 /gmstats — your streak receipts\n"
-        "🔹 /gmboard — streak leaderboard\n"
-        "🔹 /rank · /xpboard — XP and ranks\n\n"
+        "🔹 /gmboard — streak leaderboard\n\n"
         "🧩 Other\n"
         "🔹 /trivia, /trboard, /roadmap, /links, /mood, /summary\n\n"
         "admins: /watch, /unwatch, /linkmode, /linkcooldown,\n"
@@ -2468,43 +2352,29 @@ async def cmd_gm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         hrs = result.get("hours_left")
         when = f"🔹 next one counts in ~{hrs:.0f}h" if hrs else "🔹 next one counts tomorrow"
         await update.message.reply_text(
-            f"🌙 already said GM this window, fren. enthusiasm noted.\n\n"
+            f"🌙 already said GM today, fren. enthusiasm noted.\n\n"
             f"🔹 Streak: {result['streak']} days\n"
-            f"{when}\n"
-            f"🔹 you get 48h of slack before anything breaks, relax"
+            f"{when}"
         )
         return
 
-    line = random.choice(GM_LINES)
-    rank_pos = get_gm_rank(user.id)
-    first = is_first_gm_today()
-
-    # XP
-    bonus = min(result["streak"], XP_GM_STREAK_CAP)
-    gained = XP_GM + bonus + (XP_GM_FIRST if first else 0)
-    total_xp = award_xp(user.id, user.username or user.first_name, gained, "gm")
-    rank_name, _, _ = rank_for(total_xp)
-
     extras = []
-    if result.get("froze"):
-        extras.append(f"🧊 you missed a day and burned a streak freeze. {result['freezes']} left. don't make a habit of it")
-    if first:
+    if is_first_gm_today():
         extras.append("🥇 first GM of the day")
     if result["streak"] in STREAK_MILESTONES:
         extras.append(f"🎉 {STREAK_MILESTONES[result['streak']]}")
+    rank_pos = get_gm_rank(user.id)
     if rank_pos and rank_pos <= 3:
         medal = {1: "🥇", 2: "🥈", 3: "🥉"}[rank_pos]
         extras.append(f"{medal} #{rank_pos} on the streak board")
-
     extra_block = ("\n" + "\n".join(extras) + "\n") if extras else ""
 
     text = (
         f"🌙 GM\n\n"
         f"🔹 Streak: {result['streak']} days\n"
         f"🔹 Total GMs: {result['total']}\n"
-        f"🔹 +{gained} XP → {total_xp:,} ({rank_name})\n"
         f"{extra_block}\n"
-        f"\"{line}\"\n\n"
+        f"\"{random.choice(GM_LINES)}\"\n\n"
         f"$TSUKI · $RWA"
     )
     tweet_text = (
@@ -2536,33 +2406,32 @@ async def cmd_gmboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_gmstats(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Receipts for your own streak. Useful now that there's an audit log."""
+    """Receipts for your own streak, straight out of the audit log."""
     user = update.effective_user
     con = db()
     row = con.execute(
-        "SELECT streak, total, best_streak, freezes, last_ts FROM gm_streaks WHERE user_id=?", (user.id,)
+        "SELECT streak, total, best_streak, last_ts FROM gm_streaks WHERE user_id=?", (user.id,)
     ).fetchone()
     recent = con.execute(
-        "SELECT ts, streak_after, froze FROM gm_log WHERE user_id=? ORDER BY ts DESC LIMIT 5", (user.id,)
+        "SELECT ts, streak_after FROM gm_log WHERE user_id=? ORDER BY ts DESC LIMIT 5", (user.id,)
     ).fetchall()
     con.close()
     if not row:
         await update.message.reply_text("no GM record for you at all. bold. /gm to fix that.")
         return
-    last = _parse_ts(row[4])
+    last = _parse_ts(row[3])
     since = f"{(datetime.now(timezone.utc) - last).total_seconds()/3600:.1f}h ago" if last else "unknown"
     lines = [
         "🌙 Your GM Record\n",
         f"🔹 Current streak: {row[0]}",
         f"🔹 Best ever: {row[2]}",
         f"🔹 Total GMs: {row[1]}",
-        f"🔹 Freezes in the bank: {row[3]}",
         f"🔹 Last GM: {since}",
     ]
     if recent:
         lines += ["", "recent:"]
-        for ts, streak_after, froze in recent:
-            lines.append(f"  {ts[:16].replace('T',' ')} → day {streak_after}{' 🧊' if froze else ''}")
+        for ts, streak_after in recent:
+            lines.append(f"  {ts[:16].replace('T',' ')} → day {streak_after}")
     await update.message.reply_text("\n".join(lines))
 
 
@@ -2584,48 +2453,6 @@ async def cmd_setstreak(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ set {target}'s streak to {streak} 🐈‍⬛")
     else:
         await update.message.reply_text(f"can't find {target} in the GM records. they need to /gm at least once first.")
-
-
-# ── XP / rank ─────────────────────────────────────────────────────────────────
-async def cmd_rank(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    xp_total = get_xp(user.id)
-    name, to_next, next_name = rank_for(xp_total)
-    con = db()
-    gm_row = con.execute("SELECT streak, total FROM gm_streaks WHERE user_id=?", (user.id,)).fetchone()
-    trivia = con.execute("SELECT score FROM trivia_scores WHERE user_id=?", (user.id,)).fetchone()
-    pos = con.execute("SELECT COUNT(*) FROM xp WHERE xp > ?", (xp_total,)).fetchone()[0] + 1
-    con.close()
-
-    lines = [
-        f"🐈‍⬛ @{user.username or user.first_name}\n",
-        f"🔹 Rank: {name}",
-        f"🔹 XP: {xp_total:,}  (#{pos} overall)",
-    ]
-    if to_next:
-        lines.append(f"🔹 {to_next:,} XP to {next_name}")
-    else:
-        lines.append("🔹 maxed out. nothing left to prove 😎")
-    lines += [
-        "",
-        f"🌙 GM streak: {gm_row[0] if gm_row else 0} ({gm_row[1] if gm_row else 0} total)",
-        f"🧩 Trivia wins: {trivia[0] if trivia else 0}",
-    ]
-    await update.message.reply_text("\n".join(lines))
-
-
-async def cmd_xpboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    rows = get_xp_leaderboard()
-    if not rows:
-        await update.message.reply_text("🔹 nobody has any XP. embarrassing for everyone involved.")
-        return
-    medals = ["🥇", "🥈", "🥉"]
-    lines = ["🏆 XP Leaderboard\n"]
-    for i, (username, xp_total) in enumerate(rows):
-        medal = medals[i] if i < 3 else f"{i+1}."
-        name, _, _ = rank_for(xp_total)
-        lines.append(f"{medal} @{username} — {xp_total:,} XP · {name}")
-    await update.message.reply_text("\n".join(lines))
 
 
 # ── Trivia ────────────────────────────────────────────────────────────────────
@@ -2849,14 +2676,11 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if active and any(ans in text.lower() for ans in active["answers"]):
         clear_trivia_active()
         add_trivia_score(user.id, user.username)
-        total_xp = award_xp(user.id, user.username or user.first_name, XP_TRIVIA, "trivia")
-        rank_name, _, _ = rank_for(total_xp)
         rows = get_trivia_leaderboard()
         score = next((s for u, s in rows if u == (user.username or "anon")), 1)
         await msg.reply_text(
             f"✅ correct, and annoyingly fast about it\n\n"
-            f"🔹 @{user.username or user.first_name}: {score} point{'s' if score != 1 else ''}\n"
-            f"🔹 +{XP_TRIVIA} XP → {total_xp:,} ({rank_name})"
+            f"🔹 @{user.username or user.first_name}: {score} point{'s' if score != 1 else ''}"
         )
         return
 
@@ -3186,7 +3010,6 @@ def main():
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
         ("gm", cmd_gm), ("gmboard", cmd_gmboard), ("gmstats", cmd_gmstats),
         ("setstreak", cmd_setstreak),
-        ("rank", cmd_rank), ("xpboard", cmd_xpboard),
         ("read", cmd_read),
         ("watch", cmd_watch), ("unwatch", cmd_unwatch),
         ("watching", cmd_watching), ("linkmode", cmd_linkmode),
