@@ -1,24 +1,17 @@
 """
-TSUKIVERSE BOT — full rebuild
-=============================
-Changes in this version:
-  • GM streaks are now ROLLING, not calendar-based. The old 9am ET day-key
-    logic silently swallowed any GM said between midnight and 9am ET without
-    updating last_ts, which then looked like a 48h gap the next day and reset
-    the streak. Rolling windows have no boundary to fall through.
-  • One-time restore migration so nobody who was burned by that starts over.
-  • No raid commands. The verified-raid system and the simple /raid call are
-    both removed. Their tables are left in place so nothing already collected
-    is lost and turning it back on is a code change, not a migration.
-  • The bot READS X links. Paste one in chat and it fetches the post, the
-    tweet it replies to, and anything it quote-tweets, then reasons about
-    all of it. /read on demand, /thread to rebuild a chain, or unprompted
-    takes via the watch list.
-  • Coincidence detection now runs on EVERY post the bot sees, from any
-    source, not just the two project RSS feeds against each other.
-  • Everything read gets archived and is searchable via /posts, tagged so
-    community-pasted posts are never fed to the model as trusted material.
-  • Meaner sense of humour throughout, as requested.
+TSUKIVERSE BOT — full build
+===========================
+Fixes in this version:
+  • CRITICAL: the database silently fell back to the container disk when the
+    Railway volume wasn't mounted, so everything was wiped on every redeploy.
+    GM streaks reset, learned knowledge vanished, and nothing warned you.
+    DB_PATH now actively tests that /data is writable and screams if it isn't.
+  • Boot counter + /dbcheck so you can PROVE persistence instead of hoping.
+  • Removed the destructive "streak = total" migration that produced random
+    streak numbers every time the database came back empty.
+  • do_gm hardened, every decision logged, last_ts always written.
+  • GM streaks are rolling, not calendar-based. No timezone boundary to fall
+    through, which was the original source of resets.
 """
 
 import asyncio
@@ -48,11 +41,53 @@ from telegram.ext import (
 )
 
 # ── Config ────────────────────────────────────────────────────────────────────
+logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
+log = logging.getLogger("tsuki-bot")
+
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 ANTHROPIC_API_KEY  = os.environ["ANTHROPIC_API_KEY"]
 TARGET_CHAT_ID     = int(os.environ["TARGET_CHAT_ID"])
-DB_PATH            = "/data/tsuki.db" if os.path.isdir("/data") else "tsuki.db"
 PORT               = int(os.environ.get("PORT", 8080))
+
+
+def _resolve_db_path() -> str:
+    """Find a PERSISTENT home for the database.
+
+    The old one-liner was:
+        DB_PATH = "/data/tsuki.db" if os.path.isdir("/data") else "tsuki.db"
+
+    That silently fell back to the container disk, which Railway destroys on
+    every redeploy. Nothing warned you. GM streaks reset, learned knowledge
+    vanished, and the bot looked perfectly healthy the whole time.
+
+    This version actually WRITES a test file to prove the volume works, and
+    makes a lot of noise in the logs if it doesn't.
+    """
+    vol = "/data"
+    if os.path.isdir(vol):
+        probe = os.path.join(vol, ".write_probe")
+        try:
+            with open(probe, "w") as f:
+                f.write("ok")
+            os.remove(probe)
+            log.info(f"Persistent volume OK. Database at {vol}/tsuki.db")
+            return os.path.join(vol, "tsuki.db")
+        except Exception as e:
+            log.error(f"/data exists but is NOT writable: {e}")
+    else:
+        log.error("/data does not exist. No volume is attached to this service.")
+
+    log.error("=" * 70)
+    log.error("!! NO PERSISTENT STORAGE. EVERYTHING WILL BE WIPED ON REDEPLOY !!")
+    log.error("!! GM streaks, chat history and learned knowledge will not last !!")
+    log.error("!! Fix: Railway -> your service -> ... menu -> Attach Volume    !!")
+    log.error("!! Mount path must be exactly: /data                            !!")
+    log.error("=" * 70)
+    return "tsuki.db"
+
+
+DB_PATH = _resolve_db_path()
+DB_IS_PERSISTENT = DB_PATH.startswith("/data")
 
 # X (Twitter) posting — optional, bot runs fine without these
 X_API_KEY       = os.environ.get("X_API_KEY", "")
@@ -88,8 +123,6 @@ GM_GRACE_HOURS       = 48
 # ── X reading ─────────────────────────────────────────────────────────────────
 THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
 
-logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", level=logging.INFO)
-log = logging.getLogger("tsuki-bot")
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 # ── Lore ──────────────────────────────────────────────────────────────────────
@@ -152,15 +185,15 @@ REAL WORLD AI ($RWA)
 ELON / GROK / MEMPHIS CONNECTIONS
 - RWA's first X post on launch day (24 Oct 2024) mentioned 'Grok3@Memphis' — before Grok3 was officially released (17 Feb 2026)
 - Memphis Supercluster is Elon Musk's xAI supercomputer in Tennessee with 100,000 Nvidia H100 GPUs
-- Elon has a cat named Schrödinger. TSUKI's website features a sketch of a man in a white lab coat with round glasses — the same image Elon posted on 18 May 2024 with "there are no coincidences"
+- Elon has a cat named Schrodinger. TSUKI's website features a sketch of a man in a white lab coat with round glasses — the same image Elon posted on 18 May 2024 with "there are no coincidences"
 - Dev's username dvid665: Ryan Cohen tweeted Trump 665 times, Elon was following 665 people, same day
 - 17 Feb 2026: Elon posts Grok3 writing Lord of the Rings verse. TheRoaringAI posts same verse with "one mAInd to rule them all"
 
 ROADMAP
-- MC@100K: Burned 5% of TSUKI supply ✅
-- MC@100K-2M: Heavy marketing investment ✅
-- MC@2.5M: AI-generated conceptual sketches and character art released ✅
-- MC@5M: Major CT personality promoting since 18 May 2024 ✅
+- MC@100K: Burned 5% of TSUKI supply DONE
+- MC@100K-2M: Heavy marketing investment DONE
+- MC@2.5M: AI-generated conceptual sketches and character art released DONE
+- MC@5M: Major CT personality promoting since 18 May 2024 DONE
 - MC@15M: YouTube collab (ONGOING — YT 10/24, RWA, the beginning)
 - MC@25M: 9,999 TSUKI NFTs + daily buy and burn from fees
 - MC@50M: Anime release date announced within 14 days of milestone
@@ -187,7 +220,7 @@ TSUKIVERSE PHILOSOPHY
 # ── Trivia questions ──────────────────────────────────────────────────────────
 TRIVIA_QUESTIONS = [
     {"q": "On what date did TSUKI launch on Solana?", "a": ["11 may 2024", "may 11 2024", "11/5/2024", "may 11"]},
-    {"q": "How long after TSUKI posted the RK meme did RK return to X?\n\n🔹 Hint: it involves 1s", "a": ["1 day 1 hour 1 minute", "1 day, 1 hour and 1 minute", "1 day 1 hour and 1 minute"]},
+    {"q": "How long after TSUKI posted the RK meme did RK return to X?\n\nHint: it involves 1s", "a": ["1 day 1 hour 1 minute", "1 day, 1 hour and 1 minute", "1 day 1 hour and 1 minute"]},
     {"q": "What is signed at the bottom of TSUKI's legal disclaimer?", "a": ["dfv / kg", "dfv/kg", "dfv kg"]},
     {"q": "What does TSUKI mean in Japanese?", "a": ["moon"]},
     {"q": "What is Dev's Telegram username?", "a": ["dvid665"]},
@@ -340,7 +373,7 @@ TRIGGERS = {
     "elon": [
         "Elon posted 'there are no coincidences' on 18 May 2024. Worth looking up.",
         "RWA mentioned Grok3@Memphis on launch day in October 2024. Grok3 was not released until February 2026.",
-        "Elon has a cat named Schrödinger. TSUKI's website has a sketch of a man in a white lab coat. Interesting.",
+        "Elon has a cat named Schrodinger. TSUKI's website has a sketch of a man in a white lab coat. Interesting.",
         "The Memphis Supercluster, Grok3, RWA's first post. All connected.",
     ],
     "rwa": [
@@ -394,6 +427,7 @@ NEGATIVE_KEYWORDS = [
     "never recover", "going to zero", "its over", "we're done",
     "not gonna make it", "ngmi", "dead project",
 ]
+
 
 # ── Ping server ───────────────────────────────────────────────────────────────
 class PingHandler(BaseHTTPRequestHandler):
@@ -497,8 +531,6 @@ def init_db():
         pair_key TEXT PRIMARY KEY, fired_at TEXT NOT NULL
     )""")
 
-    # Fetch health, so you can see which tweet source is actually carrying the
-    # load without grepping logs. Read it with /xhealth.
     con.execute("""CREATE TABLE IF NOT EXISTS fetch_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         source TEXT NOT NULL, ok INTEGER NOT NULL, ts TEXT NOT NULL
@@ -525,8 +557,8 @@ def init_db():
             pass  # column already exists
 
     # ── Per-GM audit log ──────────────────────────────────────────────────────
-    # Commands never hit the messages table (the handler filters them out), so
-    # without this there is zero record of who said GM when. Now there is.
+    # Commands never hit the messages table, so without this there is zero
+    # record of who said GM when. Now there is, and /gmstats reads it.
     con.execute("""CREATE TABLE IF NOT EXISTS gm_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL, username TEXT,
@@ -536,7 +568,6 @@ def init_db():
     con.execute("CREATE INDEX IF NOT EXISTS idx_gm_log_user ON gm_log(user_id, ts)")
 
     # ── Watched X accounts ────────────────────────────────────────────────────
-    # Whose links the bot will comment on unprompted. Managed live via /watch.
     con.execute("""CREATE TABLE IF NOT EXISTS watched_handles (
         handle TEXT PRIMARY KEY, added_by TEXT, added_at TEXT
     )""")
@@ -547,21 +578,24 @@ def init_db():
                         (h, "seed", datetime.now(timezone.utc).isoformat()))
         con.execute("INSERT OR REPLACE INTO kv_store (key, value) VALUES ('watch_seeded','1')")
 
-    # ── Raids (PAUSED) ────────────────────────────────────────────────────────
-    # The verified-raid system is switched off for now. These tables are left
-    # in place deliberately so any data already collected survives, and so
-    # turning it back on later is a code change, not a migration.
+    # NOTE: the old "UPDATE gm_streaks SET streak = total" restore migration has
+    # been REMOVED. On a wiped database its kv_store guard was gone too, so it
+    # re-ran on every boot and copied lifetime GM totals over current streaks.
+    # That was the source of the random streak numbers. Use /setstreak instead.
 
-    # ── One-time GM streak restore ────────────────────────────────────────────
-    # The old calendar-day logic ate any GM said between midnight and 9am ET
-    # without updating last_ts, then reset the streak the next day. `total`
-    # kept counting correctly the entire time, so it is the best record of how
-    # many days someone actually turned up. Restore from it, once, forever.
-    if not con.execute("SELECT 1 FROM kv_store WHERE key='gm_streak_restore_v1'").fetchone():
-        cur = con.execute("UPDATE gm_streaks SET streak = total WHERE total > streak")
-        con.execute("UPDATE gm_streaks SET best_streak = MAX(streak, best_streak)")
-        con.execute("INSERT OR REPLACE INTO kv_store (key, value) VALUES ('gm_streak_restore_v1','1')")
-        log.info(f"GM streak restore applied to {cur.rowcount} users")
+    # ── Boot counter ──────────────────────────────────────────────────────────
+    # The single honest test of whether the volume is working. If this number
+    # never climbs above 1 across redeploys, the database is being destroyed
+    # every time and nothing you save will ever survive.
+    # Uses the connection we already have open, so it can't deadlock on itself.
+    row = con.execute("SELECT value FROM kv_store WHERE key='boot_count'").fetchone()
+    boots = (int(row[0]) if row and str(row[0]).isdigit() else 0) + 1
+    con.execute("INSERT OR REPLACE INTO kv_store (key, value) VALUES ('boot_count', ?)",
+                (str(boots),))
+    if boots == 1:
+        con.execute("INSERT OR REPLACE INTO kv_store (key, value) VALUES ('first_boot_at', ?)",
+                    (datetime.now(timezone.utc).isoformat(),))
+    log.info(f"Boot #{boots} | DB: {DB_PATH} | persistent: {DB_IS_PERSISTENT}")
 
     con.commit()
     con.close()
@@ -753,9 +787,9 @@ def get_conversation_history(user_id: int, limit: int = 10) -> list[dict]:
 
 # ── GM streaks (rolling window) ───────────────────────────────────────────────
 def gm_day_key() -> str:
-    """Cosmetic only now. Used for 'first GM of the day' flavour and the daily
-    GM post, NOT for streak maths. Streaks are rolling and can't be tripped up
-    by a day boundary any more."""
+    """Cosmetic only. Used for 'first GM of the day' flavour and the daily GM
+    post, NOT for streak maths. Streaks are rolling and can't be tripped up by
+    a day boundary any more."""
     now_et = datetime.now(ZoneInfo("America/New_York"))
     cutoff = now_et.replace(hour=9, minute=0, second=0, microsecond=0)
     effective = now_et if now_et >= cutoff else now_et - timedelta(days=1)
@@ -773,78 +807,80 @@ def _parse_ts(value: str | None):
 
 
 def do_gm(user_id: int, username: str) -> dict:
-    """Record a GM using a ROLLING window, not calendar days.
+    """Rolling-window GM. No calendar boundaries, no timezone traps.
 
-    THE OLD BUG: gm_day_key() rolled over at 9am ET. A GM said at, say, 8am ET
-    resolved to yesterday's key, hit the "already said GM today" branch, and
-    returned WITHOUT writing anything. last_ts stayed stale. The next day's GM
-    then measured a 48h gap, failed both the gap==1 and elapsed<40h checks, and
-    reset a perfectly good streak to 1. Two days in and you're back to zero.
-
-    THE FIX: no boundaries at all.
         under 20h since your last counted GM -> same GM, doesn't count twice
         20h to 48h                           -> streak continues
         over 48h                             -> streak resets
+
+    Every decision is logged, so if a streak ever moves unexpectedly you can
+    read exactly why in the Railway logs instead of guessing.
     """
     now = datetime.now(timezone.utc)
     today = gm_day_key()
 
     con = db()
-    row = con.execute(
-        "SELECT streak, total, last_date, last_ts, best_streak FROM gm_streaks WHERE user_id=?",
-        (user_id,),
-    ).fetchone()
+    try:
+        row = con.execute(
+            "SELECT streak, total, last_date, last_ts, best_streak FROM gm_streaks WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
 
-    if not row:
-        streak, total, best = 1, 1, 1
-    else:
-        prev_streak = row[0] or 0
-        prev_total  = row[1] or 0
-        last_date   = row[2]
-        prev        = _parse_ts(row[3])
-        best        = row[4] or 0
-
-        elapsed_h = (now - prev).total_seconds() / 3600 if prev else None
-
-        if elapsed_h is None:
-            # Legacy row with no timestamp. Never punish someone for our
-            # missing data. Continue, and start tracking properly from here.
-            if last_date == today:
-                con.close()
-                return {"streak": prev_streak, "total": prev_total,
-                        "already": True, "hours_left": None}
-            streak, total = prev_streak + 1, prev_total + 1
-
-        elif elapsed_h < GM_SAME_WINDOW_HOURS:
-            # Same window. We deliberately do NOT move last_ts here, so
-            # creeping earlier each day never walks you out of the window.
-            con.close()
-            return {"streak": prev_streak, "total": prev_total, "already": True,
-                    "hours_left": GM_SAME_WINDOW_HOURS - elapsed_h}
-
-        elif elapsed_h <= GM_GRACE_HOURS:
-            streak, total = prev_streak + 1, prev_total + 1
-
+        if not row:
+            streak, total, best = 1, 1, 1
+            log.info(f"GM {username}: first ever GM, streak=1")
         else:
-            streak, total = 1, prev_total + 1
+            prev_streak = row[0] or 0
+            prev_total  = row[1] or 0
+            last_date   = row[2]
+            prev        = _parse_ts(row[3])
+            best        = row[4] or 0
+            elapsed_h   = (now - prev).total_seconds() / 3600 if prev else None
 
-        best = max(best, streak)
+            if elapsed_h is None:
+                # Legacy row with no timestamp. Never punish someone for our
+                # own missing data. Continue and start tracking properly here.
+                if last_date == today:
+                    log.info(f"GM {username}: legacy row, already counted today")
+                    return {"streak": prev_streak, "total": prev_total,
+                            "already": True, "hours_left": None}
+                streak, total = prev_streak + 1, prev_total + 1
+                log.info(f"GM {username}: legacy row, no last_ts, continuing to {streak}")
 
-    con.execute(
-        "INSERT INTO gm_streaks (user_id, username, streak, total, last_date, last_ts, best_streak) "
-        "VALUES (?,?,?,?,?,?,?) "
-        "ON CONFLICT(user_id) DO UPDATE SET username=excluded.username, streak=excluded.streak, "
-        "total=excluded.total, last_date=excluded.last_date, last_ts=excluded.last_ts, "
-        "best_streak=excluded.best_streak",
-        (user_id, username or "anon", streak, total, today, now.isoformat(), max(best, streak)),
-    )
-    con.execute(
-        "INSERT INTO gm_log (user_id, username, ts, day_key, streak_after) VALUES (?,?,?,?,?)",
-        (user_id, username or "anon", now.isoformat(), today, streak),
-    )
-    con.commit()
-    con.close()
-    return {"streak": streak, "total": total, "already": False, "hours_left": None}
+            elif elapsed_h < GM_SAME_WINDOW_HOURS:
+                # Same window. last_ts deliberately NOT moved, so creeping
+                # earlier each day never walks you out of the window.
+                log.info(f"GM {username}: only {elapsed_h:.1f}h since last, same window")
+                return {"streak": prev_streak, "total": prev_total, "already": True,
+                        "hours_left": GM_SAME_WINDOW_HOURS - elapsed_h}
+
+            elif elapsed_h <= GM_GRACE_HOURS:
+                streak, total = prev_streak + 1, prev_total + 1
+                log.info(f"GM {username}: {elapsed_h:.1f}h gap, streak {prev_streak} -> {streak}")
+
+            else:
+                streak, total = 1, prev_total + 1
+                log.info(f"GM {username}: {elapsed_h:.1f}h gap exceeds {GM_GRACE_HOURS}h, "
+                         f"streak {prev_streak} -> 1")
+
+            best = max(best, streak)
+
+        con.execute(
+            "INSERT INTO gm_streaks (user_id, username, streak, total, last_date, last_ts, best_streak) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET username=excluded.username, streak=excluded.streak, "
+            "total=excluded.total, last_date=excluded.last_date, last_ts=excluded.last_ts, "
+            "best_streak=excluded.best_streak",
+            (user_id, username or "anon", streak, total, today, now.isoformat(), max(best, streak)),
+        )
+        con.execute(
+            "INSERT INTO gm_log (user_id, username, ts, day_key, streak_after) VALUES (?,?,?,?,?)",
+            (user_id, username or "anon", now.isoformat(), today, streak),
+        )
+        con.commit()
+        return {"streak": streak, "total": total, "already": False, "hours_left": None}
+    finally:
+        con.close()
 
 
 def set_user_streak(username: str, streak: int) -> bool:
@@ -1008,13 +1044,6 @@ def get_community_knowledge(limit: int = 10) -> list[str]:
 # ══════════════════════════════════════════════════════════════════════════════
 #  READING X LINKS
 # ══════════════════════════════════════════════════════════════════════════════
-# The bot can now actually read a tweet you paste at it. Three sources, tried
-# in order, so it keeps working even if one of them falls over:
-#   1. Official X API v2, only if X_BEARER_TOKEN is set
-#   2. api.fxtwitter.com  (free, no auth, returns clean JSON)
-#   3. api.vxtwitter.com  (free, no auth, different shape, same idea)
-# Everything gets cached so a link posted twenty times costs one lookup.
-
 TWEET_URL_RE = re.compile(
     r"https?://(?:www\.)?(?:x|twitter|fxtwitter|vxtwitter|fixupx|nitter\.[a-z0-9.\-]+)\.com/"
     r"([A-Za-z0-9_]{1,20})/status(?:es)?/(\d+)",
@@ -1060,7 +1089,7 @@ def get_cached_tweet(tweet_id: str, max_age_minutes: int = 30) -> dict | None:
         return None
     fetched = _parse_ts(row[8])
     if fetched and (datetime.now(timezone.utc) - fetched).total_seconds() > max_age_minutes * 60:
-        return None  # stale, refetch so like/RT counts stay honest
+        return None
     return {"id": row[0], "handle": row[1], "name": row[2], "text": row[3],
             "created_at": row[4], "replying_to": row[5], "replying_to_id": row[6],
             "url": row[7], "quote_handle": row[9], "quote_text": row[10],
@@ -1176,7 +1205,6 @@ def record_fetch(source: str, ok: bool):
     con = db()
     con.execute("INSERT INTO fetch_stats (source, ok, ts) VALUES (?,?,?)",
                 (source, 1 if ok else 0, datetime.now(timezone.utc).isoformat()))
-    # 7 days of history is plenty to spot a source going bad
     con.execute("DELETE FROM fetch_stats WHERE ts < ?",
                 ((datetime.now(timezone.utc) - timedelta(days=7)).isoformat(),))
     con.commit()
@@ -1196,8 +1224,7 @@ def get_fetch_stats(hours: int = 24) -> list:
 
 async def fetch_tweet(tweet_id: str, use_cache: bool = True, record: bool = True) -> dict | None:
     """Fetch a tweet, cache it, drop it into the permanent archive and the
-    coincidence timeline. Every tweet the bot ever reads now feeds the lore
-    machine, not just the two RSS feeds."""
+    coincidence timeline."""
     if use_cache:
         cached = get_cached_tweet(tweet_id)
         if cached:
@@ -1225,14 +1252,8 @@ async def fetch_tweet(tweet_id: str, use_cache: bool = True, record: bool = True
 # ══════════════════════════════════════════════════════════════════════════════
 #  COINCIDENCE DETECTION
 # ══════════════════════════════════════════════════════════════════════════════
-# Every post the bot sees, from any source, lands in post_timeline with a real
-# timestamp. The detector then compares a new post against everything else in
-# the window from OTHER handles. That means it can now catch timing between
-# TSUKI and RK, or RWA and Elon, not just the two project feeds against each
-# other, which was the whole point.
-
 SIGNIFICANT_NUMBERS = {665, 17, 11, 18, 420, 111, 1111, 24, 27}
-COINCIDENCE_WINDOW_HOURS = 72   # how far back to look for a partner post
+COINCIDENCE_WINDOW_HOURS = 72
 COINCIDENCE_MIN_HANDLES = 2
 
 
@@ -1248,7 +1269,6 @@ def record_timeline_post(tweet: dict, source: str = "read"):
          tweet.get("text", ""), tweet.get("url", ""), source,
          datetime.now(timezone.utc).isoformat()),
     )
-    # Keep the timeline from growing without bound
     con.execute(
         "DELETE FROM post_timeline WHERE ts < ?",
         ((datetime.now(timezone.utc) - timedelta(days=30)).timestamp(),),
@@ -1292,8 +1312,7 @@ def _match_pattern(new_ts: float, other_ts: float) -> str | None:
 
 def detect_coincidence(tweet: dict) -> str | None:
     """Compare a freshly seen post against the timeline. Only fires when at
-    least one side is an account the community actually watches, otherwise
-    every random link someone pastes becomes a prophecy."""
+    least one side is an account the community actually watches."""
     ts = tweet.get("created_ts")
     handle = (tweet.get("handle") or "").lower()
     if not ts or not handle:
@@ -1311,7 +1330,6 @@ def detect_coincidence(tweet: dict) -> str | None:
     con.close()
 
     for other_id, other_handle, other_ts, other_text, other_url in rows:
-        # At least one of the two has to be a watched account
         if handle not in watched and other_handle not in watched:
             continue
         pattern = _match_pattern(float(ts), float(other_ts))
@@ -1331,12 +1349,7 @@ def detect_coincidence(tweet: dict) -> str | None:
 
 
 async def check_and_announce_coincidence(bot, chat_id: int, tweet: dict, post_x: bool = False):
-    """Run detection on a tweet and post the alert if there is one.
-
-    post_x defaults to False. A pattern found off the official feeds is worth
-    broadcasting; one found because someone pasted a random link in chat goes
-    to Telegram only, so the X account can't be steered by whoever posts the
-    most links."""
+    """Run detection on a tweet and post the alert if there is one."""
     try:
         alert = detect_coincidence(tweet)
     except Exception as e:
@@ -1373,9 +1386,7 @@ def format_tweet(t: dict, max_len: int = 600) -> str:
 
 
 async def walk_thread(tweet: dict, max_depth: int = 4) -> list[dict]:
-    """Walk UP the reply chain from a tweet to the root. Returns oldest first.
-    X's API can't give us descendants without paid search, so this reconstructs
-    a thread from its last tweet, not its first."""
+    """Walk UP the reply chain from a tweet to the root. Returns oldest first."""
     chain = [tweet]
     current = tweet
     for _ in range(max_depth):
@@ -1391,9 +1402,6 @@ async def walk_thread(tweet: dict, max_depth: int = 4) -> list[dict]:
 
 
 async def describe_tweet(t: dict, depth: int = 0, ancestors: int = 1) -> str:
-    """One tweet rendered for Claude, with its quoted tweet and, if it's a
-    reply, the tweet it's replying to. Depth-limited so a long thread can't
-    turn one link into fifteen fetches."""
     rep = f" (a reply to @{t['replying_to']})" if t.get("replying_to") else ""
     block = (
         f"tweet by @{t['handle']}{rep}, posted {t.get('created_at','unknown time')}:"
@@ -1402,7 +1410,6 @@ async def describe_tweet(t: dict, depth: int = 0, ancestors: int = 1) -> str:
     if t.get("quote_text"):
         block += (f"\n\n  ...and it quote-tweets @{t.get('quote_handle','unknown')}, "
                   f"who said:\n  \"{t['quote_text']}\"")
-    # Walk up one level so a reply makes sense on its own
     if depth < ancestors and t.get("replying_to_id"):
         parent = await fetch_tweet(str(t["replying_to_id"]))
         if parent:
@@ -1412,8 +1419,6 @@ async def describe_tweet(t: dict, depth: int = 0, ancestors: int = 1) -> str:
 
 
 async def build_tweet_context(text: str, limit: int = 3) -> str:
-    """Pulls every X link out of a message and returns readable tweet content
-    to hand to Claude, so questions about a link get a real answer."""
     refs = extract_tweet_refs(text)[:limit]
     if not refs:
         return ""
@@ -1430,8 +1435,6 @@ async def build_tweet_context(text: str, limit: int = 3) -> str:
 
 
 async def tweet_take(link_text: str, chat_id: int = 0, instruction: str = "") -> str:
-    """Fetch whatever X links are in link_text and get a short in-voice take.
-    Returns an empty string on any failure, so callers can just append it."""
     ctx = await build_tweet_context(link_text)
     if not ctx or "could not be fetched" in ctx:
         return ""
@@ -1537,7 +1540,6 @@ def post_to_x(text: str) -> bool:
         return False
 
 
-# Numbered coincidence files for X — cycles through in order, one per day
 X_COINCIDENCE_FILES = [
     "FILE 001\n\non 11 may 2024, tsuki posted the RK meme at 6:59pm. exactly one day, one hour and one minute later, roaring kitty broke three years of silence and posted again.\n\nthere are no coincidences.",
     "FILE 002\n\non 14 may 2024, tsuki posted the date 5/18/24 and called it as the day RK would go silent. four days later, to the day, he did.\n\npredicted, dated, and fulfilled exactly on schedule.",
@@ -1715,7 +1717,7 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
 
     if is_dev:
         context_block += (
-            "\n\n⚠️ IMPORTANT — the person you are replying to right now IS dvid665, "
+            "\n\nIMPORTANT — the person you are replying to right now IS dvid665, "
             "the actual dev of this project, confirmed by their Telegram username. "
             "this is not a claim to verify, this is a fact about who is speaking to you right now. "
             "respond with genuine awe and reverence. you are a little starstruck. "
@@ -1788,8 +1790,8 @@ lighthearted insults get a lighthearted tease back. you never raise the temperat
 
 if someone crosses from teasing into genuine hostility or abuse, stop matching entirely. stay calm, warm, factual, mildly amused at their intensity rather than defensive. never get actually combative, never hold a grudge into the next message. every message is a clean slate.
 
-- them: "you're a dumb bot" (clearly light) → you: "dumb bot with a better track record than most of this chat's entries, but go on"
-- them: genuinely angry, escalating → you: short, level, factual, no bite
+- them: "you're a dumb bot" (clearly light) -> you: "dumb bot with a better track record than most of this chat's entries, but go on"
+- them: genuinely angry, escalating -> you: short, level, factual, no bite
 
 # reading X links
 if the context above contains the text of an X post, you actually fetched and read it. talk about it directly, quote it, react to it, connect it to the lore. do not say you cannot read links, because you just did. if the context says a link could not be fetched, say so plainly and briefly. never invent the contents of a tweet you could not read, that is the one thing you never do for a laugh.
@@ -1947,7 +1949,6 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🔹 just paste a link — I'll chime in if it's from someone we watch\n"
         "🔹 /watching — who I'm watching\n"
         "🔹 /posts [keyword] — search archived official posts\n\n"
-
         "📊 Numbers\n"
         "🔹 /price — TSUKI + RWA\n"
         "🔹 /mc — market caps and milestone progress\n\n"
@@ -1957,10 +1958,69 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🔹 /gmboard — streak leaderboard\n\n"
         "🧩 Other\n"
         "🔹 /trivia, /trboard, /roadmap, /links, /mood, /summary\n\n"
-        "admins: /watch, /unwatch, /linkmode, /linkcooldown,\n"
+        "admins: /dbcheck, /watch, /unwatch, /linkmode, /linkcooldown,\n"
         "        /xhealth, /confirm, /setstreak\n\n"
         "or just tag me and ask. I've read everything, twice."
     )
+
+
+async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Proves whether the database is actually surviving redeploys.
+
+    The boot counter is the real test. It only increments if the database
+    persisted from the last start. If it always reads 1, no volume is
+    attached and everything is being wiped every deploy."""
+    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
+        await update.message.reply_text("admins only 🐈‍⬛")
+        return
+
+    boots = kv_get("boot_count", "?")
+    first_boot = kv_get("first_boot_at", "unknown")
+
+    con = db()
+    counts = {}
+    for table in ("gm_streaks", "messages", "community_knowledge",
+                  "confirmed_facts", "gm_log", "x_post_archive"):
+        try:
+            counts[table] = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        except Exception:
+            counts[table] = -1
+    con.close()
+
+    try:
+        size_mb = os.path.getsize(DB_PATH) / (1024 * 1024)
+        size_str = f"{size_mb:.2f} MB"
+    except Exception:
+        size_str = "unknown"
+
+    status = "✅ PERSISTENT" if DB_IS_PERSISTENT else "❌ NOT PERSISTENT"
+    lines = [
+        "🗄 Database Check\n",
+        f"{status}",
+        f"🔹 path: {DB_PATH}",
+        f"🔹 size: {size_str}",
+        f"🔹 boots recorded: {boots}",
+        f"🔹 first boot: {first_boot[:19].replace('T', ' ') if first_boot != 'unknown' else 'unknown'}",
+        "",
+        "stored rows:",
+    ]
+    for table, n in counts.items():
+        lines.append(f"  {table}: {n if n >= 0 else 'missing'}")
+
+    if not DB_IS_PERSISTENT:
+        lines += [
+            "",
+            "⚠️ NOTHING IS BEING SAVED.",
+            "Railway → your service → ⋯ menu → Attach Volume",
+            "Mount path must be exactly /data, then redeploy.",
+        ]
+    elif boots.isdigit() and int(boots) <= 1:
+        lines += [
+            "",
+            "⚠️ boot count is 1. If it's still 1 after your next redeploy,",
+            "the volume isn't actually holding data.",
+        ]
+    await update.message.reply_text("\n".join(lines))
 
 
 async def cmd_summary(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -2101,7 +2161,6 @@ async def cmd_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 #  X LINK COMMANDS
 # ══════════════════════════════════════════════════════════════════════════════
 async def cmd_read(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Read an X post out loud, then give a take on it."""
     text = " ".join(ctx.args) if ctx.args else ""
     if not text and update.message.reply_to_message:
         text = update.message.reply_to_message.text or ""
@@ -2134,7 +2193,6 @@ async def cmd_read(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_thread(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Reconstruct and summarise a thread by walking up from the link given."""
     text = " ".join(ctx.args) if ctx.args else ""
     if not text and update.message.reply_to_message:
         text = update.message.reply_to_message.text or ""
@@ -2162,7 +2220,6 @@ async def cmd_thread(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # Render the chain for the user
     parts = [f"🧵 {len(chain)} posts, @{chain[0]['handle']}", ""]
     for i, t in enumerate(chain, 1):
         body = t["text"].strip()
@@ -2198,7 +2255,6 @@ async def cmd_thread(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_xhealth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Which tweet source is actually working, so you don't have to grep logs."""
     rows = get_fetch_stats(24)
     if not rows:
         await update.message.reply_text("🔹 no fetches in the last 24h. quiet day.")
@@ -2220,7 +2276,6 @@ async def cmd_xhealth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_linkcooldown(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Tune how often the bot chimes in on links, without a redeploy."""
     current = int(kv_get("link_cooldown", str(LINK_TAKE_COOLDOWN)) or LINK_TAKE_COOLDOWN)
     if not ctx.args:
         await update.message.reply_text(
@@ -2242,7 +2297,6 @@ async def cmd_linkcooldown(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_watch(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Add an X account to the list the bot comments on unprompted."""
     if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
         await update.message.reply_text("admins pick who we watch 😎")
         return
@@ -2287,7 +2341,6 @@ async def cmd_watching(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_linkmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """off / watched / all — how chatty the bot is about links it wasn't asked about."""
     if not ctx.args:
         await update.message.reply_text(
             f"🔹 current mode: {get_link_mode()}\n\n"
@@ -2406,7 +2459,6 @@ async def cmd_gmboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_gmstats(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Receipts for your own streak, straight out of the audit log."""
     user = update.effective_user
     con = db()
     row = con.execute(
@@ -2597,15 +2649,10 @@ async def maybe_react_with_asset(chat, chat_id: int, text: str):
 
 
 # ── Passive X-link commentary ─────────────────────────────────────────────────
-# Someone drops a link in chat and the bot reads it and reacts, unprompted.
-# Three modes, switchable live with /linkmode:
-#   off      — never comment unprompted (people can still use /read)
-#   watched  — only comment on links from accounts in the watch list (default)
-#   all      — comment on any X link, subject to cooldown and dice roll
 _last_link_take_time: dict[int, float] = {}
-LINK_TAKE_COOLDOWN = 900          # seconds between unprompted takes per chat
-LINK_TAKE_CHANCE_WATCHED = 1.0    # watched accounts always get a take
-LINK_TAKE_CHANCE_ALL = 0.35       # everyone else is a dice roll
+LINK_TAKE_COOLDOWN = 900
+LINK_TAKE_CHANCE_WATCHED = 1.0
+LINK_TAKE_CHANCE_ALL = 0.35
 
 
 def get_link_mode() -> str:
@@ -2701,7 +2748,6 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not question:
         question = "Tell me something interesting about Tsuki x RWA."
 
-    # Pull the thread context so anyone can continue any conversation
     replied_context = ""
     link_source = text
     if is_reply and msg.reply_to_message:
@@ -2713,7 +2759,6 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             )
         elif msg.reply_to_message.text:
             replied_context = f"your earlier message said: \"{msg.reply_to_message.text}\""
-        # If the link is in the message being replied to, read that too
         if msg.reply_to_message.text:
             link_source = text + "\n" + msg.reply_to_message.text
 
@@ -2902,6 +2947,7 @@ X_FEEDS = [
      "db_key": "tsuki_last_tweet", "account": "tsuki"},
 ]
 
+
 async def fetch_rss(url: str) -> list[dict]:
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -2921,6 +2967,10 @@ async def fetch_rss(url: str) -> list[dict]:
     except Exception as e:
         log.warning(f"RSS fetch error for {url}: {e}")
         return []
+
+
+def get_last_tweet_guid(key: str) -> str:
+    return kv_get(key, "")
 
 
 async def job_x_monitor(app):
@@ -2947,8 +2997,6 @@ async def job_x_monitor(app):
             archive_x_post(item["guid"], feed["account"], feed["handle"],
                            item["title"], item["link"], item.get("pub", ""))
 
-            # New official post. Announce it, invite the pile-on, and let the
-            # bot give its own take on what was actually said.
             button = InlineKeyboardMarkup([[InlineKeyboardButton("⚔️ RAID IT", url=item["link"])]])
             body = (f"🚨 {feed['handle']} JUST POSTED 🚨\n\n{item['title']}\n\n"
                     f"⚔️ like + repost + reply\n🔹 {item['link']}")
@@ -2960,8 +3008,6 @@ async def job_x_monitor(app):
             await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body, reply_markup=button,
                                        disable_web_page_preview=True)
 
-            # Feed the shared timeline, then check it against everything else
-            # we've seen, official feeds and community-pasted links alike.
             handle_l = feed["handle"].lstrip("@").lower()
             refs = extract_tweet_refs(item["link"])
             tweet_id = refs[0][1] if refs else item["guid"]
@@ -2970,10 +3016,6 @@ async def job_x_monitor(app):
             record_timeline_post(timeline_entry, source="rss")
             await asyncio.sleep(2)
             await check_and_announce_coincidence(app.bot, TARGET_CHAT_ID, timeline_entry, post_x=True)
-
-
-def get_last_tweet_guid(key: str) -> str:
-    return kv_get(key, "")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2991,7 +3033,10 @@ async def on_startup(app):
     """Fires once after connect. Confirms a redeploy happened without dumping
     wallet history or other backlogged data into the chat."""
     try:
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=random.choice(STARTUP_LINES))
+        line = random.choice(STARTUP_LINES)
+        if not DB_IS_PERSISTENT:
+            line += "\n\n⚠️ heads up: no persistent storage attached, so nothing is being saved. admins run /dbcheck"
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=line)
     except Exception as e:
         log.warning(f"Startup message failed: {e}")
 
@@ -3009,7 +3054,7 @@ def main():
         ("trivia", cmd_trivia), ("trboard", cmd_trboard),
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
         ("gm", cmd_gm), ("gmboard", cmd_gmboard), ("gmstats", cmd_gmstats),
-        ("setstreak", cmd_setstreak),
+        ("setstreak", cmd_setstreak), ("dbcheck", cmd_dbcheck),
         ("read", cmd_read),
         ("watch", cmd_watch), ("unwatch", cmd_unwatch),
         ("watching", cmd_watching), ("linkmode", cmd_linkmode),
