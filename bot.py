@@ -2729,11 +2729,22 @@ async def job_daily_campaign(app):
 
 
 async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Admin: fire today's campaign post manually (test / repost)."""
-    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
-        await update.message.reply_text("admins only 🐈‍⬛")
+    """Admin: fire today's campaign post manually (test / repost).
+    Always answers in the chat where it was typed, so it never looks dead."""
+    msg = update.effective_message
+    try:
+        admin = await is_admin(ctx, update.effective_chat.id, update.effective_user.id)
+    except Exception:
+        admin = False
+    if not admin and update.effective_chat.type != "private":
+        await msg.reply_text("admins only 🐈‍⬛")
         return
-    await job_daily_campaign(ctx.application)
+    await msg.reply_text(f"firing Day {campaign_day()} post into the main chat 🌙")
+    try:
+        await job_daily_campaign(ctx.application)
+        await msg.reply_text("done ✅ check the main chat")
+    except Exception as e:
+        await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
 
 
 async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
