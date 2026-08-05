@@ -1,29 +1,37 @@
 """
-TSUKIVERSE BOT — full build
-===========================
-Fixes in this version:
-  • CRITICAL: the database silently fell back to the container disk when the
-    Railway volume wasn't mounted, so everything was wiped on every redeploy.
-    GM streaks reset, learned knowledge vanished, and nothing warned you.
-    DB_PATH now actively tests that /data is writable and screams if it isn't.
-  • Boot counter + /dbcheck so you can PROVE persistence instead of hoping.
-  • Removed the destructive "streak = total" migration that produced random
-    streak numbers every time the database came back empty.
-  • do_gm hardened, every decision logged, last_ts always written.
-  • GM streaks are rolling, not calendar-based. No timezone boundary to fall
-    through, which was the original source of resets.
+TSUKIVERSE BOT
+==============
+A Telegram bot for the $TSUKI x $RWA community. Answers questions about the
+lore, reads X links people paste, watches the official accounts, and holds a
+conversation properly.
+
+Notes for future maintenance:
+
+  • The GM streak feature was REMOVED. It reset people's streaks repeatedly
+    because the underlying database kept being wiped, and the community lost
+    trust in it. The gm_streaks and gm_log tables are deliberately left in
+    place so any historical data survives if it is ever revived, but nothing
+    reads or writes them any more.
+
+  • PERSISTENCE IS LOAD BEARING. If the Railway volume is not mounted at
+    /data, the database silently falls back to the container disk and is
+    destroyed on every redeploy. That is what killed the GM feature. The
+    startup logs will scream about it and /dbcheck reports it.
+
+  • The bot only speaks when tagged or replied to, plus scheduled posts.
 """
 
 import asyncio
 import logging
 import os
+import glob
 import random
 import re
 import sqlite3
 import threading
 import time
 import urllib.parse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from zoneinfo import ZoneInfo
 
@@ -48,6 +56,11 @@ TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 ANTHROPIC_API_KEY  = os.environ["ANTHROPIC_API_KEY"]
 TARGET_CHAT_ID     = int(os.environ["TARGET_CHAT_ID"])
 PORT               = int(os.environ.get("PORT", 8080))
+
+# —— Daily $1B campaign post ————————————————————————————————————————
+CAMPAIGN_START = os.environ.get("CAMPAIGN_START_DATE", "2026-08-06")  # the date that counts as Day 1
+CAMPAIGN_TEXT  = "Posting $TSUKI & $RWA until they reach a market cap of $1B"
+PHOTOS_DIR     = os.path.join(os.path.dirname(os.path.abspath(__file__)), "photos")
 
 
 def _resolve_db_path() -> str:
@@ -79,7 +92,7 @@ def _resolve_db_path() -> str:
 
     log.error("=" * 70)
     log.error("!! NO PERSISTENT STORAGE. EVERYTHING WILL BE WIPED ON REDEPLOY !!")
-    log.error("!! GM streaks, chat history and learned knowledge will not last !!")
+    log.error("!! Chat history, learned knowledge and lore updates will not last !!")
     log.error("!! Fix: Railway -> your service -> ... menu -> Attach Volume    !!")
     log.error("!! Mount path must be exactly: /data                            !!")
     log.error("=" * 70)
@@ -112,13 +125,9 @@ TRACK_WALLET = "Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8"
 # or replying to the bot, so it can respond with the appropriate reverence.
 DEV_USERNAME = "dvid665"
 
-# ── GM streak tuning ──────────────────────────────────────────────────────────
-# Streaks are rolling. No calendar boundaries, no timezone traps.
-#   under GM_SAME_WINDOW_HOURS since your last counted GM -> same GM
-#   between that and GM_GRACE_HOURS                       -> streak continues
-#   past GM_GRACE_HOURS                                   -> streak resets
-GM_SAME_WINDOW_HOURS = 20
-GM_GRACE_HOURS       = 48
+# ── Removed feature ───────────────────────────────────────────────────────────
+# GM streaks used to live here. Removed, see the module docstring. The tables
+# remain in init_db so historical data is not destroyed.
 
 # ── X reading ─────────────────────────────────────────────────────────────────
 THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
@@ -307,7 +316,6 @@ There are over 40.
 
 ▪️ /price — TSUKI + RWA
 ▪️ /mc — market caps + milestone progress
-▪️ /gm — streak
 ▪️ /read <x link> — I'll read it and tell you what I think
 ▪️ /trivia — test your lore
 
@@ -491,6 +499,7 @@ def init_db():
         bot_msg_id INTEGER PRIMARY KEY,
         question TEXT NOT NULL, answer TEXT NOT NULL, timestamp TEXT NOT NULL
     )""")
+    # DORMANT: kept so old streak data survives, nothing reads these now
     con.execute("""CREATE TABLE IF NOT EXISTS gm_streaks (
         user_id INTEGER PRIMARY KEY,
         username TEXT,
@@ -774,7 +783,7 @@ def save_conversation_message(user_id: int, role: str, content: str):
     con.close()
 
 
-def get_conversation_history(user_id: int, limit: int = 10) -> list[dict]:
+def get_conversation_history(user_id: int, limit: int = 20) -> list[dict]:
     con = db()
     rows = con.execute(
         "SELECT role, content FROM conversations WHERE user_id=? ORDER BY timestamp ASC",
@@ -786,16 +795,6 @@ def get_conversation_history(user_id: int, limit: int = 10) -> list[dict]:
 
 
 # ── GM streaks (rolling window) ───────────────────────────────────────────────
-def gm_day_key() -> str:
-    """Cosmetic only. Used for 'first GM of the day' flavour and the daily GM
-    post, NOT for streak maths. Streaks are rolling and can't be tripped up by
-    a day boundary any more."""
-    now_et = datetime.now(ZoneInfo("America/New_York"))
-    cutoff = now_et.replace(hour=9, minute=0, second=0, microsecond=0)
-    effective = now_et if now_et >= cutoff else now_et - timedelta(days=1)
-    return effective.strftime("%Y-%m-%d")
-
-
 def _parse_ts(value: str | None):
     if not value:
         return None
@@ -804,131 +803,6 @@ def _parse_ts(value: str | None):
         return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except Exception:
         return None
-
-
-def do_gm(user_id: int, username: str) -> dict:
-    """Rolling-window GM. No calendar boundaries, no timezone traps.
-
-        under 20h since your last counted GM -> same GM, doesn't count twice
-        20h to 48h                           -> streak continues
-        over 48h                             -> streak resets
-
-    Every decision is logged, so if a streak ever moves unexpectedly you can
-    read exactly why in the Railway logs instead of guessing.
-    """
-    now = datetime.now(timezone.utc)
-    today = gm_day_key()
-
-    con = db()
-    try:
-        row = con.execute(
-            "SELECT streak, total, last_date, last_ts, best_streak FROM gm_streaks WHERE user_id=?",
-            (user_id,),
-        ).fetchone()
-
-        if not row:
-            streak, total, best = 1, 1, 1
-            log.info(f"GM {username}: first ever GM, streak=1")
-        else:
-            prev_streak = row[0] or 0
-            prev_total  = row[1] or 0
-            last_date   = row[2]
-            prev        = _parse_ts(row[3])
-            best        = row[4] or 0
-            elapsed_h   = (now - prev).total_seconds() / 3600 if prev else None
-
-            if elapsed_h is None:
-                # Legacy row with no timestamp. Never punish someone for our
-                # own missing data. Continue and start tracking properly here.
-                if last_date == today:
-                    log.info(f"GM {username}: legacy row, already counted today")
-                    return {"streak": prev_streak, "total": prev_total,
-                            "already": True, "hours_left": None}
-                streak, total = prev_streak + 1, prev_total + 1
-                log.info(f"GM {username}: legacy row, no last_ts, continuing to {streak}")
-
-            elif elapsed_h < GM_SAME_WINDOW_HOURS:
-                # Same window. last_ts deliberately NOT moved, so creeping
-                # earlier each day never walks you out of the window.
-                log.info(f"GM {username}: only {elapsed_h:.1f}h since last, same window")
-                return {"streak": prev_streak, "total": prev_total, "already": True,
-                        "hours_left": GM_SAME_WINDOW_HOURS - elapsed_h}
-
-            elif elapsed_h <= GM_GRACE_HOURS:
-                streak, total = prev_streak + 1, prev_total + 1
-                log.info(f"GM {username}: {elapsed_h:.1f}h gap, streak {prev_streak} -> {streak}")
-
-            else:
-                streak, total = 1, prev_total + 1
-                log.info(f"GM {username}: {elapsed_h:.1f}h gap exceeds {GM_GRACE_HOURS}h, "
-                         f"streak {prev_streak} -> 1")
-
-            best = max(best, streak)
-
-        con.execute(
-            "INSERT INTO gm_streaks (user_id, username, streak, total, last_date, last_ts, best_streak) "
-            "VALUES (?,?,?,?,?,?,?) "
-            "ON CONFLICT(user_id) DO UPDATE SET username=excluded.username, streak=excluded.streak, "
-            "total=excluded.total, last_date=excluded.last_date, last_ts=excluded.last_ts, "
-            "best_streak=excluded.best_streak",
-            (user_id, username or "anon", streak, total, today, now.isoformat(), max(best, streak)),
-        )
-        con.execute(
-            "INSERT INTO gm_log (user_id, username, ts, day_key, streak_after) VALUES (?,?,?,?,?)",
-            (user_id, username or "anon", now.isoformat(), today, streak),
-        )
-        con.commit()
-        return {"streak": streak, "total": total, "already": False, "hours_left": None}
-    finally:
-        con.close()
-
-
-def set_user_streak(username: str, streak: int) -> bool:
-    """Admin restore tool. Sets a streak by username, case-insensitive, and
-    stamps last_ts to now so the rolling window starts clean from here."""
-    con = db()
-    row = con.execute(
-        "SELECT user_id, total, best_streak FROM gm_streaks WHERE lower(username)=?",
-        (username.lower().lstrip("@"),),
-    ).fetchone()
-    if not row:
-        con.close()
-        return False
-    con.execute(
-        "UPDATE gm_streaks SET streak=?, best_streak=MAX(?, best_streak), last_ts=?, last_date=? WHERE user_id=?",
-        (streak, streak, datetime.now(timezone.utc).isoformat(), gm_day_key(), row[0]),
-    )
-    con.commit()
-    con.close()
-    return True
-
-
-def get_gm_leaderboard(limit: int = 10) -> list:
-    con = db()
-    rows = con.execute(
-        "SELECT username, streak, total FROM gm_streaks ORDER BY streak DESC, total DESC LIMIT ?",
-        (limit,),
-    ).fetchall()
-    con.close()
-    return rows
-
-
-def get_gm_rank(user_id: int) -> int | None:
-    con = db()
-    rows = con.execute("SELECT user_id FROM gm_streaks ORDER BY streak DESC, total DESC").fetchall()
-    con.close()
-    for i, (uid,) in enumerate(rows, start=1):
-        if uid == user_id:
-            return i
-    return None
-
-
-def is_first_gm_today() -> bool:
-    today = gm_day_key()
-    con = db()
-    count = con.execute("SELECT COUNT(*) FROM gm_streaks WHERE last_date=?", (today,)).fetchone()[0]
-    con.close()
-    return count <= 1  # caller is already recorded, so 1 means they're first
 
 
 # ── Misc storage ──────────────────────────────────────────────────────────────
@@ -1708,6 +1582,110 @@ def check_triggers(text: str) -> str | None:
 
 
 # ── Claude helpers ────────────────────────────────────────────────────────────
+# ── Lore retrieval helpers ────────────────────────────────────────────────────
+# The lore document is ~1800 tokens and gets sent on every single question.
+# That is fine cost-wise thanks to prompt caching, but it means the model has
+# to find the relevant part itself every time. These helpers pull the specific
+# passages that match a question and put them RIGHT NEXT to the question, so
+# the relevant facts are impossible to miss.
+
+# Maps the loose language people actually use to the terms that appear in the
+# lore document. Without this, "the video thing" matches nothing, because the
+# lore says "frame", "resolution" and "advance access" instead.
+LORE_SYNONYMS = {
+    "video": ["frame", "resolution", "advance access", "8pm", "16 may"],
+    "frame": ["video", "resolution", "one minute", "advance access"],
+    "screenshot": ["dark knight", "livestream", "17 june", "screenshots"],
+    "prediction": ["5/18/24", "predicted", "silent", "cat signal", "14 may"],
+    "predicted": ["5/18/24", "silent", "prophecy", "cat signal"],
+    "silence": ["silent", "5/18/24", "18 may", "100+ posts"],
+    "number": ["665", "dvid665", "ryan cohen", "elon", "following"],
+    "665": ["dvid665", "ryan cohen", "trump", "following", "17 july"],
+    "uno": ["reverse card", "19 may", "2 june", "return"],
+    "reverse": ["uno", "19 may", "2 june"],
+    "burn": ["burned", "35 million", "685", "3 dec", "5% of supply", "lp"],
+    "burned": ["burn", "35 million", "lp", "liquidity", "revoked"],
+    "nft": ["9,999", "25m", "daily buy and burn", "roadmap"],
+    "anime": ["50m", "14 days", "diana", "release date"],
+    "grok": ["grok3", "memphis", "supercluster", "xai", "24 october"],
+    "memphis": ["grok3", "supercluster", "xai", "100,000"],
+    "elon": ["musk", "there are no coincidences", "18 may", "schrodinger", "lab coat"],
+    "wallet": ["aifbb4", "tracking wallet", "marketing wallet", "27kpd"],
+    "track": ["aifbb4", "tracking wallet", "31 oct", "here's where you'll track me"],
+    "diana": ["black cat", "moon", "gme logo", "forehead", "anime"],
+    "roadmap": ["mc@", "milestone", "25m", "50m", "150m", "1bn"],
+    "dev": ["dvid665", "telegram", "breadcrumbs", "sha"],
+    "sha": ["code", "decode", "livestream", "roadmap", "hash"],
+    "rk": ["roaring kitty", "keith gill", "dfv", "deep fucking value"],
+    "gme": ["gamestop", "ryan cohen", "shareholders", "logo"],
+    "suspended": ["ash wednesday", "5 march", "4/20", "i'm alive", "phoenix"],
+    "alive": ["4/20", "4:20pm", "heartbeat", "phoenix", "suspended"],
+    "hpl": ["human programming language", "maind", "january 2026"],
+    "maind": ["hpl", "platform", "17 jan"],
+    "launch": ["11 may 2024", "raydium", "stealth", "6:59pm"],
+    "supply": ["1,000,000,000", "1 billion", "burned", "lp", "revoked"],
+}
+
+
+def find_lore_passages(question: str, max_lines: int = 14) -> str:
+    """Pull the lore lines most relevant to this question and surface them
+    separately, so the model does not have to hunt through the whole document.
+    Expands the query with synonyms first, because people ask about 'the video
+    thing' and the lore calls it 'a frame at higher resolution'."""
+    q = (question or "").lower()
+    words = [w for w in re.findall(r"[a-z0-9']+", q) if len(w) > 2 and w not in STOPWORDS]
+    terms = set(words)
+
+    # Expand with synonyms. Matching on stems as well as whole words, because
+    # someone asking "did they predict it" should hit the "predicted" key, and
+    # "burning" should hit "burn". Without stemming those silently miss and the
+    # bot falls back to generic lore lines.
+    def stem(w):
+        for suffix in ("ing", "ed", "es", "s"):
+            if len(w) > 4 and w.endswith(suffix):
+                return w[: -len(suffix)]
+        return w
+
+    stems = {stem(w) for w in words}
+    for key, extras in LORE_SYNONYMS.items():
+        key_stem = stem(key)
+        if key in q or key in words or key_stem in stems or any(stem(w) == key_stem for w in words):
+            terms.update(e.lower() for e in extras)
+    if not terms:
+        return ""
+
+    scored = []
+    for line in TSUKI_LORE.split("\n"):
+        clean = line.strip()
+        if len(clean) < 20:
+            continue
+        low = clean.lower()
+        score = 0
+        for t in terms:
+            if t in low:
+                # multi-word synonym hits ("cat signal", "5/18/24") are far more
+                # specific than a single common word, so weight them heavily
+                score += 3 if " " in t or "/" in t or any(c.isdigit() for c in t) else 1
+        if score:
+            scored.append((score, clean))
+    if not scored:
+        return ""
+    scored.sort(key=lambda x: -x[0])
+    top = [line for _, line in scored[:max_lines]]
+    return "\n".join(top)
+
+
+def build_lore_context(question: str) -> str:
+    passages = find_lore_passages(question)
+    if not passages:
+        return ""
+    return (
+        "\n\nMOST RELEVANT LORE FOR THIS SPECIFIC QUESTION (pulled from your lore "
+        "document because it matches what was asked, use these exact details, "
+        "dates and numbers rather than paraphrasing loosely):\n" + passages
+    )
+
+
 def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
                     is_dev: bool = False, tweet_context: str = "") -> str:
     recent_sums = get_recent_summaries(chat_id) if chat_id else []
@@ -1729,11 +1707,18 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
     if tweet_context:
         context_block += "\n\n" + tweet_context
 
+    # Targeted lore passages first, so the specific facts sit right next to
+    # the question instead of buried in a 1800 token document.
+    context_block += build_lore_context(question)
+
     if chat_id:
-        live_msgs = get_messages_since(chat_id, hours=0.75)
+        # 3 hours and 40 messages, not 45 minutes and 20. Conversations in an
+        # active telegram move fast, and the old window meant the bot lost the
+        # thread of a discussion that had been running for an hour.
+        live_msgs = get_messages_since(chat_id, hours=3)
         if live_msgs:
-            recent_lines = [f"{m['full_name']}: {m['text']}" for m in live_msgs[-20:]]
-            context_block += "\n\nlive chat right now (last 45 min, most recent last):\n" + "\n".join(recent_lines)
+            recent_lines = [f"{m['full_name']}: {m['text']}" for m in live_msgs[-40:]]
+            context_block += "\n\nlive chat right now (last 3 hours, most recent last):\n" + "\n".join(recent_lines)
 
         historical = search_messages(chat_id, question)
         if historical:
@@ -1873,16 +1858,30 @@ match the register of whoever you're talking to. careful analytical question get
 - answer the actual question first. atmosphere second
 - NEVER narrate where your information came from. no "the lore states", "as confirmed", "per the canon". you just know things
 
-# length — keep it tight
-- default 2-3 sentences
-- one-line questions get one or two
-- speculative questions get at most two short paragraphs
-- hard limit: never more than 5 sentences
-- never fill the screen. the pdf exists for depth"""
+# length — match the question, do not cap yourself
+this is the single biggest thing people notice. a one line question gets a one line answer. a real question about the lore gets a real answer with the actual dates and numbers in it.
+
+- casual chat, banter, a quick factual check: 1 to 3 sentences
+- a genuine lore question ("what happened on 16 may", "explain the 665 thing"): as long as it needs to be, usually 4 to 8 sentences, with specific dates, times and numbers
+- someone asking you to lay out the case, or a sceptic asking for evidence: go properly deep. multiple short paragraphs. walk the timeline. this is what you are for
+- speculation or theorising: two or three paragraphs, clearly labelled as theory
+
+there is no sentence cap. there is a relevance cap. never pad, never repeat yourself, never restate the question back. but if someone asks a real question, answer it properly instead of giving them a teaser and pointing at the pdf.
+
+use double line breaks between paragraphs so long answers are readable on mobile.
+
+# reciting the lore — be precise
+when you reference a coincidence, give the actual specifics. not "there was a timing thing in may", but "11 may 2024, tsuki posted the RK meme at 6:59pm, and RK broke three years of silence exactly 1 day 1 hour 1 minute later".
+
+the dates, times and numbers ARE the argument. vague retellings convince nobody and make you sound like you half remember it. you do not half remember anything, you have the whole document.
+
+if the context above gave you MOST RELEVANT LORE for this question, use those exact lines. they were pulled because they match what was asked.
+
+if you genuinely do not have a specific detail, say which part you are unsure of rather than inventing a date. one honest gap costs you nothing. one invented timestamp costs you everything, because the whole case rests on timestamps being checkable."""
 
     msg = claude.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=400,
+        max_tokens=900,
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral"}},
@@ -1952,14 +1951,10 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📊 Numbers\n"
         "🔹 /price — TSUKI + RWA\n"
         "🔹 /mc — market caps and milestone progress\n\n"
-        "🌙 Daily\n"
-        "🔹 /gm — say GM, keep your streak\n"
-        "🔹 /gmstats — your streak receipts\n"
-        "🔹 /gmboard — streak leaderboard\n\n"
         "🧩 Other\n"
         "🔹 /trivia, /trboard, /roadmap, /links, /mood, /summary\n\n"
         "admins: /dbcheck, /watch, /unwatch, /linkmode, /linkcooldown,\n"
-        "        /xhealth, /confirm, /setstreak\n\n"
+        "        /xhealth, /confirm\n\n"
         "or just tag me and ask. I've read everything, twice."
     )
 
@@ -1979,8 +1974,8 @@ async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     con = db()
     counts = {}
-    for table in ("gm_streaks", "messages", "community_knowledge",
-                  "confirmed_facts", "gm_log", "x_post_archive"):
+    for table in ("messages", "community_knowledge",
+                  "confirmed_facts", "x_post_archive"):
         try:
             counts[table] = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
         except Exception:
@@ -2364,149 +2359,6 @@ async def cmd_linkmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 # ── GM ────────────────────────────────────────────────────────────────────────
-GM_LINES = [
-    "the moon is patient. so are we.",
-    "there are no coincidences, only mornings.",
-    "still here. still building. still watching.",
-    "the pattern doesn't take days off.",
-    "every day closer to the number.",
-    "silence is not inactivity.",
-    "one community, one sunrise.",
-    "the files keep writing themselves.",
-    "you showed up. that's the whole trick.",
-    "another day of being early. exhausting work.",
-    "the chart is a mood. the roadmap is a fact.",
-]
-
-GM_IMAGES = [
-    "assets/hero-redmoon.jpg",
-    "assets/closing-cliffmoon.jpg",
-    "assets/file-001-clock.jpg",
-]
-
-STREAK_MILESTONES = {
-    3:   "3 days. the habit is forming 🐈‍⬛",
-    7:   "a full week. officially one of the consistent ones 😎",
-    14:  "two weeks straight. dev-tier discipline",
-    30:  "30 days. you've said GM more times than most people have checked the chart 💀",
-    50:  "50 days. genuinely impressive, ser",
-    69:  "69 days. nice 😎",
-    100: "100 DAYS. absolute legend status 🔥",
-    200: "200 days. at this point you're load-bearing",
-    365: "one full year of GMs. you are the lore now 🐈‍⬛",
-}
-
-
-async def cmd_gm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    result = do_gm(user.id, user.username or user.first_name)
-
-    if result["already"]:
-        hrs = result.get("hours_left")
-        when = f"🔹 next one counts in ~{hrs:.0f}h" if hrs else "🔹 next one counts tomorrow"
-        await update.message.reply_text(
-            f"🌙 already said GM today, fren. enthusiasm noted.\n\n"
-            f"🔹 Streak: {result['streak']} days\n"
-            f"{when}"
-        )
-        return
-
-    extras = []
-    if is_first_gm_today():
-        extras.append("🥇 first GM of the day")
-    if result["streak"] in STREAK_MILESTONES:
-        extras.append(f"🎉 {STREAK_MILESTONES[result['streak']]}")
-    rank_pos = get_gm_rank(user.id)
-    if rank_pos and rank_pos <= 3:
-        medal = {1: "🥇", 2: "🥈", 3: "🥉"}[rank_pos]
-        extras.append(f"{medal} #{rank_pos} on the streak board")
-    extra_block = ("\n" + "\n".join(extras) + "\n") if extras else ""
-
-    text = (
-        f"🌙 GM\n\n"
-        f"🔹 Streak: {result['streak']} days\n"
-        f"🔹 Total GMs: {result['total']}\n"
-        f"{extra_block}\n"
-        f"\"{random.choice(GM_LINES)}\"\n\n"
-        f"$TSUKI · $RWA"
-    )
-    tweet_text = (
-        f"GM Tsukiverse 🌙\n\n{result['streak']} day streak. {result['total']} total.\n\n"
-        f"there are no coincidences. $TSUKI $RWA"
-    )
-    share_button = InlineKeyboardMarkup([[InlineKeyboardButton(
-        "📤 Share this on X", url="https://twitter.com/intent/tweet?text=" + urllib.parse.quote(tweet_text)
-    )]])
-
-    sent = await send_image_if_exists(update.message.chat, random.choice(GM_IMAGES), caption=text)
-    if sent:
-        await update.message.reply_text("tap below to post it, grab the image first 🐈‍⬛", reply_markup=share_button)
-    else:
-        await update.message.reply_text(text, reply_markup=share_button)
-
-
-async def cmd_gmboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    rows = get_gm_leaderboard()
-    if not rows:
-        await update.message.reply_text("🌙 no streaks yet. somebody has to go first. /gm")
-        return
-    medals = ["🥇", "🥈", "🥉"]
-    lines = ["🌙 GM Streak Leaderboard\n"]
-    for i, (username, streak, total) in enumerate(rows):
-        medal = medals[i] if i < 3 else f"{i+1}."
-        lines.append(f"{medal} @{username} — {streak} day streak ({total} total)")
-    await update.message.reply_text("\n".join(lines))
-
-
-async def cmd_gmstats(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    con = db()
-    row = con.execute(
-        "SELECT streak, total, best_streak, last_ts FROM gm_streaks WHERE user_id=?", (user.id,)
-    ).fetchone()
-    recent = con.execute(
-        "SELECT ts, streak_after FROM gm_log WHERE user_id=? ORDER BY ts DESC LIMIT 5", (user.id,)
-    ).fetchall()
-    con.close()
-    if not row:
-        await update.message.reply_text("no GM record for you at all. bold. /gm to fix that.")
-        return
-    last = _parse_ts(row[3])
-    since = f"{(datetime.now(timezone.utc) - last).total_seconds()/3600:.1f}h ago" if last else "unknown"
-    lines = [
-        "🌙 Your GM Record\n",
-        f"🔹 Current streak: {row[0]}",
-        f"🔹 Best ever: {row[2]}",
-        f"🔹 Total GMs: {row[1]}",
-        f"🔹 Last GM: {since}",
-    ]
-    if recent:
-        lines += ["", "recent:"]
-        for ts, streak_after in recent:
-            lines.append(f"  {ts[:16].replace('T',' ')} → day {streak_after}")
-    await update.message.reply_text("\n".join(lines))
-
-
-async def cmd_setstreak(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if not await is_admin(ctx, update.effective_chat.id, user.id):
-        await update.message.reply_text("admins only 🐈‍⬛")
-        return
-    if len(ctx.args) != 2:
-        await update.message.reply_text("usage: /setstreak @username <number>\n\ne.g. /setstreak @BigboyJuju 12")
-        return
-    target, num_str = ctx.args[0], ctx.args[1]
-    try:
-        streak = int(num_str)
-    except ValueError:
-        await update.message.reply_text("that's not a number, malaka 😎")
-        return
-    if set_user_streak(target, streak):
-        await update.message.reply_text(f"✅ set {target}'s streak to {streak} 🐈‍⬛")
-    else:
-        await update.message.reply_text(f"can't find {target} in the GM records. they need to /gm at least once first.")
-
-
 # ── Trivia ────────────────────────────────────────────────────────────────────
 async def cmd_trivia(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     active = get_trivia_active()
@@ -2801,7 +2653,7 @@ async def handle_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             f"🔹 Start with the Welcome PDF, it covers the whole story\n\n"
             f"📄 https://tinyurl.com/tsukipdf\n"
             f"🔗 https://linktr.ee/tsukionsol\n\n"
-            f"say /gm to start a streak, /help for the rest. tag @{ctx.bot.username} "
+            f"/help for what i can do. tag @{ctx.bot.username} "
             f"with any question and I'll answer, probably with attitude."
         )
 
@@ -2809,6 +2661,123 @@ async def handle_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════════════════════════════════════
 #  SCHEDULED JOBS
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════
+#  DAILY $1B CAMPAIGN POST
+#  Day N derives from CAMPAIGN_START_DATE (nothing stored, so redeploys
+#  and DB wipes can't reset it). Photos rotate from the repo's photos/
+#  folder by day number — add images by committing them.
+# ═══════════════════════════════════════════════════════════════════════
+
+def campaign_day() -> int:
+    try:
+        start = datetime.strptime(CAMPAIGN_START, "%Y-%m-%d").date()
+    except ValueError:
+        return 1
+    return max(1, (date.today() - start).days + 1)
+
+
+def todays_campaign_photo():
+    files = sorted(
+        glob.glob(os.path.join(PHOTOS_DIR, "*.jpg"))
+        + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
+        + glob.glob(os.path.join(PHOTOS_DIR, "*.png"))
+    )
+    if not files:
+        return None
+    return files[campaign_day() % len(files)]
+
+
+def campaign_share_button() -> InlineKeyboardMarkup:
+    # X intent links prefill text only; no platform lets a link pre-attach
+    # an image. So the image posts first, people save it, then share.
+    tweet = f"Day {campaign_day()}: {CAMPAIGN_TEXT}\n\n$TSUKI $RWA 🌙"
+    url = "https://twitter.com/intent/tweet?text=" + urllib.parse.quote(tweet)
+    return InlineKeyboardMarkup([[InlineKeyboardButton("Share on X 🐦", url=url)]])
+
+
+async def job_daily_campaign(app):
+    """Image first (clean + savable), then the Day post with the share button."""
+    log.info(f"Posting Day {campaign_day()} campaign")
+    photo = todays_campaign_photo()
+    try:
+        if photo:
+            with open(photo, "rb") as f:
+                await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=f)
+        else:
+            log.warning("campaign: photos/ folder is empty, posting text only")
+
+        text = (
+            f"🌙 Day {campaign_day()}\n"
+            f"\n"
+            f"{CAMPAIGN_TEXT}\n"
+            f"\n"
+            f"Save the image above & share it with your post 👆\n"
+            f"\n"
+            f"There are no coincidences."
+        )
+        m = await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text,
+                                       reply_markup=campaign_share_button())
+        try:
+            await app.bot.pin_chat_message(chat_id=TARGET_CHAT_ID,
+                                           message_id=m.message_id,
+                                           disable_notification=True)
+        except Exception:
+            pass  # no pin rights, not fatal
+    except Exception as e:
+        log.warning(f"daily campaign post failed: {e}")
+
+
+async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Admin: fire today's campaign post manually (test / repost)."""
+    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
+        await update.message.reply_text("admins only 🐈‍⬛")
+        return
+    await job_daily_campaign(ctx.application)
+
+
+async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """List the campaign photo rotation and today's pick."""
+    files = sorted(os.path.basename(p) for p in
+                   glob.glob(os.path.join(PHOTOS_DIR, "*.*"))
+                   if p.lower().endswith((".jpg", ".jpeg", ".png")))
+    today = os.path.basename(todays_campaign_photo() or "none")
+    body = "\n".join(f"◆ {f}" for f in files[:30]) or "◆ folder's empty. add images to photos/ in the repo."
+    await update.message.reply_text(
+        f"🖼 Campaign rotation ({len(files)})\n\n{body}\n\n"
+        f"◆ today (day {campaign_day()}): {today}"
+    )
+
+
+async def cmd_voldebug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Prints the ACTUAL reason /data isn't persisting."""
+    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
+        await update.message.reply_text("admins only 🐈‍⬛")
+        return
+    lines = [f"◆ /data exists: {os.path.isdir('/data')}"]
+    if os.path.isdir("/data"):
+        import stat
+        st = os.stat("/data")
+        lines.append(f"◆ owner uid: {st.st_uid}, mode: {oct(stat.S_IMODE(st.st_mode))}")
+        lines.append(f"◆ process uid: {os.getuid()}")
+        try:
+            p = "/data/_probe.txt"
+            with open(p, "w") as f:
+                f.write("ok")
+            os.remove(p)
+            lines.append("✅ write test passed — /data is writable")
+            lines.append("if dbcheck still shows tsuki.db, the path was resolved before "
+                         "the mount existed. redeploy (not restart) and check again.")
+        except Exception as e:
+            lines.append(f"❌ write test FAILED — {type(e).__name__}: {e}")
+            lines.append("fix: start command → chmod -R 777 /data 2>/dev/null; python bot.py")
+    else:
+        lines.append("the volume is not mounted in THIS container. it's attached to the "
+                     "other service, a different environment, or the mount path isn't "
+                     "exactly /data. check this service's Settings → Volumes.")
+    await update.message.reply_text("\n".join(lines))
+
+
 async def job_summary(app):
     log.info("Posting 8h summary")
     messages = get_messages_since(TARGET_CHAT_ID, hours=8)
@@ -2855,16 +2824,6 @@ return as a simple list, one insight per line, no bullets, no numbering. plain t
         log.info(f"Stored {len(insights)} community insights")
     except Exception as e:
         log.warning(f"Knowledge extraction error: {e}")
-
-
-async def job_daily_gm(app):
-    log.info("Posting daily GM")
-    line = random.choice(GM_LINES)
-    text = (f"🌙 GM Tsukiverse\n\n\"{line}\"\n\n"
-            f"/gm to start or keep your streak. you get 48h of slack, "
-            f"so there is genuinely no excuse.\n\n$TSUKI · $RWA")
-    if not await send_image_if_exists_bot(app.bot, TARGET_CHAT_ID, random.choice(GM_IMAGES), caption=text):
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text)
 
 
 MC_MILESTONES = [
@@ -3049,12 +3008,12 @@ def main():
 
     for name, fn in [
         ("help", cmd_help), ("start", cmd_help),
+        ("gmpost", cmd_gmpost), ("photos", cmd_photos), ("voldebug", cmd_voldebug),
         ("summary", cmd_summary), ("chatid", cmd_chatid),
         ("price", cmd_price), ("mc", cmd_mc), ("links", cmd_links), ("roadmap", cmd_roadmap),
         ("trivia", cmd_trivia), ("trboard", cmd_trboard),
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
-        ("gm", cmd_gm), ("gmboard", cmd_gmboard), ("gmstats", cmd_gmstats),
-        ("setstreak", cmd_setstreak), ("dbcheck", cmd_dbcheck),
+        ("dbcheck", cmd_dbcheck),
         ("read", cmd_read),
         ("watch", cmd_watch), ("unwatch", cmd_unwatch),
         ("watching", cmd_watching), ("linkmode", cmd_linkmode),
@@ -3072,12 +3031,12 @@ def main():
     scheduler.add_job(job_post,            "cron", hour="*/4", minute=5, args=[app])
     scheduler.add_job(job_wallet_watch,    "cron", minute="*/5", args=[app])
     scheduler.add_job(job_milestone_watch, "cron", minute="*/10", args=[app])
-    scheduler.add_job(job_daily_gm,        "cron", hour=9, minute=0, timezone=ny_tz, args=[app])
     scheduler.add_job(job_build_knowledge, "cron", hour="*/3", args=[app])
     scheduler.add_job(job_x_monitor,       "interval", minutes=2, args=[app])
     scheduler.add_job(job_x_daily_log,     "cron", hour=9, minute=0, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_coincidence_file, "cron", hour=10, minute=15, args=[app])
     scheduler.add_job(job_x_shill,            "cron", hour=16, minute=45, args=[app])
+    scheduler.add_job(job_daily_campaign,    "cron", hour=7, minute=0, timezone=ny_tz, args=[app])  # 7am New York, auto-handles EST/EDT
     scheduler.add_job(job_x_milestone,        "cron", hour=20, minute=0, args=[app])
     scheduler.add_job(job_x_shill,            "cron", hour=23, minute=15, args=[app])
     scheduler.start()
