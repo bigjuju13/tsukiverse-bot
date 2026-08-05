@@ -2678,11 +2678,22 @@ def campaign_day() -> int:
 
 
 def todays_campaign_photo():
-    files = sorted(
+    all_files = sorted(
         glob.glob(os.path.join(PHOTOS_DIR, "*.jpg"))
         + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
         + glob.glob(os.path.join(PHOTOS_DIR, "*.png"))
     )
+    # Telegram's bot API rejects photos over 10MB — skip anything near that
+    files = []
+    for p in all_files:
+        try:
+            if os.path.getsize(p) <= 9_500_000:
+                files.append(p)
+            else:
+                log.warning(f"campaign: skipping {os.path.basename(p)} "
+                            f"({os.path.getsize(p)/1_000_000:.1f}MB > Telegram's 10MB photo limit)")
+        except OSError:
+            continue
     if not files:
         return None
     return files[campaign_day() % len(files)]
@@ -2696,36 +2707,50 @@ def campaign_share_button() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[InlineKeyboardButton("Share on X 🐦", url=url)]])
 
 
-async def job_daily_campaign(app):
-    """Image first (clean + savable), then the Day post with the share button."""
+async def job_daily_campaign(app) -> str:
+    """Image first (clean + savable), then the Day post with the share button.
+    Photo and text send INDEPENDENTLY — a bad image can never kill the post.
+    Returns a status string so callers can report honestly."""
     log.info(f"Posting Day {campaign_day()} campaign")
+    status = []
+
     photo = todays_campaign_photo()
-    try:
-        if photo:
+    if photo:
+        try:
             with open(photo, "rb") as f:
                 await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=f)
-        else:
-            log.warning("campaign: photos/ folder is empty, posting text only")
+            status.append(f"photo sent ({os.path.basename(photo)})")
+        except Exception as e:
+            log.warning(f"campaign photo failed: {e}")
+            status.append(f"photo FAILED: {type(e).__name__}: {e}")
+    else:
+        status.append("no usable photo (folder empty or all files >10MB)")
 
-        text = (
-            f"🌙 Day {campaign_day()}\n"
-            f"\n"
-            f"{CAMPAIGN_TEXT}\n"
-            f"\n"
-            f"Save the image above & share it with your post 👆\n"
-            f"\n"
-            f"There are no coincidences."
-        )
+    text = (
+        f"🌙 Day {campaign_day()}\n"
+        f"\n"
+        f"{CAMPAIGN_TEXT}\n"
+        f"\n"
+        f"Save the image above & share it with your post 👆\n"
+        f"\n"
+        f"There are no coincidences."
+    )
+    try:
         m = await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text,
                                        reply_markup=campaign_share_button())
+        status.append("day post sent")
         try:
             await app.bot.pin_chat_message(chat_id=TARGET_CHAT_ID,
                                            message_id=m.message_id,
                                            disable_notification=True)
+            status.append("pinned")
         except Exception:
-            pass  # no pin rights, not fatal
+            status.append("not pinned (no rights)")
     except Exception as e:
-        log.warning(f"daily campaign post failed: {e}")
+        log.warning(f"campaign text failed: {e}")
+        status.append(f"day post FAILED: {type(e).__name__}: {e}")
+
+    return " · ".join(status)
 
 
 async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -2741,8 +2766,8 @@ async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     await msg.reply_text(f"firing Day {campaign_day()} post into the main chat 🌙")
     try:
-        await job_daily_campaign(ctx.application)
-        await msg.reply_text("done ✅ check the main chat")
+        result = await job_daily_campaign(ctx.application)
+        await msg.reply_text(f"result: {result}")
     except Exception as e:
         await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
 
