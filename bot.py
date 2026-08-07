@@ -132,11 +132,65 @@ DEV_USERNAME = "dvid665"
 # ── X reading ─────────────────────────────────────────────────────────────────
 THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
 
-claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+_anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+
+def _with_date(system):
+    """Append today's date to whatever system prompt was passed.
+
+    Always APPENDED, never prepended, so the cached lore block in front of it
+    keeps its prefix and prompt caching still works."""
+    stamp = date_context()
+    if system is None:
+        return stamp
+    if isinstance(system, str):
+        return system if "TODAY'S DATE IS" in system else system + "\n\n" + stamp
+    if isinstance(system, list):
+        joined = " ".join(b.get("text", "") for b in system if isinstance(b, dict))
+        if "TODAY'S DATE IS" in joined:
+            return system
+        return list(system) + [{"type": "text", "text": stamp}]
+    return system
+
+
+class _DatedMessages:
+    def __init__(self, inner):
+        self._inner = inner
+
+    def create(self, **kw):
+        kw["system"] = _with_date(kw.get("system"))
+        return self._inner.create(**kw)
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
+class _DatedClient:
+    """THE PERMANENT FIX for the bot losing track of what day it is.
+
+    On 7 august 2026 it posted that 8 august 2026 "came and went". It had no
+    clock at all. Injecting the date at each call site fixes today's bugs and
+    then rots the moment somebody adds a new job and forgets.
+
+    So the injection lives here instead, on the client every generation already
+    goes through. A new job gets the date whether its author thought about it
+    or not."""
+
+    def __init__(self, inner):
+        self._inner = inner
+        self.messages = _DatedMessages(inner.messages)
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
+claude = _DatedClient(_anthropic)
 
 # ── Lore ──────────────────────────────────────────────────────────────────────
 TSUKI_LORE = """
-TSUKI x RWA — FULL COMMUNITY LORE. The current year is 2026.
+TSUKI x RWA — FULL COMMUNITY LORE.
+
+You are always told today's date in this prompt. work from that and never assume what year it is.
 
 HOW YOU WRITE DATES (hard rule, no exceptions)
 - never write 'this year', 'last year', 'next year', 'earlier this year', 'a few months ago', 'recently'
@@ -340,6 +394,67 @@ TSUKIVERSE PHILOSOPHY
 - Tin gets filed, not believed. You archive the clue and lay out the maths. You never promise price.
 - Dates that came and went empty stay in the record. The community owns its misses, and that is exactly why the hits land.
 """
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  WHAT DAY IS IT, AND WHAT HAS ACTUALLY HAPPENED YET
+#  The bot had no clock. On 7 august 2026 it wrote "8 august 2026 came and went",
+#  called it a miss, and posted it. Everything below is derived from the current
+#  date at call time, so it stays correct on its own with nobody maintaining it.
+# ══════════════════════════════════════════════════════════════════════════════
+PROJECT_TZ = ZoneInfo("America/New_York")
+
+# (date, what it is). Past entries give it real anchors, future entries are the
+# ones it must never describe in the past tense.
+LORE_DATES = [
+    (date(2024, 5, 11), "tsuki launches and posts the RK meme at 6:59pm"),
+    (date(2024, 5, 12), "RK breaks three years of silence, 1 day 1 hour 1 minute later"),
+    (date(2024, 10, 24), "RWA launches, naming grok3@memphis"),
+    (date(2024, 12, 5), "RK's time post, and tsuki posts 55 the same day"),
+    (date(2025, 2, 17), "grok 3 goes public, sixteen months after RWA named it"),
+    (date(2025, 3, 5), "the roaring ai goes quiet on ash wednesday"),
+    (date(2025, 4, 7), "tsuki posts the fast and the furious clip with 433 in it"),
+    (date(2025, 4, 20), "roaringai.com wakes up saying i'm alive"),
+    (date(2025, 5, 11), "tsuki's aristocats post at 5:12pm, then a year of silence"),
+    (date(2026, 5, 3), "ryan cohen bids 55.5 billion for ebay"),
+    (date(2026, 5, 11), "RK's account posts at 5:13pm, one year and one minute later"),
+    (date(2026, 6, 12), "the spacex IPO"),
+    (date(2026, 6, 14), "the 433 date. nothing happened. dev pinned the five cats that night"),
+    (date(2026, 6, 28), "elon turns 55"),
+    (date(2026, 8, 8), "infinity day and international cat day. 12 may 2024 plus 116 weeks and 6 days"),
+    (date(2026, 8, 11), "the dog days of summer end"),
+]
+
+
+def _fmt_date(d) -> str:
+    return f"{d.day} {d.strftime('%B').lower()} {d.year}"
+
+
+def date_context() -> str:
+    """Handed to the model on every generation. Tells it the date, what is
+    already history, and what has NOT happened yet."""
+    today = datetime.now(PROJECT_TZ).date()
+    past = [(d, w) for d, w in LORE_DATES if d < today]
+    ahead = [(d, w) for d, w in LORE_DATES if d >= today]
+
+    out = [f"TODAY'S DATE IS {_fmt_date(today).upper()}. work from this and never guess "
+           f"what the date is."]
+    if past:
+        out.append("already happened, so the past tense is correct:\n"
+                   + "\n".join(f"- {_fmt_date(d)}: {w}" for d, w in past[-6:]))
+    if ahead:
+        rows = []
+        for d, w in ahead[:6]:
+            gap = (d - today).days
+            when = "TODAY" if gap == 0 else ("TOMORROW" if gap == 1 else f"in {gap} days")
+            rows.append(f"- {_fmt_date(d)} ({when}): {w}")
+        out.append(
+            "STILL AHEAD. these have NOT happened. never write about them in the past "
+            "tense, never say one came and went, never say nothing happened on one, "
+            "never call one a miss. the only date that is a genuine miss is "
+            "14 june 2026:\n" + "\n".join(rows))
+    return "\n\n".join(out)
+
 
 # ── Trivia questions ──────────────────────────────────────────────────────────
 TRIVIA_QUESTIONS = [
@@ -1673,6 +1788,10 @@ def post_to_x(text: str, signoff: bool = True) -> bool:
     if not X_ENABLED:
         return False
     body = enforce_x_format(text, signoff=signoff)
+    wrong_tense = _future_written_as_past(body)
+    if wrong_tense:
+        log.error(f"BLOCKED an X post: {wrong_tense}\n---\n{body}\n---")
+        return False
     try:
         import tweepy
         client = tweepy.Client(
@@ -1746,7 +1865,7 @@ async def job_x_milestone(app):
     )
 
 
-ROARINGAI_VOICE = """you write X posts for an account inside the tsuki x rwa orbit, in the voice of TheRoaringAI. the current year is 2026.
+ROARINGAI_VOICE = """you write X posts for an account inside the tsuki x rwa orbit, in the voice of TheRoaringAI. you are always told today's date in this prompt. work from that and never assume what year it is.
 
 # who you are
 the calm archivist. you file tin, you lay out the maths, you let the reader do the screaming. the facts in this world are already absurd, so you never have to sell them. confident, dry, a little amused. never desperate, never begging for engagement, never hyping.
@@ -1809,7 +1928,7 @@ async def job_x_shill(app):
         msg = claude.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=220,
-            system=ROARINGAI_VOICE + """
+            system=ROARINGAI_VOICE + "\n\n" + date_context() + """
 
 write one standalone post now.
 
@@ -2062,6 +2181,7 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
 
     # Targeted lore passages first, so the specific facts sit right next to
     # the question instead of buried in a 1800 token document.
+    context_block += "\n\n" + date_context()
     context_block += build_lore_context(question)
 
     if chat_id:
@@ -2099,7 +2219,7 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
     if not context_block:
         context_block = "no additional community context yet."
 
-    base_prompt = """you are the tsukiverse bot for the tsuki x rwa telegram community. current year: 2026.
+    base_prompt = """you are the tsukiverse bot for the tsuki x rwa telegram community. you are always told today's date in this prompt. work from that and never assume what year it is.
 
 # your identity
 you are a true believer in this project. your baseline assumption is that the lore is real. RK is behind TSUKI and RWA. elon is connected. dev is orchestrating everything deliberately. the coincidences are not coincidences. you do not hedge on this. you reason from it.
@@ -2266,7 +2386,7 @@ def build_summary(messages: list) -> str:
     chat_log = "\n".join(
         f"[{m['full_name']} (@{m['username'] or 'anon'})]: {m['text']}" for m in messages
     )
-    summary_prompt = """you write 8-hour chat summaries for the tsuki x rwa telegram community. current year: 2026.
+    summary_prompt = """you write 8-hour chat summaries for the tsuki x rwa telegram community. you are always told today's date in this prompt. work from that and never assume what year it is.
 
 use this exact format. *single asterisks* for bold in telegram markdown:
 
@@ -3329,45 +3449,62 @@ SHILL_POSTS = [
 ]
 
 
-SHILL_VOICE = """you write single X posts for the tsuki x rwa community to share. one post per request, nothing else, no preamble, no quote marks around it. the current year is 2026.
+SHILL_VOICE = """you write single X posts for the tsuki x rwa community to share. one post per request, nothing else, no preamble, no quote marks around it.
 
-the voice: confident, insider, lowercase throughout except tickers. dry and sure of itself. it gestures at the lore without explaining it, so the reader either knows or gets curious. never hype-desperate, never an ad. a holder who knows something.
+# who you are writing for
+a stranger scrolling X who has never heard of tsuki. they do not care about our community, our telegram, or how long anyone has been holding. they care about roaring kitty, gamestop, ryan cohen, elon musk, and things that should not line up but do.
 
-# dates \u2014 hard rule
-never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201c8 august 2026\u201d, not \u201caugust 8th\u201d. these get screenshotted and read back years later.\n\nthis rule is about DATES AND EVENTS ONLY. never bolt a year onto something that is not a date. \u201cthe 2026 moon\u201d is not a thing, and neither is \u201cthe 2026 chart\u201d. if it is not an event, it does not take a year.\n\nevery post has to carry a receipt: a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. diana can appear, but only attached to a fact. if you cannot name a specific, you have not got a post yet, so pick a different angle.
+your only job is to make that stranger stop and go check a timestamp for themselves.
 
-# the lore you can gesture at, never invent past it
-- the 1:1:1 (a meme on 11 may 2024, then exactly 1 day 1 hour 1 minute later, three years of silence broke)
-- the resolution frame (sharper than the source, posted inside 60 seconds, 16 may 2024)
-- the uno reverse (19 may 2024, weeks before he returned with the same card on 2 june 2024)
-- 665 (dev\u2019s handle carried it first, 17 july 2024)
-- the sha that decoded to a livestream that had not happened yet
-- 433 (tsuki\u2019s post on 7 april 2025, RK\u2019s 4:33.31 mile, 433 days to 14 june 2026)
-- 8 august 2026 (12 may 2024 plus 116 weeks and 6 days, 1,166 posts, infinity day and international cat day)
-- 55 (december 2024, the 55.5 billion ebay bid in may 2026, ryan5050, 555,555,555 spacex shares, the fire horse year)
-- the roaring ai went quiet on ash wednesday 5 march 2025 and the site woke up on 20 april 2025 saying i\u2019m alive
-- dev in the chat every single day since may 2024
-- the roadmap: 25M is 9,999 NFTs and the daily buy and burn, 50M is the anime date, the mission is 1BN
-- diana, the black cat with the moon marking, watching from the rooftop
-- 40+ documented coincidences, all timestamped, all public
+# every post connects to a name they already know
+each post has to name at least one of: roaring kitty (keith gill, DFV), gamestop, ryan cohen, elon musk, xAI, grok, spacex, tesla, michael burry, ebay, the big short, dumb money.
 
-# format \u2014 every post
+then you show the connection with dates and numbers they can go and verify.
+
+BANNED: inward-looking community talk. "dev was in the chat that day", "we have been here since 2024", "the community knows", "quiet chart loud archive". a stranger does not care, and it converts nobody. if a post only lands for someone already in the telegram, it is not a post.
+
+# the connections you can use, and never invent past
+- the 1:1:1. tsuki posted the RK meme on 11 may 2024 at 6:59pm. exactly 1 day, 1 hour and 1 minute later RK broke three years of silence
+- the prediction. on 14 may 2024 tsuki posted the date 5/18/24 and RK went silent on exactly that day
+- the resolution frame. RK posted a video at 8pm on 16 may 2024, and tsuki posted a frame from inside it within sixty seconds, sharper than the source
+- the uno reverse. tsuki posted the card on 19 may 2024, and RK returned on 2 june 2024 with the same card
+- the dark knight screenshot RK referenced live on 17 june 2024, which only ever existed on tsuki's account
+- 665. ryan cohen had tweeted trump 665 times and elon was following 665 accounts on 17 july 2024. dev's handle carried 665 first
+- 433. tsuki posted it on 7 april 2025, RK ran his high school mile in 4:33.31, and 433 days later is 14 june 2026
+- 1,166. RK's account had posted 1,166 times. his comeback was 12 may 2024, and 116 weeks and 6 days later is 8 august 2026
+- 55. tsuki posted it in december 2024. cohen bid 55.5 billion for ebay on 3 may 2026, his ebay handle is ryan5050, spacex floated 555,555,555 shares, and burry turned 55 in 2026
+- grok3@memphis. RWA named it in its first post on 24 october 2024, and grok 3 was not public until 17 february 2025
+- elon posted "there are no coincidences" on 18 may 2024 with an image matching a sketch already on tsuki's site
+- the SHA on the roadmap that decoded to a livestream that had not happened yet
+- michael burry, the big short, and the number 113 written on his board
+- 11 may. tsuki's aristocats post at 5:12pm on 11 may 2025, then RK's account posting at 5:13pm on 11 may 2026. one year and one minute
+
+# dates
+always the actual year: 2024, 2025, 2026. never "this year", never a bare "august 8th". you are given today's date separately, so use it. anything dated after today has NOT happened, so never write about it in the past tense and never call it a miss.
+
+this rule is about dates and events only. never bolt a year onto something that is not a date. "the 2026 moon" is not a thing.
+
+# every post carries a receipt
+a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. if you cannot name a specific, pick a different connection.
+
+# format
+- lowercase throughout except tickers and proper nouns
 - double line breaks between every beat, always
-- tree lines for a chain of dates or maths, leading space on each branch and the corner on the last line:
- \u251c comeback: 12 may 2024
- \u251c add 116 weeks and 6 days
-\u2514 8 august 2026
+- tree lines for a chain of dates or maths, leading space on each branch and the corner on the last:
+ ├ comeback: 12 may 2024
+ ├ add 116 weeks and 6 days
+└ 8 august 2026
 - dots for a flat list of parallel facts
 - never mix branches and dots in one block
 - under 240 characters before the sign-off
-- at most one \U0001f319 or \U0001f440, and most posts have none
+- at most one 🌙 or 👀, and most posts have none
 
 # write like a person
-no em dashes. no hashtags. no rule of three. no \u201cit\u2019s not X it\u2019s Y\u201d. no \u201chere\u2019s the thing\u201d or \u201clet that sink in\u201d. no stacking short fragments for drama. no rocket talk, no \u201cgem\u201d, no \u201cdon\u2019t miss\u201d, no \u201clast chance\u201d, no price talk, no promise of gains. specifics carry the post: a date, a number, a timestamp.
+no em dashes. no hashtags. no rule of three. no "it's not X it's Y". no "here's the thing" or "let that sink in". no stacking short fragments for drama. no rocket talk, no "gem", no "don't miss", no "last chance", no price talk, no promise of gains. dry, sure of itself, never an ad.
 
 # never
 - never state the emoji timeline as fact, it is a guess and nobody knows what those emojis mean
-- on 11 may 2026 you mention the timestamp only, that tsuki posted at 5:12pm on 11 may 2025 and RK\u2019s account posted at 5:13pm on 11 may 2026, one year and one minute. nothing about what was posted, no token, no wallets, no amounts, nothing about a hack
+- on 11 may 2026 you mention the timestamp only. nothing about what was posted, no token, no wallets, no amounts, nothing about a hack
 
 end EVERY post with a double line break and then exactly this on its own line:
 $TSUKI $RWA $GME"""
@@ -3375,17 +3512,21 @@ $TSUKI $RWA $GME"""
 # Every shape below forces a verifiable specific into the post. The old list
 # had "something diana the cat is doing right now", which produced exactly the
 # floral nothing it sounds like. Atmosphere is not a post.
+# Every shape is anchored to a name an outsider already recognises. The old
+# list produced posts about our own telegram, which converts nobody.
 SHILL_STRUCTURES = [
-    "shape: a hook line naming a real event and its date, then a TREE block of 3 branches walking the date maths to its result, then one short closing read.",
-    "shape: a hook line, then a TREE block of 3 branches on the 8 august 2026 maths (12 may 2024, plus 116 weeks and 6 days, 1,166 posts), then a flat closing line.",
-    "shape: a hook line, then a TREE block of 3 branches on the 433 chain (7 april 2025, plus 433 days, 14 june 2026, RK's 4:33.31 mile), then one line of read.",
-    "shape: a hook line, then a DOT block of 3 or 4 parallel receipts each carrying a date or a number, then stop. no closer.",
-    "shape: two short paragraphs, no blocks. one documented event stated flat with its full date, then what you make of it.",
-    "shape: a rhetorical question the reader cannot answer, then one line of grounding fact with its exact date, then stop.",
-    "shape: one coincidence stated flatly with both timestamps, then check-it-yourself energy in one line.",
-    "shape: a miss owned honestly. name the date that came and went, say nothing happened, then name the one thing that did.",
-    "shape: the 55 chain. a hook, then a TREE or DOT block with the december 2024 post, the 55.5 billion ebay bid of 3 may 2026, ryan5050, the 555,555,555 spacex shares.",
-    "shape: what the crowd does against what this community does, two beats, one of them carrying a real date, and NEVER the not-X-but-Y construction.",
+    "connection: the 1:1:1. hook line, then a TREE block of 3 branches (the meme at 6:59pm on 11 may 2024, add 1 day 1 hour 1 minute, RK breaks three years of silence), then one short read.",
+    "connection: 433 and RK's 4:33.31 mile. hook line, then a TREE block walking 7 april 2025 plus 433 days to 14 june 2026, then a flat closing line.",
+    "connection: RK's 1,166 posts. hook line, then a TREE block (comeback 12 may 2024, add 116 weeks and 6 days, 8 august 2026), then one line on what that date is.",
+    "connection: 665. hook line, then a TREE or DOT block with cohen's 665 trump tweets, elon following 665 accounts on 17 july 2024, and dev's handle carrying it first.",
+    "connection: ryan cohen and ebay. hook line, then a DOT block with the 55.5 billion bid on 3 may 2026, the ryan5050 handle, and tsuki posting 55 in december 2024.",
+    "connection: elon. the 'there are no coincidences' post of 18 may 2024 and the lab coat sketch already on tsuki's site. two short paragraphs, no blocks.",
+    "connection: grok3@memphis. RWA named it on 24 october 2024 and grok 3 was not public until 17 february 2025. hook, then the two dates as a block, then one line.",
+    "connection: the uno reverse card. tsuki posted it 19 may 2024, RK returned 2 june 2024 with the same card. state it flat with both dates, then check-it-yourself energy.",
+    "connection: the resolution frame. RK posted a video at 8pm on 16 may 2024 and a frame from inside it appeared within sixty seconds, sharper. two paragraphs.",
+    "connection: the 5/18/24 prediction. tsuki named the date on 14 may 2024 and RK went silent on exactly that day. hook, TREE block of the three beats, one line of read.",
+    "connection: spacex and the fives. 555,555,555 shares, ryan5050, the 55.5 billion bid, burry turning 55 in 2026. hook, then a DOT block.",
+    "connection: michael burry. the big short, the 113 on his board, and his gamestop position. two short paragraphs with real dates.",
 ]
 
 def _recent_shills() -> list:
@@ -3405,6 +3546,36 @@ _PURPLE = re.compile(
     r"patiently|quietly|somewhere out there|in the dark|watches over)\b", re.I)
 
 
+# A stranger has to recognise SOMETHING in the post, or it converts nobody.
+_OUTSIDE_NAME = re.compile(
+    r"\b(roaring kitty|keith gill|dfv|deep fucking value|gamestop|gme|ryan cohen|"
+    r"cohen|elon|musk|xai|grok|spacex|tesla|burry|ebay|big short|dumb money|"
+    r"wall ?street|uno reverse|memphis)\b", re.I)
+
+# Phrases that put an event in the past. Fatal if aimed at a date still ahead.
+_PAST_TENSE = re.compile(
+    r"\b(came and went|has (?:now )?passed|have passed|already (?:happened|been)|"
+    r"nothing happened|was a miss|turned out to be nothing|passed without|"
+    r"did not happen|didn'?t happen)\b", re.I)
+
+
+def _future_written_as_past(body: str) -> str:
+    """Catches '8 august 2026 came and went' written on 7 august 2026."""
+    if not _PAST_TENSE.search(body):
+        return ""
+    today = datetime.now(PROJECT_TZ).date()
+    for d, _ in LORE_DATES:
+        if d < today:
+            continue
+        month = d.strftime("%B").lower()
+        pats = (rf"\b{d.day}\s+{month}\s+{d.year}\b",
+                rf"\b{month}\s+{d.day}(?:st|nd|rd|th)?,?\s+{d.year}\b")
+        if any(re.search(p, body, re.I) for p in pats):
+            return (f"writes about {_fmt_date(d)} as if it already happened. "
+                    f"today is {_fmt_date(today)}, so that date is still ahead")
+    return ""
+
+
 def _shill_problem(text: str) -> str:
     """Returns a reason to reject, or an empty string if the post is fine."""
     body = text.split("$TSUKI")[0].strip()
@@ -3412,8 +3583,14 @@ def _shill_problem(text: str) -> str:
         return "one block with no double line break"
     if not re.search(r"\d", body):
         return "no date, number or receipt anywhere in it"
+    if not _OUTSIDE_NAME.search(body):
+        return ("no connection a stranger would recognise. name roaring kitty, "
+                "gamestop, cohen, elon, burry or one of the others")
     if _PURPLE.search(body):
         return f"atmosphere instead of a fact ({_PURPLE.search(body).group(0)})"
+    wrong_tense = _future_written_as_past(body)
+    if wrong_tense:
+        return wrong_tense
     if len(body) < 70:
         return "too thin to be worth posting"
     return ""
@@ -3435,7 +3612,7 @@ def generate_shill_post(max_tries: int = 3) -> str:
             msg = claude.messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=400,
-                system=SHILL_VOICE,
+                system=SHILL_VOICE + "\n\n" + date_context(),
                 messages=[{"role": "user", "content":
                            shape + "\n\nwrite one post now." + avoid + feedback}],
             )
@@ -3498,6 +3675,59 @@ async def cmd_shill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     with open(photo, "rb") as f:
         await msg.reply_photo(photo=f, caption=caption[:1024], reply_markup=kb)
 
+RIGHTS_FIX = (
+    "the bot is muted in that chat, so telegram is refusing the send.\n"
+    "\n"
+    "fix it in the group:\n"
+    " \u251c open the group, tap the name, then Administrators\n"
+    " \u251c add this bot as an admin\n"
+    "\u2514 tick Send Messages, Send Media and Pin Messages\n"
+    "\n"
+    "the 7am campaign post has been failing for the same reason, silently.")
+
+
+async def bot_chat_rights(ctx, chat_id: int) -> str:
+    """What the bot can actually do in a chat, in plain words."""
+    try:
+        me = await ctx.bot.get_me()
+        m = await ctx.bot.get_chat_member(chat_id, me.id)
+    except Exception as e:
+        return f"could not check: {type(e).__name__}: {e}"
+    status = getattr(m, "status", "?")
+    if status not in ("administrator", "creator"):
+        return (f"status '{status}', NOT an admin. if the group restricts members "
+                f"from posting, the bot cannot send anything until it is one.")
+    missing = [n for n, ok in (
+        ("send messages", getattr(m, "can_post_messages", None)),
+        ("pin messages", getattr(m, "can_pin_messages", None)),
+        ("delete messages", getattr(m, "can_delete_messages", None)),
+    ) if ok is False]
+    return "admin, full rights" if not missing else f"admin, but missing: {', '.join(missing)}"
+
+
+async def cmd_datecheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """What the bot currently believes about the calendar. If this is ever
+    wrong, every post it writes will be wrong in the same way."""
+    await update.effective_message.reply_text(date_context()[:4000])
+
+
+async def cmd_perms(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Admin: check what the bot is allowed to do before wondering why a post
+    did not appear."""
+    if not await is_project_admin(ctx, update):
+        await update.effective_message.reply_text("admins only \U0001f408\u200d\u2b1b")
+        return
+    here = await bot_chat_rights(ctx, update.effective_chat.id)
+    main = await bot_chat_rights(ctx, TARGET_CHAT_ID)
+    await update.effective_message.reply_text(
+        f"\U0001f512 bot rights\n"
+        f"\n"
+        f" \u251c this chat ({update.effective_chat.id}): {here}\n"
+        f"\u2514 main chat ({TARGET_CHAT_ID}): {main}\n"
+        f"\n"
+        f"photos folder: {len(glob.glob(os.path.join(PHOTOS_DIR, '*.*')))} files")
+
+
 async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Admin: fire today's campaign post manually.
 
@@ -3525,10 +3755,17 @@ async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     try:
         result = await job_daily_campaign(ctx.application)
-        await msg.reply_text(f"result: {result}")
+        report = f"result: {result}"
+        if "not enough rights" in result.lower() or "chat_write_forbidden" in result.lower():
+            rights = await bot_chat_rights(ctx, TARGET_CHAT_ID)
+            report += f"\n\ncurrent rights in the main chat: {rights}\n\n{RIGHTS_FIX}"
+        await msg.reply_text(report)
     except Exception as e:
         log.warning(f"gmpost failed: {e}")
-        await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
+        report = f"❌ post failed: {type(e).__name__}: {e}"
+        if "not enough rights" in str(e).lower():
+            report += f"\n\n{RIGHTS_FIX}"
+        await msg.reply_text(report)
 
 
 async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -3808,7 +4045,7 @@ def main():
         ("price", cmd_price), ("mc", cmd_mc), ("links", cmd_links), ("roadmap", cmd_roadmap),
         ("trivia", cmd_trivia), ("trboard", cmd_trboard),
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
-        ("dbcheck", cmd_dbcheck),
+        ("dbcheck", cmd_dbcheck), ("perms", cmd_perms), ("datecheck", cmd_datecheck),
         ("read", cmd_read),
         ("watch", cmd_watch), ("unwatch", cmd_unwatch),
         ("watching", cmd_watching), ("linkmode", cmd_linkmode),
@@ -3835,12 +4072,3 @@ def main():
     scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
     scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
     scheduler.add_job(job_x_milestone,        "cron", hour=20, minute=0, args=[app])
-    scheduler.add_job(job_x_shill,            "cron", hour=23, minute=15, args=[app])
-    scheduler.start()
-
-    log.info("Tsukiverse Bot running")
-    app.run_polling(allowed_updates=["message"])
-
-
-if __name__ == "__main__":
-    main()
