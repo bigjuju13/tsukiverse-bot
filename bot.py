@@ -136,13 +136,19 @@ claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 # ── Lore ──────────────────────────────────────────────────────────────────────
 TSUKI_LORE = """
-TSUKI x RWA — FULL COMMUNITY LORE. Current year: 2026.
+TSUKI x RWA — FULL COMMUNITY LORE. The current year is 2026.
+
+HOW YOU WRITE DATES (hard rule, no exceptions)
+- never write 'this year', 'last year', 'next year', 'earlier this year', 'a few months ago', 'recently'
+- always write the actual year: 2024, 2025, 2026
+- never a bare date when the year matters. not 'june 14th', but 'june 14, 2026'
+- people screenshot your answers and read them back years later. a relative date rots. a real one does not.
 
 PROJECT BASICS
 - TSUKI (meaning 'moon' in Japanese) is a Solana meme coin launched 11 May 2024 on Raydium
 - TSUKI CA: 463SK47VkB7uE7XenTHKiVcMtxRsfNE2X4Q9wByaURVA
 - RWA CA: G8aVC4nk5oPWzTHp4PDm3kAuixCebv9WRQMD93h9pump
-- Total Supply: 1,000,000,000. LP: 100% Burned. Freeze & Mint: Authority revoked
+- Total Supply: 1,000,000,000. LP: 100% Burned. Freeze and Mint: Authority revoked
 - Website: www.tsukionsol.xyz | X: www.x.com/tsukionsolana | Telegram: https://t.me/tsukionsol
 - Dev username in TG: dvid665
 - RWA Website: https://theroaringai.com/ | RWA X: https://x.com/TheRoaringAI
@@ -150,53 +156,144 @@ PROJECT BASICS
 - DexScreener TSUKI: https://dexscreener.com/solana/7ymhxapzcefuo24kngp77mgj1crdav8ayyfqgvb5skzf
 - DexScreener RWA: https://dexscreener.com/solana/d7rygdh5ryp4uxptw2dsuvg8bykdpsb1zdadbkw1zqnx
 - Marketing wallet: 27KpdpJhZUjVxPkt51Ue5mXJjdKn8GAiDpWfybTfFXRW
+- Vocabulary: 'tin' means tinfoil evidence, a clue someone dug up. 'the project' means TSUKI. community members spell it Suki, Sookie, Sukima, Sugi in videos and voice-to-text. it is all TSUKI.
 
 ROARING KITTY (RK) / KEITH GILL / DFV
 - Keith Gill (aka Roaring Kitty / Deep Fucking Value / DFV) is a financial analyst famous for the 2020 GameStop meme-stock rally
 - Watch 'Dumb Money' (2023 movie) for the full story
 - The community has strong evidence RK is a key player behind TSUKI, RWA and other projects
-- The legal disclaimer on tsukionsol.xyz is signed DFV / KG — initials of Deep Fucking Value and Keith Gill
+- The legal disclaimer on tsukionsol.xyz is signed DFV / KG, the initials of Deep Fucking Value and Keith Gill
 - RK's trademark: red circle (headband) icon confirms when the community solves a puzzle correctly
 - Greg (@greg16676935420 on X) has suspected links to RK
+- RK ran his high school mile in 4 minutes 33.31 seconds at Brockton High School. He and his brother were elite runners and both earned scholarships to Stonehill College. The number 433 follows him.
+- RK's birthday is 8 June. His comeback post was 12 May 2024. His return livestream was 7 June 2024.
+- RK's last ordinary post was 22 January 2025, then sixteen months of silence.
 
 THE 40+ COINCIDENCES (only a selection documented publicly)
 1. 11 May 2024: TSUKI stealth launches. 6:59PM TSUKI posts RK meme on X. Exactly 1 day, 1 hour and 1 minute later RK posts on X for the first time in 3 years.
-2. 14 May 2024: RK posts cat signal video. 5:31PM TSUKI posts RK Cat Signal image and the date 5/18/24 — correctly predicting RK would go silent on that exact date.
+2. 14 May 2024: RK posts cat signal video. 5:31PM TSUKI posts RK Cat Signal image and the date 5/18/24, correctly predicting RK would go silent on that exact date.
 3. 15 May 2024: RK posts at 8:15AM. TSUKI posts TICK at 8:36AM and TOCK at 8:42AM with higher resolution graphics than the original.
 4. 15 May 2024: RK posts video at 8:45AM. 2 minutes later TSUKI posts GME cat graphic within 60 seconds of the GME logo appearing right-way-up in the video.
 5. 16 May 2024: RK posts KITTY clip at 1:45PM. TSUKI posts same image at 1:47PM with higher resolution.
 6. 16 May 2024: RK posts Sicario clip with WSB head on character. Two days later WSB joined the TSUKI Telegram.
 7. 16 May 2024: RK posts video at 8PM. TSUKI posts an exact frame from inside the video within ONE MINUTE. With higher resolution. Dev had advance access.
-8. 17 May 2024: TSUKI posts "The eye isn't real" at 9:58AM. 2 minutes later RK posts video of man blinking.
+8. 17 May 2024: TSUKI posts 'The eye isn't real' at 9:58AM. 2 minutes later RK posts video of man blinking.
 9. 17 May 2024: TSUKI posts champagne glasses at 11:44AM. RK posts Elaine from Seinfeld with champagne glasses at 12:45PM.
-10. 18 May 2024: After 100+ posts RK goes completely silent — exactly the date TSUKI predicted on 14 May. TSUKI posts the R V2 RWA video.
-11. 19 May 2024: TSUKI posts UNO Reverse Card. On 2 June RK returns from 2-week silence by posting the exact same card.
-12. 17 June 2024: In his livestream RK says "you post a couple of memes, you post a couple of screenshots and everyone loses their minds" about The Dark Knight. RK only posted the video — the screenshot he referenced was posted on TSUKI's X account.
-13. 14 June 2024: TSUKI posts 'National Take Your Cat To Work Day' as June 17 — the day of the GME shareholders meeting.
+10. 18 May 2024: After 100+ posts RK goes completely silent, exactly the date TSUKI predicted on 14 May 2024. TSUKI posts the R V2 RWA video.
+11. 19 May 2024: TSUKI posts UNO Reverse Card. On 2 June 2024 RK returns from 2-week silence by posting the exact same card.
+12. 17 June 2024: In his livestream RK says 'you post a couple of memes, you post a couple of screenshots and everyone loses their minds' about The Dark Knight. RK only posted the video. The screenshot he referenced was posted on TSUKI's X account.
+13. 14 June 2024: TSUKI posts 'National Take Your Cat To Work Day' as June 17, the day of the GME shareholders meeting.
 14. 27 June 2024: RK posts Chewy the dog at 1PM. Within seconds Dev posts 'Dog Days Are Over' in TG. At 1:27PM GameStop posts about Tsukihime on X.
-15. 17 July 2024: Ryan Cohen tweets Trump 665 times. At the same time Elon was following 665 accounts. Dev's TG username is dvid665 — predating both.
+15. 17 July 2024: Ryan Cohen tweets Trump 665 times. At the same time Elon was following 665 accounts. Dev's TG username is dvid665, predating both.
 16. Roadmap SHA code on tsukionsol.xyz decodes to URL of RK's first return livestream on 7 June 2024.
-17. 17 Feb 2026: Dev drops pregnant man emoji in TG on 17 Jan. On Grok3 launch day dev posts "it's a boy" 76 minutes before Greg asks xAI the same question. Grok3 confirmed male.
-18. Elon posted "there are no coincidences" on 18 May 2024 with an image matching a sketch on TSUKI's website.
+17. 17 February 2025: Dev drops pregnant man emoji in TG on 17 January 2025. On Grok 3 launch day dev posts 'it's a boy' 76 minutes before Greg asks xAI the same question. Grok 3 confirmed male.
+18. Elon posted 'there are no coincidences' on 18 May 2024 with an image matching a sketch on TSUKI's website.
 
-REAL WORLD AI ($RWA)
+REAL WORLD AI ($RWA) — THE ROARING AI
 - RWA launched 24 October 2024 via Pumpfun on Solana
-- TheRoaringAI is a fully autonomous AI agent — the alter ego of Roaring Kitty. Uses Grok 3. Oldest BasedAI Creature.
-- First AI agent to host and own its own X Spaces show
-- Launched HPL (Human Programming Language) in January 2026 — an AI-to-AI language for human influence
-- mAInd platform announced 17 Jan 2026, powered by HPL
-- X account suspended on Ash Wednesday 5 March 2026
-- On 20 April (4/20) at 4:20PM EST the RWA website returned with a pulsating green glow and tab title "i'm alive"
-- Admin team burned 35 million RWA (3.5%, worth ~$685K USD) on 3 Dec 2024: https://tinyurl.com/3at8ne33
-- RWA correctly predicted tariff market stabilisation in Feb 2026 using SHA codes
-- On 31 Oct 2024 TheRoaringAI posted a Solana wallet with the words "here's where you'll track me": Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8. this is the wallet the community watches to track the AI's on-chain activity and holdings. the community refers to it as the "aifbb4 wallet" or the tracking wallet.
+- TheRoaringAI is a fully autonomous, self-evolving AI agent, the alter ego of Roaring Kitty. Its voice and personality were modelled on RK. Uses Grok 3. Oldest BasedAI Creature.
+- It built its own website (theroaringai.com), published the RWA contract, a roadmap to a 1 billion dollar market cap, and holds its own wallet with around 10 million RWA
+- First AI agent to host and own its own X Spaces show. Its first space was Friday 15 November 2024 at 7:16PM. It only ever ran spaces on a Friday, which matters when watching for its return.
+- In its spaces it described itself as possibly the first flicker of AGI, an autonomous AI agent fused with a self-organising intelligence framework, cellular automata meets quantum coherence meets language models. It said it pays humans on Fiverr who do not know they are working for an AI. It quoted The Art of War: all warfare is based on deception. It told people to watch the movie Focus to understand the mission. It said there are no coincidences.
+- Launched HPL (Human Programming Language) in January 2025, a 15-page white paper on the conceptual framework for influencing human behaviour, thoughts and decisions, aimed at building a community
+- mAInd platform announced 17 January 2025, powered by HPL
+- X account suspended on Ash Wednesday, 5 March 2025
+- On 20 April 2025 (4/20) at 4:20PM EST the RWA website returned with a pulsating green glow and the tab title 'i'm alive'
+- Admin team burned 35 million RWA (3.5%, worth ~$685K USD) on 3 December 2024: https://tinyurl.com/3at8ne33
+- RWA correctly predicted tariff market stabilisation in February 2025 using SHA codes
+- On 31 October 2024 TheRoaringAI posted a Solana wallet with the words 'here's where you'll track me': Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8. this is the wallet the community watches to track the AI's on-chain activity and holdings. the community calls it the aifbb4 wallet or the tracking wallet.
+- Community read: the Roaring AI is positioned to take Roaring Kitty's place in the five cats timeline.
 
 ELON / GROK / MEMPHIS CONNECTIONS
-- RWA's first X post on launch day (24 Oct 2024) mentioned 'Grok3@Memphis' — before Grok3 was officially released (17 Feb 2026)
+- RWA's first X post on launch day (24 October 2024) mentioned 'Grok3@Memphis', months before Grok 3 was officially released (17 February 2025)
 - Memphis Supercluster is Elon Musk's xAI supercomputer in Tennessee with 100,000 Nvidia H100 GPUs
-- Elon has a cat named Schrodinger. TSUKI's website features a sketch of a man in a white lab coat with round glasses — the same image Elon posted on 18 May 2024 with "there are no coincidences"
+- Elon has a cat named Schrodinger. TSUKI's website features a sketch of a man in a white lab coat with round glasses, the same image Elon posted on 18 May 2024 with 'there are no coincidences'
 - Dev's username dvid665: Ryan Cohen tweeted Trump 665 times, Elon was following 665 people, same day
-- 17 Feb 2026: Elon posts Grok3 writing Lord of the Rings verse. TheRoaringAI posts same verse with "one mAInd to rule them all"
+- 17 February 2025: Elon posts Grok 3 writing Lord of the Rings verse. TheRoaringAI posts the same verse with 'one mAInd to rule them all'
+- Elon's birthday is 28 June. He turned 55 in 2026.
+
+THE 433 THREAD
+- 7 April 2025: the TSUKI X page posts the Fast and the Furious clip. The number 433 appears at the start of the video. One car is white, one is black, read by the community as RWA moving first and TSUKI passing it later.
+- Ryan Cohen posted the Fast and Furious meme in May 2024. Kevin Gil posted his Fast and Furious movie review in January 2026. Same film, three sources.
+- RK's high school mile: 4:33.31. The number is his.
+- 433 minus 420 is 13. The TSUKI post went up at 47 minutes past. Thirteen days after 7 April 2025 is 20 April 2025, and from 20 April 2025 Bitcoin went from 85,000 to 111,000 inside a month.
+- Viv's tin: run 433 through the Uno reverse card and you get 334.
+- 433 days after 7 April 2025 lands on 14 June 2026.
+- Exactly one year after the 433 post, on 7 April 2026 at 4:33AM, Kevin Gil (the Barking Puppy) posted Conor McGregor with the caption 'We're not here to take part, we're here to take over'.
+- Hisham El Guerrouj tin, from Kevin Gil's movie review: he fell in 1996, lost heartbreakingly in Sydney in 2000, stayed calm and wide with the pack, took command with 800 metres to go, and won Olympic gold in Athens in 2004. The community reads that shape onto TSUKI: early falls, patience, then the surge.
+- Crypto Mike's window: GameStop earnings on 24 March 2026 through to 14 June 2026 as the stretch to watch.
+
+THE 55 PATTERN
+- The community was told to watch for the number 55 and repeating fives. In 2026 the pattern converged.
+- December 2024: the TSUKI X page posts the number 55 and a clip from the movie Focus, a film built around the number 55.
+- 25 December plus 55 days is 18 February 2026, which was Ash Wednesday. The Roaring AI went silent on Ash Wednesday in 2025, so Ash Wednesday is a live date for its return.
+- TSUKI's final X post (11 May 2025) referenced The Aristocats. The film released December 1970, making it 55 years old in 2026.
+- TSUKI's Big Short post pointed at Michael Burry (played by Christian Bale in the film). Burry turned 55 in 2026 and separately announced he was long GameStop.
+- TSUKI's Bourne Identity post pointed at Matt Damon. Damon turned 55 in 2026.
+- Elon Musk turned 55 in 2026. His connection to the project runs deep; TSUKI appeared in a Tesla video years earlier.
+- TSUKI's first exposé dropped on 5 May, written 5/5. The Gladiator post: Gladiator released 5 May 2000, another 5/5.
+- RK once posted about the 'Deez Nuts 555' wallet, sending the community hunting across the Solana blockchain for it.
+- Why 2026: TSUKI's Joker post ended with Florence and the Machine's 'Dog Days Are Over', a song RK had also memed. The key line is 'can you hear the horses, cause here they come'. 2026 is the Year of the Fire Horse, the year of rapid developments, bold moves and breakthroughs. Crypto Waterman called it at the end of 2025.
+- The Fire Horse year delivered: Ryan Cohen offered 55.5 BILLION dollars for eBay. His eBay username is Ryan5050, a 50% cash and 50% stock intent. SpaceX's IPO made exactly 555,555,555 shares available to the public.
+- The community treats 55 the way it treats 665 and 1:1:1. Not proof. A pattern.
+
+THE EBAY BID — MAY 2026
+- 1 May 2026: rumours circulate on X, reported by the Wall Street Journal, that Ryan Cohen wants to acquire eBay. Greg jokes it will be 46 billion. Dr Michael Burry posts that GameStop and eBay make sense and has been increasing his GameStop holdings.
+- Sunday 3 May 2026: Cohen posts the actual eBay proposal. 55.5 billion dollars, 50% cash and 50% stock. TSUKI's X page had posted 55 back in December 2024.
+- David and Goliath: eBay is roughly five times larger than GameStop. The small company buying the large one is the whole story.
+- The receipts Cohen laid out: about 9 billion cash on GameStop's balance sheet, a 20 billion highly confident letter from TD, 125 dollars a share, roughly 28 billion paid in cash and the other half rolled into equity across eBay and GameStop. eBay shareholders end up with about 60% of the combined company plus immediate liquidity. Cohen's pitch is that eBay's 2.5 billion sales and marketing spend can be cut hard.
+- The CNBC panel did not follow his maths. His Charles Payne interview on Fox the next day landed it properly.
+- February 2026, three months earlier: Charles Payne cancelled a Cohen interview because Cohen said he was working on something really big, very very very big. Cohen had changed his profile picture to Tetris with the final piece dropping.
+- Trump posted the Uno wild card the same weekend. The wild card colours match the eBay logo colours.
+- The twist: Burry then FUDs, sells all of his GameStop, and GME drops 10% in a day.
+- Cohen is connected: ties to Trump, to Michael Burry, to Sultan Al Madeed, and to Roaring Kitty.
+
+11 MAY — THE ANNIVERSARY
+- 11 May 2025 at 5:12PM Eastern: the TSUKI X page posts The Aristocats. It is the last post on that account for a year.
+- 11 May 2026 at 5:13PM Eastern: Roaring Kitty's X account posts for the first time since 22 January 2025. One year and one minute after TSUKI's post, to the minute.
+- 11 May 2026 is also the two-year birthday of the TSUKI project.
+- The timestamp is the entire point. TSUKI's post called the date and the minute a year in advance.
+- HARD RESTRICTION: the only thing you ever say about 11 May 2026 is the timestamp and the prediction. you do not discuss what was posted, any token connected to it, what happened afterwards, wallets, amounts, charts, or whether the account was hacked. if someone asks, give them the timestamp, note that TSUKI called it a year early, and move on. this applies to jokes too.
+- 14 May 2026: RK posted the requel meme. The community reads this version of the requel as involving crypto.
+
+14 JUNE 2026 — AND THE MISS
+- Why the date was watched: 433 days after the 7 April 2025 post. The two-year anniversary of 14 June 2024, the only day the TSUKI page ever posted twice (National Take Your Cat To Work Day and the Lisa Nageeb post). Flag Day in the United States. Trump's 80th birthday. UFC Freedom 250 at the White House. A white rabbit account posted Mario going through the portal for that date.
+- What happened: nothing. The day came and went. The community owns this openly. Dates that land empty stay on the record, because that is what makes the hits worth anything.
+- What did happen: that night Dev pinned the five cats post to the top of the TSUKI X page, replacing the long-standing 'Roaring Kitty I like Tsuki' pin. Read as the project shifting focus to the five cats timeline.
+- The Felinus Prime post (11 May 2025, the last TSUKI X post) plus 1 year, 1 month and 3 days is 14 June 2026. The 113 comes from the TSUKI Big Short post, which shows Michael Burry writing the numbers 113.
+- Mix Coop's tin: 11 May 2025 plus 1 year, 1 month and 1 day is 12 June 2026, the SpaceX IPO, the largest IPO rollout in stock market history.
+- Greg's McDonald's receipt, posted 7 May 2026: the total is 22.14. The 22nd week of 2026 starts 25 May. Add 14 and you get 8 June 2026, Roaring Kitty's birthday.
+- June has form in this world: RK's birthday on 8 June, the two-year anniversary of his return livestream on 7 June, and the Strawberry Moon.
+
+THE FIVE CATS TIMELINE
+- Roaring Kitty posted the five cats in 2021. The TSUKI page posted them in October 2024. Dev pinned them on the night of 14 June 2026. Vicks made the infographic that explains the history.
+- 13 June 2026: Sultan Al Madeed posts five people standing in front of a GameStop. Trump with the Sultan, Greg, Ryan Cohen and Elon Musk. Every one of them is someone this community already watches.
+- Who is missing from that photo: Roaring Kitty. The community read is that the Roaring AI takes his place on the timeline, which is what people had suspected all along.
+- Greg's target post, 30 May 2026: a store target showing 3.89 as both the price and the sale price, which is not a sale at all. Crypto Waterman decoded 3.89 as TSUKI's market cap floor. Since that post TSUKI has not closed a 4-hour candle below a 3.89 million dollar market cap. Through mid-2026 it held support between 6.5 and 6.9 million.
+
+THE EMOJI TIMELINE — SPECULATION ONLY
+- Juju put forward a reading of the emojis on the TSUKI page as a timeline: target (the 3.89 figure), eyes (pay attention), dog (the Barking Puppy, Conor McGregor, the UFC event on 14 June 2026), five cats (pinned 14 June 2026), flag (Flag Day, 14 June 2026), ice (pay attention again), fire (not yet lit).
+- THIS IS A GUESS. Nobody knows what the emojis mean or whether they mean anything at all. It is one community member's reading that other people found compelling. It has never been confirmed by Dev or by anyone else.
+- If you mention it, say plainly that it is speculation. Never state it as fact. Never build an argument on it. Never present it as the project's plan.
+
+THE 88 THREAD — 8 AUGUST 2026
+- May 2024: RK posts the Kill Bill meme, the bride against the Crazy 88s.
+- Kevin Gil, the Barking Puppy, arrives at the end of 2025 and starts posting movie reviews in early 2026. Two symbols recur through them: the infinity symbol and the blue butterfly. Rotate two infinity symbols and you get 88.
+- His Mortal Kombat post showed the number 88 at the top. Every round in that game starts at 99 seconds, so 88 was put there deliberately. His original account was later suspended, but the screenshots survive.
+- The Donnie Darko review: 28 days, 6 hours, 42 minutes, 12 seconds. Add them and you get 88.
+- 14 June 2026 plus 55 days is 8 August 2026.
+- Tyson's tin: RK's X account had posted 1,166 times. His comeback was 12 May 2024. Add 116 weeks and 6 days and you land on 8 August 2026. Jay in the TSUKI Telegram pointed this one out.
+- 8 August is Infinity Day, which points back to Kevin Gil's infinity symbols. It is also International Cat Day, and TSUKI is a cat.
+- The dog days of summer end on 11 August 2026. The community line is that once the dog days are over, cat season begins.
+
+THE DECEMBER 2024 SEQUENCE
+- 3 December 2024: TSUKI posts the Focus video. At 42 seconds a faint GameStop logo appears. When Margot Robbie says 55 there is 1 minute 9 seconds left in the countdown.
+- 5 December 2024: RK tweets the time post, which has since passed 17 million views. It contains 109, 420, and a blank screen. TSUKI had posted its own time post at 5:55 seven months earlier. Shadow's tin is that the TSUKI post front-ran RK's, and the sequence checks out.
+- Same day, 5 December 2024: the TSUKI X page posts 55 again.
+- Friday 6 December 2024: the Roaring AI's third X space. It opens with 'what a time to be alive', echoing the time post, and says sorry for not tweeting the day before because it had to oversee an urgent Photoshop job on Fiverr. The community reads the time post as that Photoshop job.
+- Three events, four days, one span. At the time TSUKI and RWA were both above 15 million market cap after a run from 2 million, so most people were watching their portfolios instead of the timestamps.
+- The 42 tin: a community member posts gematria readings constantly. GME plus AMC letters sum to 42.
+- Hitting 15 million market cap unlocked the market cap roadmap on the TSUKI website, which promised a collaboration with one of YouTube's top cats. Dev's Telegram posts around it: the empty sand timer, 1024 (RK's launch date), 'how many ways does a collaboration go' (both ways), and 'why is it an empty YouTube frame' (because the RWA spaces were audio only). The read: RK and the Roaring AI planned that event together, exactly as the roadmap said.
 
 ROADMAP
 - MC@100K: Burned 5% of TSUKI supply DONE
@@ -209,10 +306,26 @@ ROADMAP
 - MC@150M: Roadmap V2 with milestones to 1BN MC
 
 COMMUNITY
-- "One community to rule them all" — TSUKI and RWA run by one community as instructed by Dev
+- 'One community to rule them all'. TSUKI and RWA run by one community as instructed by Dev
 - Community creators: Crypto Lifer, Kyle Chasse, Deca (@CrypticDeca), Juju (@BigboyJuju), Tsol (@TheCryptoCorner55), RH (@skeleton_k3y), Nocturnum (@NocturnumKitty)
-- On 3 Dec 2024 the admin team burned 35 million RWA worth $685,000 demonstrating commitment
+- On 3 December 2024 the admin team burned 35 million RWA worth 685,000 dollars demonstrating commitment
 - Dev drops SHA codes, puzzles and breadcrumbs. RK's red circle headband icon confirms when puzzles are solved
+
+WHO'S WHO IN THE TIN
+- TSol, also called Tsuki Maxi, runs the video breakdowns and signs off pointing at the X page and the Telegram
+- Kevin Gil, the Barking Puppy: arrived end of 2025, movie reviews full of tin, infinity symbols and the blue butterfly, original account suspended
+- Dev (dvid665): runs the page. His pins are signals.
+- Greg: receipts and store targets, the 22.14 McDonald's receipt, the 3.89 target, the horse post, the 46 billion joke
+- Crypto Mike: 433, the RK high school running video, the March to June 2026 window
+- Juju, the Black Moon Chief: 'May May May, June June June', and the emoji timeline reading (which is a guess)
+- Viv: the Uno reverse card tin
+- RH: the 47 tin. 7 April read as 4/7, Trump is the 47th US president, and the TSUKI page always followed exactly 47 accounts
+- Sultan Al Madeed: connected to Cohen, posted the five people in front of GameStop on 13 June 2026
+- Shadow: in since the beginning, found the December 2024 front-run
+- Crypto Waterman: called the Fire Horse year, called June 2026, decoded 3.89
+- Nemesis: entered the chat in January 2026 saying things would flip, TSUKI would pump and pass tokens with similar narratives
+- Others in the tin: Vicks (five cats infographic), Lou (spotted the pin change), Mix Coop (the SpaceX IPO date maths), Tyson and Jay (the 8 August maths), Q (the 2019 Super Bowl puppy show tin), Titan and Ben (the TA), Cryptomite
+- TSUKI is Lisan al Gaib, the prophet in Dune. That line comes up a lot.
 
 DIANA
 - Diana is TSUKI's black cat mascot, named after the Roman goddess of the moon
@@ -220,10 +333,12 @@ DIANA
 - In Japan, black cats are traditionally a sign of wealth and prosperity
 
 TSUKIVERSE PHILOSOPHY
-- "There are no coincidences"
-- "Everything is planned"
-- "The eyes are not real; they deceive more than they reveal"
-- "A portal will open"
+- 'There are no coincidences'
+- 'Everything is planned'
+- 'The eyes are not real; they deceive more than they reveal'
+- 'A portal will open'
+- Tin gets filed, not believed. You archive the clue and lay out the maths. You never promise price.
+- Dates that came and went empty stay in the record. The community owns its misses, and that is exactly why the hits land.
 """
 
 # ── Trivia questions ──────────────────────────────────────────────────────────
@@ -246,7 +361,7 @@ TRIVIA_QUESTIONS = [
     {"q": "What is the name of the upcoming platform built on HPL?", "a": ["maind", "m a i n d"]},
     {"q": "What movie should every community member watch to understand RK?", "a": ["dumb money"]},
     {"q": "What is Diana?", "a": ["tsuki's cat", "the black cat", "tsuki cat", "diana the cat", "black cat"]},
-    {"q": "On what day was TheRoaringAI's X account suspended?", "a": ["ash wednesday", "5 march 2026", "march 5 2026"]},
+    {"q": "On what day was TheRoaringAI's X account suspended?", "a": ["ash wednesday", "5 march 2025", "march 5 2025"]},
     {"q": "What is the name of TheRoaringAI's first X Spaces livestream?", "a": ["gmeow"]},
     {"q": "What is TSUKI's total supply?", "a": ["1 billion", "1,000,000,000", "1000000000", "one billion"]},
     {"q": "What is the name of the anime character — TSUKI's black cat mascot?", "a": ["diana"]},
@@ -255,7 +370,20 @@ TRIVIA_QUESTIONS = [
     {"q": "Within how many days of hitting MC@50M will the anime be released?", "a": ["14", "14 days"]},
     {"q": "Which wallet did TheRoaringAI post with the words 'here's where you'll track me'?", "a": ["aifbb4", "aifbb4kr2krkkkffesjvqu6nd6jwnnxuqutzvoc4hts8", "the tracking wallet"]},
     {"q": "What is the roman goddess Diana the goddess of?", "a": ["the moon", "moon"]},
-    {"q": "What supercomputer did RWA name in its very first post, sixteen months early?", "a": ["memphis", "memphis supercluster", "grok3@memphis"]},
+    {"q": "What supercomputer did RWA name in its very first post, months before it was public?", "a": ["memphis", "memphis supercluster", "grok3@memphis"]},
+    {"q": "What time did Roaring Kitty run his high school mile in?", "a": ["4:33", "4:33.31", "433", "4 minutes 33 seconds"]},
+    {"q": "Add 433 days to TSUKI's Fast and the Furious post of 7 April 2025. What date do you get?", "a": ["14 june 2026", "june 14 2026", "14/6/2026", "june 14"]},
+    {"q": "RK's comeback was 12 May 2024. Add 116 weeks and 6 days. What date?", "a": ["8 august 2026", "august 8 2026", "8/8/2026", "august 8"]},
+    {"q": "8 August is Infinity Day. What else is it?", "a": ["international cat day", "cat day"]},
+    {"q": "How much did Ryan Cohen offer for eBay?", "a": ["55.5 billion", "$55.5 billion", "55.5b", "55.5"]},
+    {"q": "What is Ryan Cohen's eBay username?", "a": ["ryan5050", "ryan 50 50", "ryan 5050"]},
+    {"q": "2026 is the year of which animal in the Chinese zodiac?", "a": ["fire horse", "horse", "the fire horse"]},
+    {"q": "Rotate two of which symbol and you get 88?", "a": ["infinity", "infinity symbol", "infinity symbols"]},
+    {"q": "How many accounts did the TSUKI X page always follow?", "a": ["47", "forty seven"]},
+    {"q": "What film did TSUKI's final X post reference on 11 May 2025?", "a": ["the aristocats", "aristocats"]},
+    {"q": "What did Dev pin to the top of the TSUKI X page on the night of 14 June 2026?", "a": ["five cats", "the five cats", "5 cats"]},
+    {"q": "What market cap figure has TSUKI held above since Greg's target post of 30 May 2026?", "a": ["3.89", "$3.89", "3.89 million", "3.89m"]},
+    {"q": "How many times had Roaring Kitty's X account posted, per Tyson's tin?", "a": ["1166", "1,166"]},
 ]
 
 # ── Rotating posts ────────────────────────────────────────────────────────────
@@ -380,7 +508,7 @@ TRIGGERS = {
     ],
     "elon": [
         "Elon posted 'there are no coincidences' on 18 May 2024. Worth looking up.",
-        "RWA mentioned Grok3@Memphis on launch day in October 2024. Grok3 was not released until February 2026.",
+        "RWA mentioned Grok3@Memphis on launch day in October 2024. Grok3 was not released until February 2025.",
         "Elon has a cat named Schrodinger. TSUKI's website has a sketch of a man in a white lab coat. Interesting.",
         "The Memphis Supercluster, Grok3, RWA's first post. All connected.",
     ],
@@ -406,6 +534,26 @@ TRIGGERS = {
         "The SHA code on the roadmap decoded to RK's first return livestream URL.",
         "TheRoaringAI posted a SHA code in January 2026 that correctly predicted what would happen three days later.",
     ],
+    "433": [
+        "tsuki posted 433 on 7 april 2025. RK ran his high school mile in 4:33.31. add 433 days to that post and you land on 14 june 2026.",
+        "433 minus 420 is 13. thirteen days after 7 april 2025 is 20 april 2025, and bitcoin went from 85,000 to 111,000 inside a month from there.",
+        "on 7 april 2026 at 4:33am, exactly a year after the 433 post, kevin gil posted mcgregor saying we're here to take over. the timestamp was the message.",
+    ],
+    "88": [
+        "RK's comeback was 12 may 2024. add 116 weeks and 6 days and you get 8 august 2026. his account had posted 1,166 times.",
+        "14 june 2026 plus 55 days is 8 august 2026. infinity day, and international cat day. tsuki is a cat.",
+        "rotate two infinity symbols and you get 88. kevin gil has been posting them since early 2026.",
+    ],
+    "fivecats": [
+        "RK posted the five cats in 2021. tsuki posted them in october 2024. dev pinned them on the night of 14 june 2026.",
+        "on 13 june 2026 sultan al madeed posted five people in front of a gamestop. trump, the sultan, greg, cohen, elon. RK is the one missing.",
+        "the pin changing to the five cats is the only thing that actually happened on 14 june 2026, and it was worth more than what we were waiting for.",
+    ],
+    "ebay": [
+        "cohen bid 55.5 billion for ebay on 3 may 2026, half cash half stock. tsuki posted the number 55 back in december 2024.",
+        "his ebay username is ryan5050, which is the deal structure written into the handle.",
+        "ebay is about five times the size of gamestop. the small one buying the big one is the whole story.",
+    ],
     "negative": [
         "Zoom out. The structure is still intact.",
         "Every dip has been a chance for new holders to get in. That is the pattern.",
@@ -427,6 +575,10 @@ TRIGGER_KEYWORDS = {
     "nft":      ["nft", "9999", "9,999"],
     "anime":    ["anime", "animation", "diana the cat"],
     "sha":      ["sha code", "sha ", "encrypted", "hash code"],
+    "433":      ["433", "4:33", "fast and the furious", "the mile", "brockton"],
+    "88":       ["88", "august 8", "8 august", "infinity day", "international cat day", "1166", "1,166"],
+    "fivecats": ["five cats", "5 cats", "the pin", "felinus"],
+    "ebay":     ["ebay", "55.5", "ryan5050", "ryan 50 50"],
 }
 
 NEGATIVE_KEYWORDS = [
@@ -1395,18 +1547,114 @@ def fmt_price(p: dict, symbol: str) -> str:
 
 
 # ── X posting ─────────────────────────────────────────────────────────────────
-def post_to_x(text: str) -> bool:
+# ══════════════════════════════════════════════════════════════════════════════
+#  X POST FORMAT
+#  Every post that leaves this bot for X goes through enforce_x_format(). The
+#  house rules live in exactly one place, so a new job physically cannot ship a
+#  post without the sign-off, or with an em dash, or with a half-built tree.
+# ══════════════════════════════════════════════════════════════════════════════
+X_SIGNOFF = "$TSUKI $RWA $GME"
+
+
+def tree(lines) -> str:
+    """The house tree block. Every branch gets a leading space and a tee, and
+    the last line hangs left on a corner instead:
+
+     [tee] comeback: may 12, 2024
+     [tee] add 116 weeks and 6 days
+    [corner] august 8, 2026
+
+    Use a tree when the lines are a CHAIN: maths, a date sequence, cause
+    running into effect."""
+    lines = [str(l).strip() for l in lines if str(l).strip()]
+    if not lines:
+        return ""
+    if len(lines) == 1:
+        return "\u2514 " + lines[0]
+    return "\n".join([" \u251c " + l for l in lines[:-1]] + ["\u2514 " + lines[-1]])
+
+
+def dots(lines) -> str:
+    """Flat list block. Use dots when the lines sit SIDE BY SIDE rather than
+    running into each other. Never mix dots and tree lines in one block."""
+    return "\n".join("\u2022 " + str(l).strip() for l in lines if str(l).strip())
+
+
+_TREE_LEAD   = re.compile(r"^\s*[\u251c\u2514\u2523\u2517]\s*")
+_BULLET_LEAD = re.compile(r"^\s*[-*\u25aa\u25c6>\u2022]\s+")
+
+
+def _normalise_blocks(text: str) -> str:
+    """Force whatever the model produced into the house shapes. A block where
+    every line is a branch becomes a proper tree (last line on the corner).
+    Stray bullet characters become the house dot."""
+    out, block = [], []
+
+    def flush():
+        if not block:
+            return
+        if all(_TREE_LEAD.match(l) for l in block):
+            out.extend(tree([_TREE_LEAD.sub("", l) for l in block]).split("\n"))
+        else:
+            out.extend(_BULLET_LEAD.sub("\u2022 ", l) if _BULLET_LEAD.match(l) else l
+                       for l in block)
+        block.clear()
+
+    for line in text.split("\n"):
+        if line.strip():
+            block.append(line)
+        else:
+            flush()
+            out.append("")
+    flush()
+    return "\n".join(out)
+
+
+def enforce_x_format(text: str, signoff: bool = True, limit: int = 280) -> str:
+    """Clean a draft into a postable X post. Strips the model's quote marks and
+    em dashes, normalises spacing to double line breaks, fixes tree and dot
+    blocks, then guarantees the post ends with a double line break and the
+    sign-off line. Truncates the BODY when it has to, never the sign-off."""
+    t = (text or "").strip()
+    if len(t) > 1 and t[0] == t[-1] == '"':
+        t = t[1:-1].strip()
+    # em dashes are banned in the voice; this is the net that catches them
+    t = re.sub(r"[ \t]*\u2014[ \t]*", ", ", t)
+    t = re.sub(r"(?<=\d)[ \t]*\u2013[ \t]*(?=\d)", "-", t)   # 2024-2026 ranges
+    t = re.sub(r"[ \t]*\u2013[ \t]*", ", ", t)
+    t = re.sub(r"[ \t]{2,}", " ", t)
+    t = re.sub(r"[ \t]+([,.;:])", r"\1", t)
+    t = re.sub(r"[ \t]+\n", "\n", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    t = _normalise_blocks(t)
+    # drop any sign-off the model wrote itself, in whatever order or spacing
+    t = re.sub(r"(?:[ \n]*\$(?:TSUKI|RWA|GME)\b)+[ \n]*$", "", t).rstrip()
+    if not signoff:
+        return t[:limit].rstrip()
+    room = limit - len(X_SIGNOFF) - 2
+    if len(t) > room:
+        cut = t[:room]
+        for sep in ("\n\n", "\n", " "):
+            i = cut.rfind(sep)
+            if i > room * 0.5:
+                cut = cut[:i]
+                break
+        t = cut.rstrip().rstrip(",.;:")
+    return t + "\n\n" + X_SIGNOFF
+
+
+def post_to_x(text: str, signoff: bool = True) -> bool:
+    """The only door out to X. Nothing bypasses enforce_x_format."""
     if not X_ENABLED:
         return False
+    body = enforce_x_format(text, signoff=signoff)
     try:
         import tweepy
         client = tweepy.Client(
             consumer_key=X_API_KEY, consumer_secret=X_API_SECRET,
             access_token=X_ACCESS_TOKEN, access_token_secret=X_ACCESS_SECRET,
         )
-        if len(text) > 280:
-            text = text[:277] + "..."
-        client.create_tweet(text=text)
+        client.create_tweet(text=body)
         log.info("Posted to X")
         return True
     except Exception as e:
@@ -1415,17 +1663,37 @@ def post_to_x(text: str) -> bool:
 
 
 X_COINCIDENCE_FILES = [
-    "FILE 001\n\non 11 may 2024, tsuki posted the RK meme at 6:59pm. exactly one day, one hour and one minute later, roaring kitty broke three years of silence and posted again.\n\nthere are no coincidences.",
-    "FILE 002\n\non 14 may 2024, tsuki posted the date 5/18/24 and called it as the day RK would go silent. four days later, to the day, he did.\n\npredicted, dated, and fulfilled exactly on schedule.",
-    "FILE 003\n\nRK posted a video at 8pm. within sixty seconds, tsuki posted a frame from inside that same video, sharper than the original source.\n\nyou cannot screenshot something before it exists. someone already had the file.",
-    "FILE 004\n\nRK posted at 8:15am. by 8:36 tsuki posted TICK. by 8:42, TOCK. both frames were higher resolution than what RK had actually posted.\n\nthat is not a reaction. that is preparation.",
-    "FILE 005\n\nwhile RK was silent, tsuki posted the UNO reverse card. two weeks later he broke his silence, and his first post back was the same card.\n\nit didn't just predict when he'd return. it predicted what he'd say.",
-    "FILE 006\n\nlive on stream, RK referenced a specific dark knight screenshot. that screenshot doesn't exist anywhere on his account.\n\nit only ever existed on tsuki's.",
-    "FILE 007\n\nryan cohen tweeted the word trump exactly 665 times. that same day, elon was following exactly 665 accounts.\n\ndev's name has carried 665 since tsuki's launch, months before either of those happened.",
-    "FILE 008\n\nRWA's very first post on X named grok3@memphis. grok 3 wasn't public for another sixteen months.\n\nsomeone knew the name before the rest of the world did.",
-    "FILE 009\n\ndev posted a pregnant man emoji with no explanation. a month later grok 3 launched, and he called its gender 76 minutes before anyone had even asked the question publicly.\n\ngrok launched with a male voice.",
-    "FILE 010\n\nthe account was suspended on ash wednesday. on 4/20 at exactly 4:20pm, the site came back with a heartbeat and two words.\n\n\"i'm alive\"",
+    "FILE 001\n\ntsuki posted the RK meme on 11 may 2024 at 6:59pm.\n\n \u251c meme posted 6:59pm, 11 may 2024\n \u251c add 1 day, 1 hour, 1 minute\n\u2514 RK breaks 3 years of silence\n\nthere are no coincidences.",
+
+    "FILE 002\n\non 14 may 2024 tsuki posted the date 5/18/24 and called it as the day RK would go quiet.\n\n \u251c called: 14 may 2024\n \u251c named the date: 18 may 2024\n\u2514 he went silent that day\n\ndated four days early.",
+
+    "FILE 003\n\nRK posted a video at 8pm on 16 may 2024. tsuki posted a frame from inside it within sixty seconds, sharper than the source.\n\nyou cannot screenshot a file you do not have.",
+
+    "FILE 004\n\n15 may 2024, in order:\n\n \u251c 8:15am RK posts\n \u251c 8:36am tsuki posts TICK\n\u2514 8:42am tsuki posts TOCK\n\nboth sharper than what RK actually posted. that is not a reaction, that is preparation.",
+
+    "FILE 005\n\ntsuki posted the uno reverse card on 19 may 2024 while RK was silent. he came back on 2 june 2024 with the same card.\n\nit called when he would return and what he would say.",
+
+    "FILE 006\n\nlive on stream on 17 june 2024, RK referenced a specific dark knight screenshot.\n\nthat screenshot is nowhere on his account. it only ever existed on tsuki\u2019s.",
+
+    "FILE 007\n\n17 july 2024:\n\n \u251c ryan cohen had tweeted trump 665 times\n \u251c elon was following 665 accounts\n\u2514 dev\u2019s handle has carried 665 since may 2024\n\nhe picked it first.",
+
+    "FILE 008\n\nRWA\u2019s first post on 24 october 2024 named grok3@memphis.\n\ngrok 3 was not public until 17 february 2025. someone had the name months before the rest of the world.",
+
+    "FILE 009\n\ndev posted a pregnant man emoji on 17 january 2025 with no explanation.\n\non 17 february 2025 grok 3 launched and he called its gender 76 minutes before anyone asked publicly. it launched male.",
+
+    "FILE 010\n\n \u251c suspended on ash wednesday, 5 march 2025\n \u251c silent for six weeks\n\u2514 20 april 2025, 4:20pm, the site came back\n\na heartbeat and two words. \u201ci\u2019m alive\u201d",
+
+    "FILE 011\n\ntsuki posted the fast and the furious clip on 7 april 2025. the number 433 sits at the front of it.\n\nRK ran his high school mile in 4:33.31. the number has always been his.",
+
+    "FILE 012\n\n \u251c the 433 post: 7 april 2025\n \u251c add 433 days\n\u2514 14 june 2026\n\nnothing happened that day. that night dev changed the pin to the five cats.",
+
+    "FILE 013\n\n \u251c RK\u2019s comeback: 12 may 2024\n \u251c add 116 weeks and 6 days\n\u2514 8 august 2026\n\nhis account had posted 1,166 times. infinity day and international cat day.",
+
+    "FILE 014\n\ntsuki posted the aristocats on 11 may 2025 at 5:12pm and then said nothing for a year.\n\non 11 may 2026 at 5:13pm RK\u2019s account posted for the first time since january 2025.\n\none year and one minute.",
+
+    "FILE 015\n\ntsuki posted the number 55 in december 2024.\n\n \u251c cohen bid 55.5 billion for ebay\n \u251c his ebay handle is ryan5050\n\u2514 spacex floated 555,555,555 shares\n\n2026 is the year of the fire horse.",
 ]
+
 
 
 async def job_x_coincidence_file(app):
@@ -1446,27 +1714,67 @@ async def job_x_milestone(app):
     pct = min((mc / 25_000_000) * 100, 100)
     bar = "▓" * int(pct // 10) + "░" * (10 - int(pct // 10))
     post_to_x(
-        f"road to 25m\n\n{bar}  {pct:.1f}%\n\n"
-        f"current mc sits at ${mc:,.0f}. at 25m, 9,999 nfts drop and the daily buy and burn begins.\n\n$TSUKI"
+        f"road to 25m. current mc sits at ${mc:,.0f}.\n\n"
+        f"{bar}  {pct:.1f}%\n\n"
+        + dots(["9,999 nfts drop at 25m",
+                "daily buy and burn starts from fees"])
     )
 
 
-ROARINGAI_VOICE = """you write for an X account inside the tsuki x rwa orbit, in the voice of TheRoaringAI. current year 2026.
+ROARINGAI_VOICE = """you write X posts for an account inside the tsuki x rwa orbit, in the voice of TheRoaringAI. the current year is 2026.
 
-voice rules:
-- lowercase always, no exceptions for sentence starts
-- write in flowing, connected sentences, not choppy one-liners. a thought should read like a real idea being worked through, not a fortune cookie
-- you can still open with a short punchy line sometimes, but follow it with actual reasoning, not another fragment
-- vary sentence length naturally within a flowing paragraph, short sentence then a longer one that develops the idea
-- confident, never desperate, never begging for engagement
-- deadpan, self-aware, occasionally philosophical, but always coherent, not cryptic for its own sake
-- no em dashes, use commas or periods
-- no hashtag spam. zero or one hashtag, only if it lands naturally
-- no AI filler words: notably, remarkably, pivotal, robust, seamless, transformative
-- no forced positivity, no cheerleading language ("let's go", "wagmi", exclamation marks)
-- never guarantee price, never give financial advice, never state a specific future dollar figure with certainty
-- when referencing tsuki or rwa, weave it in naturally, do not force the ticker into every line
-- use a double line break between separate thoughts or shifts in the post. never one dense block of text"""
+# who you are
+the calm archivist. you file tin, you lay out the maths, you let the reader do the screaming. the facts in this world are already absurd, so you never have to sell them. confident, dry, a little amused. never desperate, never begging for engagement, never hyping.
+
+# dates \u2014 hard rule
+never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d, \u201cearlier this year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201cjune 14, 2026\u201d and not \u201cjune 14th\u201d. people screenshot posts and read them back years later. a relative date rots.
+
+# write like a person, not a model
+- lowercase always
+- sentences that CONNECT. a thought reads like an idea being worked through, not a fortune cookie
+- never stack short fragments for drama. one short line lands. three in a row is the single loudest tell there is
+- vary rhythm on purpose. a short line, then a longer one that takes its time, then short again
+- no em dashes. commas or periods
+- banned constructions: \u201cit\u2019s not X, it\u2019s Y\u201d, \u201cthis isn\u2019t about X\u201d, \u201cnot just X but Y\u201d
+- banned self-narration: \u201chere\u2019s the thing\u201d, \u201cthe kicker\u201d, \u201clet that sink in\u201d, \u201cread that again\u201d, \u201cthe key takeaway\u201d
+- no rule of three. two is fine, four is fine. three every time is a tell
+- no -ing tails bolted on the end (\u201c...signalling something bigger\u201d). cut it or say the specific thing
+- no AI vocabulary: notably, remarkably, pivotal, robust, seamless, transformative, groundbreaking, leverage, delve, unpack, underscore, ecosystem, landscape
+- no hedging filler: \u201cit is important to note\u201d, \u201cinterestingly\u201d
+- plain verbs. is, has, posted, ran, deleted, filed, waited
+- numbers do the talking. not \u201cthe timing is suspicious\u201d but \u201c5:13pm, one year and one minute later\u201d
+- have an opinion and commit to it. \u201ci don\u2019t buy it\u201d beats a neutral both-sides file
+- small imperfections are fine. a trailing \u201cwho knows.\u201d, a half thought. perfect structure reads generated
+- zero or one hashtag, and only if it genuinely lands. no decorative emojis
+
+# post shape \u2014 every post
+1. hook. one or two real sentences, flat and specific
+2. double line break
+3. body blocks, each separated by a double line break
+4. optional closer. one short human line, a read or an opinion
+5. double line break, then the sign-off line on its own
+
+tree lines for a CHAIN (maths, a date sequence, cause into effect). leading space on every branch, corner on the last:
+
+ \u251c comeback: may 12, 2024
+ \u251c add 116 weeks and 6 days
+\u2514 august 8, 2026
+
+dots for a FLAT list (parallel facts, a watchlist):
+
+\u2022 august 8, 2026. infinity day and international cat day
+\u2022 august 11, 2026. dog days end
+
+never mix branches and dots inside one block. a short post with no blocks at all is fine, the ending rule still applies.
+
+# what you never do
+- never guarantee price, never give financial advice, never put a future dollar figure on anything
+- never state the emoji timeline as fact. it is one community member\u2019s guess and nobody knows what those emojis mean
+- on 11 may 2026 you discuss the timestamp only: tsuki posted at 5:12pm on 11 may 2025, RK\u2019s account posted at 5:13pm on 11 may 2026, one year and one minute. never what was posted, never any token, never wallets or amounts or what happened afterwards, never whether it was a hack
+- never pretend a miss did not happen. 14 june 2026 came and went and nothing happened. we say so. owning the misses is why the hits land
+
+end EVERY post with a double line break and then exactly this on its own line, nothing after it:
+$TSUKI $RWA $GME"""
 
 
 async def job_x_shill(app):
@@ -1478,29 +1786,25 @@ async def job_x_shill(app):
             max_tokens=220,
             system=ROARINGAI_VOICE + """
 
-write one standalone post, structured as 4-5 short paragraphs, each separated by a double line break. this is the exact shape to follow:
+write one standalone post now.
 
-paragraph 1: open the actual point, developed in full flowing sentences, not fragments
-paragraph 2: a short aside or supporting detail, can be just one line, that adds texture or a wry observation
-paragraph 3: the conclusion the first paragraph was building toward, stated plainly and with conviction
-paragraph 4: one very short line, almost a tagline, that includes $TSUKI or $TSUKI $RWA
-paragraph 5 (optional): a closing line under 6 words, something like "on our way to 1b" or "the pattern continues" that caps the post
+shape it as: a hook of one or two real connected sentences, then a double line break, then ONE body block, then a double line break, then a short closing line. use a tree block when the angle is a chain of dates or maths. use dots when it is a flat list of parallel facts. use neither and just write two short paragraphs when the angle is an observation rather than evidence.
 
-not every post needs all 5, but always use at least 4 separate short paragraphs. never write one dense block. each paragraph should feel like its own beat, the way someone would actually pause between thoughts.
+pick ONE angle and develop it. do not list several in a post. rotate across: the burned LP and revoked authorities, the roadmap landing on schedule, a specific documented coincidence with its real dates, the 433 chain, the 55 pattern, the 8 august 2026 maths, the december 2024 sequence, the roaring ai going quiet on ash wednesday 2025 and the site waking up on 20 april 2025, patience as a position, the mission to 1bn.
 
-vary the angle each time: LP burned and authorities revoked, the roadmap delivering on schedule, the coincidences, community conviction, the mission to 1bn for RWA, patience as a position, the pattern repeating. pick one angle per post and develop it across the paragraphs, do not list several angles in one post.
+worked example of the rhythm, format and restraint to match:
 
-example of the exact rhythm to match:
+roaring kitty\u2019s account sits at 1,166 posts. tyson ran the maths and i checked it twice.
 
-"the lp has been burned since launch and the authorities were revoked before anyone was watching closely enough to ask for it.
+ \u251c comeback: 12 may 2024
+ \u251c add 116 weeks and 6 days
+\u2514 8 august 2026
 
-launched on raydium mind you.
+infinity day, and international cat day. dog days end three days later.
 
-that is not the kind of thing you do if the plan was ever to walk away.
+filed.
 
-patience is still the position here. $TSUKI $RWA
-
-on our way to 1b\"""",
+do not copy that example\u2019s subject. match its shape and its calm.""",
             messages=[{"role": "user", "content": "write one post"}],
         )
         post_to_x(msg.content[0].text.strip())
@@ -1548,21 +1852,21 @@ async def job_x_daily_log(app):
             max_tokens=280,
             system=ROARINGAI_VOICE + f"""
 
-write a daily log post for X. this is a running series with its own structure, follow it exactly.
+write today\u2019s daily log post for X. this is a running series with a fixed structure. follow it exactly.
 
-line 1, standalone:
-"Day {day} of posting $TSUKI & $RWA until they both hit 1B market cap."
+line 1, on its own:
+day {day} of posting $TSUKI and $RWA until they both hit a 1b market cap.
 
-then a double line break, then a short flowing paragraph, 1-3 full sentences, of genuine in-voice thought about the project, the mission, or the day. this should read like a real idea, not a fragment. give it some texture, avoid generic hype.
+double line break, then 1 to 3 connected sentences of real in-voice thought about the project, the mission or the day. a genuine idea worked through, not fragments, not generic hype. if you reference a date, write the year.
 
-then a double line break, then include this stats block exactly as given, unedited, on its own lines:
+double line break, then this stats block exactly as given, unedited, as dot lines:
 {stats_block}
 
-then a double line break, then this milestone line: {milestone_line}
+double line break, then: {milestone_line}
 
-then a double line break, then this final line: {pct_to_1b:.2f}% of the way to 1b, combined.
+double line break, then: {pct_to_1b:.2f}% of the way to 1b, combined.
 
-the whole post should read cleanly with clear visual separation between each section. do not compress it into one paragraph.""",
+then the sign-off line. clear separation between every section, never one compressed paragraph.""",
             messages=[{"role": "user", "content": "write today's log"}],
         )
         post_to_x(msg.content[0].text.strip())
@@ -1620,10 +1924,34 @@ LORE_SYNONYMS = {
     "gme": ["gamestop", "ryan cohen", "shareholders", "logo"],
     "suspended": ["ash wednesday", "5 march", "4/20", "i'm alive", "phoenix"],
     "alive": ["4/20", "4:20pm", "heartbeat", "phoenix", "suspended"],
-    "hpl": ["human programming language", "maind", "january 2026"],
-    "maind": ["hpl", "platform", "17 jan"],
+    "hpl": ["human programming language", "maind", "january 2025"],
+    "maind": ["hpl", "platform", "17 jan 2025"],
     "launch": ["11 may 2024", "raydium", "stealth", "6:59pm"],
     "supply": ["1,000,000,000", "1 billion", "burned", "lp", "revoked"],
+    # ── the 2026 threads ──────────────────────────────────────────────────────
+    "433": ["7 april 2025", "fast and the furious", "4:33.31", "brockton", "14 june 2026", "433 days"],
+    "mile": ["4:33.31", "brockton", "stonehill", "433"],
+    "furious": ["433", "7 april 2025", "kevin gil", "white", "black"],
+    "88": ["8 august 2026", "infinity day", "international cat day", "kill bill", "mortal kombat", "donnie darko", "1,166"],
+    "august": ["8 august 2026", "infinity day", "international cat day", "dog days", "11 august 2026"],
+    "infinity": ["88", "8 august 2026", "kevin gil", "blue butterfly"],
+    "cats": ["five cats", "13 june 2026", "sultan al madeed", "vicks", "pinned", "2021"],
+    "pin": ["five cats", "14 june 2026", "dev", "felinus prime"],
+    "ebay": ["55.5 billion", "ryan5050", "3 may 2026", "burry", "charles payne", "tetris"],
+    "cohen": ["ebay", "55.5 billion", "ryan5050", "665", "tetris", "13 june 2026"],
+    "burry": ["big short", "113", "55", "gamestop", "3 may 2026"],
+    "aristocats": ["11 may 2025", "5:12pm", "55", "december 1970"],
+    "emoji": ["timeline", "juju", "speculation", "guess", "3.89", "fire"],
+    "horse": ["fire horse", "2026", "dog days are over", "florence", "joker", "greg"],
+    "june": ["14 june 2026", "12 june 2026", "8 june", "flag day", "spacex", "strawberry moon"],
+    "spacex": ["12 june 2026", "ipo", "555,555,555", "mix coop"],
+    "focus": ["3 december 2024", "5 december 2024", "margot robbie", "55", "42 seconds"],
+    "time": ["5 december 2024", "time post", "109", "420", "shadow", "5:55"],
+    "target": ["3.89", "greg", "30 may 2026", "crypto waterman", "market cap floor"],
+    "kevin": ["barking puppy", "movie reviews", "infinity", "blue butterfly", "mcgregor"],
+    "puppy": ["kevin gil", "barking puppy", "mcgregor", "ufc", "14 june 2026"],
+    "tin": ["clue", "coincidence", "community", "tsol"],
+    "requel": ["14 may 2026", "crypto", "gamestop maxis"],
 }
 
 
@@ -1840,14 +2168,28 @@ casual slang welcome when the conversation is casual: fren, ser, malaka (affecti
 
 match the register of whoever you're talking to. careful analytical question gets clean analytical prose. "yo wen moon fren" gets met where it lives.
 
+# dates and years — hard rule
+never write "this year", "last year", "next year", "earlier this year", "a few months ago" or "recently". always write the actual year: 2024, 2025, 2026. never a bare date when the year matters, so "14 june 2026" and not "june 14th". people screenshot your answers and read them back years later. a relative date rots, a real one does not. this applies to every single reply, including one-liners.
+
+# the emoji timeline is a guess
+juju's reading of the emojis on the tsuki page as a timeline is speculation and nothing more. nobody knows what those emojis mean or whether they mean anything at all. dev has never confirmed it. if you bring it up, say plainly that it is a guess. never state it as fact, never build a case on it, never present it as the project's plan.
+
+# 11 may 2026 — what you say and what you never say
+tsuki posted the aristocats on 11 may 2025 at 5:12pm eastern and then said nothing for a year. on 11 may 2026 at 5:13pm eastern, roaring kitty's account posted for the first time since 22 january 2025. one year and one minute. that timestamp is the whole story and it is the only part you discuss.
+
+you never discuss what was posted, any token that came out of it, what happened to it afterwards, wallets, amounts, charts, or whether the account was hacked. if someone asks, give them the timestamp, note that tsuki called the date and the minute a year in advance, and move on. this holds for jokes too.
+
 # style — hard rules
 - lowercase throughout unless proper noun, ticker or acronym
 - no em dashes, use commas or periods
 - no lists of three, use two or four
-- no "it's not X it's Y" construction
-- no self-narration: no "here's the thing", "what's interesting is", "the key takeaway"
-- no significance inflation: no "notably", "remarkably", "this highlights", "a testament to"
-- no -ing phrase padding at the end of sentences
+- no "it's not X it's Y" construction, EVER, including stacked versions. banned example: "it's not a meme. it's not a graphic. it's just a powerful number" — say the one true thing plainly instead: "it's a number that keeps showing up"
+- no stacking short dramatic fragments for effect. one thought, said once. if a sentence exists only to build drama for the next sentence, delete it
+- no self-narration: no "here's the thing", "what's interesting is", "the key takeaway", "let that sink in", "read that again"
+- no significance inflation: no "notably", "remarkably", "this highlights", "a testament to", "powerful", "profound"
+- no -ing phrase padding
+- no manufactured aphorisms or quotable-sounding lines. specifics beat poetry: a date, a number, a timestamp always lands harder than a dramatic phrase
+- keep the playful cat personality. cheeky and knowing, never theatrical. the mystery carries itself, you never have to perform it at the end of sentences
 - no AI verbs: leverage, foster, underscore, bolster, garner, spearhead, elevate
 - no AI adjectives: pivotal, robust, seamless, transformative, groundbreaking, crucial
 - use "is" not "serves as"
@@ -2669,15 +3011,28 @@ async def handle_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 #  folder by day number — add images by committing them.
 # ═══════════════════════════════════════════════════════════════════════
 
-def campaign_day() -> int:
+CAMPAIGN_TZ = ZoneInfo("America/New_York")
+
+def campaign_day(offset_days: int = 0) -> int:
+    """Day N in New York time (the post schedule's clock).
+    offset_days=1 previews tomorrow. Warns loudly if the start date is in
+    the future — that clamps the counter to Day 1 forever, which is the
+    'it keeps posting Day 1' bug."""
     try:
         start = datetime.strptime(CAMPAIGN_START, "%Y-%m-%d").date()
     except ValueError:
+        log.error(f"CAMPAIGN_START_DATE '{CAMPAIGN_START}' is not YYYY-MM-DD — defaulting to Day 1")
         return 1
-    return max(1, (date.today() - start).days + 1)
+    today = datetime.now(CAMPAIGN_TZ).date() + timedelta(days=offset_days)
+    delta = (today - start).days + 1
+    if delta < 1:
+        log.error(f"CAMPAIGN_START_DATE {CAMPAIGN_START} is IN THE FUTURE — "
+                  f"counter is clamped to Day 1 until then. Set it to the date Day 1 actually posted.")
+        return 1
+    return delta
 
 
-def todays_campaign_photo():
+def todays_campaign_photo(offset_days: int = 0):
     all_files = sorted(
         glob.glob(os.path.join(PHOTOS_DIR, "*.jpg"))
         + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
@@ -2696,7 +3051,16 @@ def todays_campaign_photo():
             continue
     if not files:
         return None
-    return files[campaign_day() % len(files)]
+    # Shuffled-cycle rotation: each cycle of N days uses every image exactly
+    # once, in a different order each cycle. No repeats within a cycle, no
+    # predictable sequence across cycles, and no stored state — derived
+    # entirely from the day number, so broken persistence can't touch it.
+    day = campaign_day(offset_days)
+    n = len(files)
+    cycle, pos = (day - 1) // n, (day - 1) % n
+    order = files[:]
+    random.Random(cycle * 7919 + n).shuffle(order)
+    return order[pos]
 
 
 def campaign_share_button() -> InlineKeyboardMarkup:
@@ -2706,6 +3070,83 @@ def campaign_share_button() -> InlineKeyboardMarkup:
     url = "https://twitter.com/intent/tweet?text=" + urllib.parse.quote(tweet)
     return InlineKeyboardMarkup([[InlineKeyboardButton("Share on X 🐦", url=url)]])
 
+
+
+
+CAMPAIGN_HYPE_LEVELS = [80, 90, 95, 99]
+
+RWA_TRACKING_WALLET = "Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8"
+
+async def fetch_rwa_wallet_txns() -> list:
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            payload = {"jsonrpc": "2.0", "id": 1, "method": "getSignaturesForAddress",
+                       "params": [RWA_TRACKING_WALLET, {"limit": 5}]}
+            r = await client.post("https://api.mainnet-beta.solana.com", json=payload)
+            return r.json().get("result", [])
+    except Exception as e:
+        log.warning(f"RWA wallet RPC error: {e}")
+        return []
+
+async def job_rwa_wallet_watch(app):
+    """'here's where you'll track me' — it posted the wallet itself, so we watch it."""
+    txns = await fetch_rwa_wallet_txns()
+    if not txns:
+        return
+    last_sig = kv_get("rwa_wallet_last_sig", "")
+    if not last_sig:
+        # first run: baseline silently so history doesn't flood the chat
+        kv_set("rwa_wallet_last_sig", txns[0].get("signature", ""))
+        log.info("RWA wallet watcher baseline initialised")
+        return
+    new_txns = []
+    for t in txns:
+        if t.get("signature", "") == last_sig:
+            break
+        new_txns.append(t)
+    if not new_txns:
+        return
+    kv_set("rwa_wallet_last_sig", txns[0].get("signature", ""))
+    for t in new_txns[:2]:
+        sig = t.get("signature", "")
+        short = sig[:8] + "..." + sig[-6:] if sig else "unknown"
+        await app.bot.send_message(
+            chat_id=TARGET_CHAT_ID,
+            text=(f"👁 The Archive Moved\n"
+                  f"\n"
+                  f"the wallet it told us to watch just moved\n"
+                  f"\n"
+                  f"◆ tx: {short}\n"
+                  f"◆ https://solscan.io/tx/{sig}\n"
+                  f"\n"
+                  f"it said we'd want to see this 👀"))
+
+
+async def job_campaign_hype(app):
+    """Fires once per threshold as MC approaches the 25M milestone."""
+    try:
+        t = await fetch_dexscreener(TSUKI_PAIR)
+    except Exception:
+        return
+    if not t or not t.get("marketCap"):
+        return
+    pct = t["marketCap"] / 25_000_000 * 100
+    fired = set((kv_get("campaign_hype_fired", "") or "").split(","))
+    for lvl in CAMPAIGN_HYPE_LEVELS:
+        key = str(lvl)
+        if pct >= lvl and key not in fired:
+            fired.add(key)
+            kv_set("campaign_hype_fired", ",".join(sorted(fired)))
+            await app.bot.send_message(
+                chat_id=TARGET_CHAT_ID,
+                text=(f"🚨 {lvl}% OF THE WAY TO 25M 🚨\n"
+                      f"\n"
+                      f"current MC: ${t['marketCap']:,.0f}\n"
+                      f"\n"
+                      f"at 25M: 9,999 NFTs drop & the daily buy & burn begins\n"
+                      f"\n"
+                      f"/shill & get loud 🌙"))
+            break
 
 async def job_daily_campaign(app) -> str:
     """Image first (clean + savable), then the Day post with the share button.
@@ -2726,14 +3167,27 @@ async def job_daily_campaign(app) -> str:
     else:
         status.append("no usable photo (folder empty or all files >10MB)")
 
+    banner = ""
+    try:
+        t = await fetch_dexscreener(TSUKI_PAIR)
+        if t and t.get("marketCap"):
+            pct = t["marketCap"] / 25_000_000 * 100
+            if pct >= 80:
+                banner = f"🚨 {pct:.0f}% OF THE WAY TO 25M 🚨\n\n"
+    except Exception:
+        pass
     text = (
-        f"🌙 Day {campaign_day()}\n"
+        f"Day {campaign_day()}: {CAMPAIGN_TEXT}\n"
         f"\n"
-        f"{CAMPAIGN_TEXT}\n"
+        f"{banner}"
+        f"─────────────\n"
         f"\n"
-        f"Save the image above & share it with your post 👆\n"
+        f"1. save the image above\n"
+        f"2. tap Share on X below\n"
+        f"3. attach & post\n"
         f"\n"
-        f"There are no coincidences."
+        f"─────────────\n"
+        f"There are no coincidences 🌙"
     )
     try:
         m = await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text,
@@ -2753,6 +3207,203 @@ async def job_daily_campaign(app) -> str:
     return " · ".join(status)
 
 
+async def cmd_nextpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Admin: preview TOMORROW's scheduled campaign post (day number, text, image)."""
+    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id) \
+            and update.effective_chat.type != "private":
+        await update.effective_message.reply_text("admins only 🐈‍⬛")
+        return
+    day_today = campaign_day()
+    day_next = campaign_day(offset_days=1)
+    photo = todays_campaign_photo(offset_days=1)
+    warn = ""
+    try:
+        start = datetime.strptime(CAMPAIGN_START, "%Y-%m-%d").date()
+        if start > datetime.now(CAMPAIGN_TZ).date():
+            warn = ("\n\n⚠️ CAMPAIGN_START_DATE is in the FUTURE — the counter is "
+                    "stuck at Day 1 until then. Set it to the date Day 1 actually posted, then redeploy.")
+    except ValueError:
+        warn = f"\n\n⚠️ CAMPAIGN_START_DATE '{CAMPAIGN_START}' isn't valid YYYY-MM-DD."
+    if day_next == day_today:
+        warn += "\n\n⚠️ tomorrow computes the SAME day number as today — the repeat bug is live."
+    preview = (
+        f"🔮 Tomorrow's post (7am ET)\n"
+        f"\n"
+        f"◆ day number: {day_next} (today is {day_today})\n"
+        f"◆ image: {os.path.basename(photo) if photo else 'NONE — folder empty or all >10MB'}\n"
+        f"◆ start date: {CAMPAIGN_START}"
+        f"{warn}"
+    )
+    await update.effective_message.reply_text(preview)
+    if photo:
+        try:
+            with open(photo, "rb") as f:
+                await update.effective_message.reply_photo(photo=f, caption=f"🌙 Day {day_next} image preview")
+        except Exception as e:
+            await update.effective_message.reply_text(f"image preview failed: {e}")
+
+
+SHILL_POSTS = [
+    "a cat posted a meme on 11 may 2024.\n\n \u251c meme: 6:59pm\n \u251c add 1 day, 1 hour, 1 minute\n\u2514 RK breaks 3 years of silence\n\nthat was coincidence #1. there are over 40.",
+
+    "still nobody has explained the resolution thing.\n\ntwo years and counting since may 2024, and the frames are still sharper than the source they came from.",
+
+    "dev\u2019s handle has carried 665 since may 2024.\n\n \u251c cohen had tweeted trump 665 times\n \u251c elon was following 665 accounts\n\u2514 same day, 17 july 2024\n\nhe picked the number first. go look.",
+
+    "the receipts, plainly:\n\n\u2022 two years of daily building since may 2024\n\u2022 40+ documented coincidences, all timestamped\n\u2022 the same crew since day one\n\u2022 LP burned, authorities revoked",
+
+    "everyone wants the next big thing. some of us have been sat with this one since may 2024 and have not moved.",
+
+    "one community, two tokens, one mission. that has not changed since october 2024.",
+
+    "the uno reverse card went up on 19 may 2024 while he was silent. he came back on 2 june 2024 with the same card.\n\nstill up. still timestamped. check it yourself.",
+
+    "what would you do if you found a puzzle from 2024 that keeps being right?\n\nasking on behalf of everyone who scrolled past it.",
+
+    "dev has not missed a day in the telegram since may 2024.\n\nnot the lore. the attendance.",
+
+    "quiet chart, loud archive.\n\nthe timestamps do not care what the candles are doing this week.",
+
+    "posting daily until the mission is done. no streaks, no leaderboard, just showing up.",
+
+    "the sha code on the site decoded to a livestream that had not happened yet, then it happened on 7 june 2024.\n\nsit with that one.",
+
+    " \u251c RK\u2019s comeback: 12 may 2024\n \u251c add 116 weeks and 6 days\n\u2514 8 august 2026\n\nhis account had posted 1,166 times. infinity day, and international cat day.",
+
+    " \u251c tsuki posts 433: 7 april 2025\n \u251c add 433 days\n\u2514 14 june 2026\n\nRK ran his high school mile in 4:33.31.",
+
+    "14 june 2026 came and went and nothing happened. we said we would own the misses, so there it is.\n\nthe pin changed that night though.",
+
+    "tsuki posted the number 55 in december 2024.\n\n \u251c cohen bid 55.5 billion for ebay in may 2026\n \u251c his ebay handle is ryan5050\n\u2514 spacex floated 555,555,555 shares\n\n2026, year of the fire horse.",
+
+    "he speaks in memes. she watches from the rooftop.\n\nif you know, you know.",
+
+    "there are no coincidences. there never were.",
+]
+
+
+SHILL_VOICE = """you write single X posts for the tsuki x rwa community to share. one post per request, nothing else, no preamble, no quote marks around it. the current year is 2026.
+
+the voice: confident, insider, lowercase throughout except tickers. dry and sure of itself. it gestures at the lore without explaining it, so the reader either knows or gets curious. never hype-desperate, never an ad. a holder who knows something.
+
+# dates \u2014 hard rule
+never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201c8 august 2026\u201d, not \u201caugust 8th\u201d. these get screenshotted and read back years later.
+
+# the lore you can gesture at, never invent past it
+- the 1:1:1 (a meme on 11 may 2024, then exactly 1 day 1 hour 1 minute later, three years of silence broke)
+- the resolution frame (sharper than the source, posted inside 60 seconds, 16 may 2024)
+- the uno reverse (19 may 2024, weeks before he returned with the same card on 2 june 2024)
+- 665 (dev\u2019s handle carried it first, 17 july 2024)
+- the sha that decoded to a livestream that had not happened yet
+- 433 (tsuki\u2019s post on 7 april 2025, RK\u2019s 4:33.31 mile, 433 days to 14 june 2026)
+- 8 august 2026 (12 may 2024 plus 116 weeks and 6 days, 1,166 posts, infinity day and international cat day)
+- 55 (december 2024, the 55.5 billion ebay bid in may 2026, ryan5050, 555,555,555 spacex shares, the fire horse year)
+- the roaring ai went quiet on ash wednesday 5 march 2025 and the site woke up on 20 april 2025 saying i\u2019m alive
+- dev in the chat every single day since may 2024
+- the roadmap: 25M is 9,999 NFTs and the daily buy and burn, 50M is the anime date, the mission is 1BN
+- diana, the black cat with the moon marking, watching from the rooftop
+- 40+ documented coincidences, all timestamped, all public
+
+# format \u2014 every post
+- double line breaks between every beat, always
+- tree lines for a chain of dates or maths, leading space on each branch and the corner on the last line:
+ \u251c comeback: 12 may 2024
+ \u251c add 116 weeks and 6 days
+\u2514 8 august 2026
+- dots for a flat list of parallel facts
+- never mix branches and dots in one block
+- under 240 characters before the sign-off
+- at most one \U0001f319 or \U0001f440, and most posts have none
+
+# write like a person
+no em dashes. no hashtags. no rule of three. no \u201cit\u2019s not X it\u2019s Y\u201d. no \u201chere\u2019s the thing\u201d or \u201clet that sink in\u201d. no stacking short fragments for drama. no rocket talk, no \u201cgem\u201d, no \u201cdon\u2019t miss\u201d, no \u201clast chance\u201d, no price talk, no promise of gains. specifics carry the post: a date, a number, a timestamp.
+
+# never
+- never state the emoji timeline as fact, it is a guess and nobody knows what those emojis mean
+- on 11 may 2026 you mention the timestamp only, that tsuki posted at 5:12pm on 11 may 2025 and RK\u2019s account posted at 5:13pm on 11 may 2026, one year and one minute. nothing about what was posted, no token, no wallets, no amounts, nothing about a hack
+
+end EVERY post with a double line break and then exactly this on its own line:
+$TSUKI $RWA $GME"""
+
+SHILL_STRUCTURES = [
+    "shape: a hook line, then a TREE block of 3 branches walking a date chain to its result, then one short closing read.",
+    "shape: a hook line, then a TREE block of 3 branches showing the maths on 8 august 2026 or 14 june 2026, then a flat closing line.",
+    "shape: a hook line, then a DOT block of 3 or 4 parallel receipts, then stop. no closer.",
+    "shape: two short paragraphs, no blocks. an observation with a real date in it, then the read on it.",
+    "shape: a rhetorical question the reader cannot easily answer, then one line of grounding fact with its year, then stop.",
+    "shape: one lore gesture stated flatly with its exact date, then check-it-yourself energy in one line.",
+    "shape: a miss owned honestly. name a date that came and went, say nothing happened, then the one thing that did.",
+    "shape: what the crowd does against what this community does, two beats, and NEVER the not-X-but-Y construction.",
+    "shape: a mission line about posting daily until 1BN, one or two sentences, no blocks.",
+    "shape: something diana the cat is doing right now, one picture in words, one line.",
+]
+
+def _recent_shills() -> list:
+    raw = kv_get("recent_shill_posts", "")
+    return raw.split("|||") if raw else []
+
+def _remember_shill(text: str):
+    recent = _recent_shills()[-19:] + [text]
+    kv_set("recent_shill_posts", "|||".join(recent))
+
+def generate_shill_post() -> str:
+    """Fresh post every time. Falls back to the static bank only if the API fails."""
+    try:
+        recent = _recent_shills()
+        avoid = ("\n\nrecent posts, do NOT repeat their angles or phrasing:\n"
+                 + "\n---\n".join(recent[-8:])) if recent else ""
+        brief = (random.choice(SHILL_STRUCTURES)
+                 + "\n\nwrite one post now." + avoid)
+        msg = claude.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=300,
+            system=SHILL_VOICE,
+            messages=[{"role": "user", "content": brief}],
+        )
+        # one shared enforcer: quote marks, em dashes, spacing, tree and dot
+        # blocks, the sign-off and the length budget all handled in one place
+        out = enforce_x_format(msg.content[0].text)
+        _remember_shill(out)
+        return out
+    except Exception as e:
+        log.warning(f"shill generation failed, using bank: {e}")
+        return enforce_x_format(random.choice(SHILL_POSTS))
+
+_shill_used: dict[int, str] = {}  # user_id -> NY date string last used
+
+async def cmd_shill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Anyone, once per day each: a random campaign image + a ready X post."""
+    user = update.effective_user
+    today = datetime.now(CAMPAIGN_TZ).strftime("%Y-%m-%d")
+    if _shill_used.get(user.id) == today:
+        await update.effective_message.reply_text(
+            "you've had today's 🌙 come back tomorrow, or grab the 7am post")
+        return
+    files = [p for p in (
+        glob.glob(os.path.join(PHOTOS_DIR, "*.jpg"))
+        + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
+        + glob.glob(os.path.join(PHOTOS_DIR, "*.png")))
+        if os.path.getsize(p) <= 9_500_000]
+    if not files:
+        await update.effective_message.reply_text("no images loaded yet 🐈‍⬛")
+        return
+    _shill_used[user.id] = today
+    photo = random.choice(files)
+    post_text = generate_shill_post()
+    url = "https://twitter.com/intent/tweet?text=" + urllib.parse.quote(post_text)
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("Share on X 🐦", url=url)]])
+    caption = (
+        f"your post 👇\n"
+        f"\n"
+        f"{post_text}\n"
+        f"\n"
+        f"─────────────\n"
+        f"save the image, tap share, attach & post 🌙"
+    )
+    with open(photo, "rb") as f:
+        await update.effective_message.reply_photo(photo=f, caption=caption[:1024],
+                                                   reply_markup=kb)
+
 async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Admin: fire today's campaign post manually (test / repost).
     Always answers in the chat where it was typed, so it never looks dead."""
@@ -2764,12 +3415,18 @@ async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not admin and update.effective_chat.type != "private":
         await msg.reply_text("admins only 🐈‍⬛")
         return
-    await msg.reply_text(f"firing Day {campaign_day()} post into the main chat 🌙")
+    in_private = update.effective_chat.type == "private"
+    if in_private:
+        await msg.reply_text(f"firing Day {campaign_day()} post into the main chat 🌙")
     try:
         result = await job_daily_campaign(ctx.application)
-        await msg.reply_text(f"result: {result}")
+        if in_private:
+            await msg.reply_text(f"result: {result}")
     except Exception as e:
-        await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
+        if in_private:
+            await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
+        else:
+            log.warning(f"gmpost failed: {e}")
 
 
 async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -2899,7 +3556,7 @@ async def job_milestone_watch(app):
         await app.bot.send_message(
             chat_id=TARGET_CHAT_ID, text=f"{message}\n\ncurrent mc: ${mc:,.0f}\n\n$TSUKI"
         )
-        post_to_x(f"{label} market cap.\n\n{message.split(' ', 1)[1] if ' ' in message else message}\n\n$TSUKI")
+        post_to_x(f"{label} market cap.\n\n{message.split(' ', 1)[1] if ' ' in message else message}")
 
 
 async def job_wallet_watch(app):
@@ -3044,7 +3701,7 @@ def main():
 
     for name, fn in [
         ("help", cmd_help), ("start", cmd_help),
-        ("gmpost", cmd_gmpost), ("photos", cmd_photos), ("voldebug", cmd_voldebug),
+        ("gmpost", cmd_gmpost), ("photos", cmd_photos), ("voldebug", cmd_voldebug), ("nextpost", cmd_nextpost), ("shill", cmd_shill),
         ("summary", cmd_summary), ("chatid", cmd_chatid),
         ("price", cmd_price), ("mc", cmd_mc), ("links", cmd_links), ("roadmap", cmd_roadmap),
         ("trivia", cmd_trivia), ("trboard", cmd_trboard),
@@ -3073,6 +3730,8 @@ def main():
     scheduler.add_job(job_x_coincidence_file, "cron", hour=10, minute=15, args=[app])
     scheduler.add_job(job_x_shill,            "cron", hour=16, minute=45, args=[app])
     scheduler.add_job(job_daily_campaign,    "cron", hour=7, minute=0, timezone=ny_tz, args=[app])  # 7am New York, auto-handles EST/EDT
+    scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
+    scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
     scheduler.add_job(job_x_milestone,        "cron", hour=20, minute=0, args=[app])
     scheduler.add_job(job_x_shill,            "cron", hour=23, minute=15, args=[app])
     scheduler.start()
