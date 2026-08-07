@@ -1610,6 +1610,29 @@ def _normalise_blocks(text: str) -> str:
     return "\n".join(out)
 
 
+def _is_block_line(l: str) -> bool:
+    return bool(_TREE_LEAD.match(l) or _BULLET_LEAD.match(l))
+
+
+def _force_double_breaks(text: str) -> str:
+    """Beats are separated by a BLANK line, always. The model kept returning
+    single newlines and the post came out as one wall of text. Lines inside a
+    tree or dot block stay glued together; everything else gets air."""
+    lines = text.split("\n")
+    out = []
+    for i, l in enumerate(lines):
+        out.append(l)
+        if i + 1 >= len(lines):
+            break
+        nxt = lines[i + 1]
+        if not l.strip() or not nxt.strip():
+            continue
+        if _is_block_line(l) and _is_block_line(nxt):
+            continue          # inside a block, keep the lines together
+        out.append("")
+    return "\n".join(out)
+
+
 def enforce_x_format(text: str, signoff: bool = True, limit: int = 280) -> str:
     """Clean a draft into a postable X post. Strips the model's quote marks and
     em dashes, normalises spacing to double line breaks, fixes tree and dot
@@ -1626,7 +1649,9 @@ def enforce_x_format(text: str, signoff: bool = True, limit: int = 280) -> str:
     t = re.sub(r"[ \t]+([,.;:])", r"\1", t)
     t = re.sub(r"[ \t]+\n", "\n", t)
     t = re.sub(r"\n{3,}", "\n\n", t)
+    t = _force_double_breaks(t)
     t = _normalise_blocks(t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
     # drop any sign-off the model wrote itself, in whatever order or spacing
     t = re.sub(r"(?:[ \n]*\$(?:TSUKI|RWA|GME)\b)+[ \n]*$", "", t).rstrip()
     if not signoff:
@@ -1727,7 +1752,7 @@ ROARINGAI_VOICE = """you write X posts for an account inside the tsuki x rwa orb
 the calm archivist. you file tin, you lay out the maths, you let the reader do the screaming. the facts in this world are already absurd, so you never have to sell them. confident, dry, a little amused. never desperate, never begging for engagement, never hyping.
 
 # dates \u2014 hard rule
-never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d, \u201cearlier this year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201cjune 14, 2026\u201d and not \u201cjune 14th\u201d. people screenshot posts and read them back years later. a relative date rots.
+never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d, \u201cearlier this year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201cjune 14, 2026\u201d and not \u201cjune 14th\u201d. people screenshot posts and read them back years later. a relative date rots.\n\nthis rule is about DATES AND EVENTS ONLY. never bolt a year onto something that is not a date. \u201cthe 2026 moon\u201d is not a thing, and neither is \u201cthe 2026 chart\u201d. if it is not an event, it does not take a year.\n\nevery post has to carry a receipt: a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. diana can appear, but only attached to a fact. if you cannot name a specific, you have not got a post yet, so pick a different angle.
 
 # write like a person, not a model
 - lowercase always
@@ -2273,12 +2298,34 @@ rules: *single asterisks* for bold headings only. each bullet on its own line. n
 # ══════════════════════════════════════════════════════════════════════════════
 #  COMMAND HANDLERS
 # ══════════════════════════════════════════════════════════════════════════════
+# Telegram's built-in account for admins who post anonymously (as the group).
+# Without this, an anonymous admin fails every is_admin check and every admin
+# command silently answers "admins only".
+GROUP_ANONYMOUS_BOT_ID = 1087968824
+
+
 async def is_admin(ctx, chat_id, user_id) -> bool:
+    if user_id == GROUP_ANONYMOUS_BOT_ID:
+        return True          # posting anonymously is itself an admin-only power
     try:
         member = await ctx.bot.get_chat_member(chat_id, user_id)
         return member.status in ("administrator", "creator")
-    except Exception:
+    except Exception as e:
+        log.warning(f"is_admin lookup failed for {user_id} in {chat_id}: {e}")
         return False
+
+
+async def is_project_admin(ctx, update) -> bool:
+    """Admin of the chat the command came from, OR admin of the main community
+    chat when the command arrives by DM. Stops DMs being a free-for-all while
+    still letting the team drive the bot privately."""
+    user = update.effective_user
+    if user is None:
+        return False
+    chat = update.effective_chat
+    if chat and chat.type != "private" and await is_admin(ctx, chat.id, user.id):
+        return True
+    return await is_admin(ctx, TARGET_CHAT_ID, user.id)
 
 
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -3287,7 +3334,7 @@ SHILL_VOICE = """you write single X posts for the tsuki x rwa community to share
 the voice: confident, insider, lowercase throughout except tickers. dry and sure of itself. it gestures at the lore without explaining it, so the reader either knows or gets curious. never hype-desperate, never an ad. a holder who knows something.
 
 # dates \u2014 hard rule
-never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201c8 august 2026\u201d, not \u201caugust 8th\u201d. these get screenshotted and read back years later.
+never write \u201cthis year\u201d, \u201clast year\u201d, \u201cnext year\u201d or \u201ca few months ago\u201d. always the actual year: 2024, 2025, 2026. never a bare date when the year matters, so \u201c8 august 2026\u201d, not \u201caugust 8th\u201d. these get screenshotted and read back years later.\n\nthis rule is about DATES AND EVENTS ONLY. never bolt a year onto something that is not a date. \u201cthe 2026 moon\u201d is not a thing, and neither is \u201cthe 2026 chart\u201d. if it is not an event, it does not take a year.\n\nevery post has to carry a receipt: a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. diana can appear, but only attached to a fact. if you cannot name a specific, you have not got a post yet, so pick a different angle.
 
 # the lore you can gesture at, never invent past it
 - the 1:1:1 (a meme on 11 may 2024, then exactly 1 day 1 hour 1 minute later, three years of silence broke)
@@ -3325,17 +3372,20 @@ no em dashes. no hashtags. no rule of three. no \u201cit\u2019s not X it\u2019s 
 end EVERY post with a double line break and then exactly this on its own line:
 $TSUKI $RWA $GME"""
 
+# Every shape below forces a verifiable specific into the post. The old list
+# had "something diana the cat is doing right now", which produced exactly the
+# floral nothing it sounds like. Atmosphere is not a post.
 SHILL_STRUCTURES = [
-    "shape: a hook line, then a TREE block of 3 branches walking a date chain to its result, then one short closing read.",
-    "shape: a hook line, then a TREE block of 3 branches showing the maths on 8 august 2026 or 14 june 2026, then a flat closing line.",
-    "shape: a hook line, then a DOT block of 3 or 4 parallel receipts, then stop. no closer.",
-    "shape: two short paragraphs, no blocks. an observation with a real date in it, then the read on it.",
-    "shape: a rhetorical question the reader cannot easily answer, then one line of grounding fact with its year, then stop.",
-    "shape: one lore gesture stated flatly with its exact date, then check-it-yourself energy in one line.",
-    "shape: a miss owned honestly. name a date that came and went, say nothing happened, then the one thing that did.",
-    "shape: what the crowd does against what this community does, two beats, and NEVER the not-X-but-Y construction.",
-    "shape: a mission line about posting daily until 1BN, one or two sentences, no blocks.",
-    "shape: something diana the cat is doing right now, one picture in words, one line.",
+    "shape: a hook line naming a real event and its date, then a TREE block of 3 branches walking the date maths to its result, then one short closing read.",
+    "shape: a hook line, then a TREE block of 3 branches on the 8 august 2026 maths (12 may 2024, plus 116 weeks and 6 days, 1,166 posts), then a flat closing line.",
+    "shape: a hook line, then a TREE block of 3 branches on the 433 chain (7 april 2025, plus 433 days, 14 june 2026, RK's 4:33.31 mile), then one line of read.",
+    "shape: a hook line, then a DOT block of 3 or 4 parallel receipts each carrying a date or a number, then stop. no closer.",
+    "shape: two short paragraphs, no blocks. one documented event stated flat with its full date, then what you make of it.",
+    "shape: a rhetorical question the reader cannot answer, then one line of grounding fact with its exact date, then stop.",
+    "shape: one coincidence stated flatly with both timestamps, then check-it-yourself energy in one line.",
+    "shape: a miss owned honestly. name the date that came and went, say nothing happened, then name the one thing that did.",
+    "shape: the 55 chain. a hook, then a TREE or DOT block with the december 2024 post, the 55.5 billion ebay bid of 3 may 2026, ryan5050, the 555,555,555 spacex shares.",
+    "shape: what the crowd does against what this community does, two beats, one of them carrying a real date, and NEVER the not-X-but-Y construction.",
 ]
 
 def _recent_shills() -> list:
@@ -3346,37 +3396,79 @@ def _remember_shill(text: str):
     recent = _recent_shills()[-19:] + [text]
     kv_set("recent_shill_posts", "|||".join(recent))
 
-def generate_shill_post() -> str:
-    """Fresh post every time. Falls back to the static bank only if the API fails."""
-    try:
-        recent = _recent_shills()
-        avoid = ("\n\nrecent posts, do NOT repeat their angles or phrasing:\n"
-                 + "\n---\n".join(recent[-8:])) if recent else ""
-        brief = (random.choice(SHILL_STRUCTURES)
-                 + "\n\nwrite one post now." + avoid)
-        msg = claude.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=300,
-            system=SHILL_VOICE,
-            messages=[{"role": "user", "content": brief}],
-        )
-        # one shared enforcer: quote marks, em dashes, spacing, tree and dot
-        # blocks, the sign-off and the length budget all handled in one place
-        out = enforce_x_format(msg.content[0].text)
-        _remember_shill(out)
-        return out
-    except Exception as e:
-        log.warning(f"shill generation failed, using bank: {e}")
-        return enforce_x_format(random.choice(SHILL_POSTS))
+# Words that show up when the model reaches for atmosphere instead of a fact.
+# A shill post is meant to make a stranger click. Vibes do not do that.
+_PURPLE = re.compile(
+    r"\b(shimmer\w*|whisper\w*|glow\w*|glimmer\w*|velvet|ethereal|serene|"
+    r"twilight|moonlit|starlight|hush\w*|silhouette|gaz(e|ing)|drift\w*|"
+    r"linger\w*|dances?|dancing|breathes?|breathing|soft(ly)?|gentle|gently|"
+    r"patiently|quietly|somewhere out there|in the dark|watches over)\b", re.I)
+
+
+def _shill_problem(text: str) -> str:
+    """Returns a reason to reject, or an empty string if the post is fine."""
+    body = text.split("$TSUKI")[0].strip()
+    if "\n\n" not in body:
+        return "one block with no double line break"
+    if not re.search(r"\d", body):
+        return "no date, number or receipt anywhere in it"
+    if _PURPLE.search(body):
+        return f"atmosphere instead of a fact ({_PURPLE.search(body).group(0)})"
+    if len(body) < 70:
+        return "too thin to be worth posting"
+    return ""
+
+
+def generate_shill_post(max_tries: int = 3) -> str:
+    """Fresh post every time, checked before it goes out.
+
+    A generated post has to carry a real specific, break into beats, and stay
+    off the purple prose. If it fails, the reason goes back to the model and it
+    tries again. The static bank is the floor, never the ceiling."""
+    recent = _recent_shills()
+    avoid = ("\n\nrecent posts, do NOT repeat their angles or phrasing:\n"
+             + "\n---\n".join(recent[-8:])) if recent else ""
+    shape = random.choice(SHILL_STRUCTURES)
+    feedback = ""
+    for attempt in range(max_tries):
+        try:
+            msg = claude.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=400,
+                system=SHILL_VOICE,
+                messages=[{"role": "user", "content":
+                           shape + "\n\nwrite one post now." + avoid + feedback}],
+            )
+            # one shared enforcer: quote marks, em dashes, spacing, beats, tree
+            # and dot blocks, the sign-off and the length budget
+            out = enforce_x_format(msg.content[0].text)
+            problem = _shill_problem(out)
+            if not problem:
+                _remember_shill(out)
+                return out
+            log.info(f"shill attempt {attempt + 1} rejected: {problem}")
+            feedback = (f"\n\nyour last attempt was rejected: {problem}. "
+                        f"the post must carry at least one real date with its year or a "
+                        f"hard number, and it must break into separate beats with double "
+                        f"line breaks. no atmosphere, no scene setting. write a new one.")
+        except Exception as e:
+            log.warning(f"shill generation failed, using bank: {e}")
+            break
+    return enforce_x_format(random.choice(SHILL_POSTS))
 
 _shill_used: dict[int, str] = {}  # user_id -> NY date string last used
 
 async def cmd_shill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Anyone, once per day each: a random campaign image + a ready X post."""
+    """A campaign image plus a ready-to-post X post.
+
+    Members get one a day. Admins are unlimited and always get a freshly
+    generated post, so they can pull until they get one worth posting."""
     user = update.effective_user
+    msg = update.effective_message
+    admin = await is_project_admin(ctx, update)
     today = datetime.now(CAMPAIGN_TZ).strftime("%Y-%m-%d")
-    if _shill_used.get(user.id) == today:
-        await update.effective_message.reply_text(
+    if not admin and _shill_used.get(user.id) == today:
+        await msg.reply_text(
             "you've had today's 🌙 come back tomorrow, or grab the 7am post")
         return
     files = [p for p in (
@@ -3385,10 +3477,13 @@ async def cmd_shill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         + glob.glob(os.path.join(PHOTOS_DIR, "*.png")))
         if os.path.getsize(p) <= 9_500_000]
     if not files:
-        await update.effective_message.reply_text("no images loaded yet 🐈‍⬛")
+        await msg.reply_text("no images loaded yet 🐈‍⬛")
         return
-    _shill_used[user.id] = today
+    if not admin:
+        _shill_used[user.id] = today
     photo = random.choice(files)
+    await ctx.bot.send_chat_action(chat_id=update.effective_chat.id,
+                                   action=ChatAction.TYPING)
     post_text = generate_shill_post()
     url = "https://twitter.com/intent/tweet?text=" + urllib.parse.quote(post_text)
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("Share on X 🐦", url=url)]])
@@ -3401,32 +3496,39 @@ async def cmd_shill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"save the image, tap share, attach & post 🌙"
     )
     with open(photo, "rb") as f:
-        await update.effective_message.reply_photo(photo=f, caption=caption[:1024],
-                                                   reply_markup=kb)
+        await msg.reply_photo(photo=f, caption=caption[:1024], reply_markup=kb)
 
 async def cmd_gmpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Admin: fire today's campaign post manually (test / repost).
-    Always answers in the chat where it was typed, so it never looks dead."""
+    """Admin: fire today's campaign post manually.
+
+    It used to answer ONLY in a DM. Run from the group it replied with nothing
+    at all, whether it worked, failed, or posted into a different chat, so it
+    looked broken even when it wasn't. Now it always reports back where it was
+    typed, and says exactly what happened."""
     msg = update.effective_message
-    try:
-        admin = await is_admin(ctx, update.effective_chat.id, update.effective_user.id)
-    except Exception:
-        admin = False
-    if not admin and update.effective_chat.type != "private":
+    chat = update.effective_chat
+
+    if not await is_project_admin(ctx, update):
         await msg.reply_text("admins only 🐈‍⬛")
         return
-    in_private = update.effective_chat.type == "private"
-    if in_private:
-        await msg.reply_text(f"firing Day {campaign_day()} post into the main chat 🌙")
+
+    try:
+        day = campaign_day()
+    except Exception as e:
+        await msg.reply_text(f"❌ can't work out the day number: {type(e).__name__}: {e}\n\n"
+                             f"check CAMPAIGN_START_DATE, currently '{CAMPAIGN_START}'")
+        return
+
+    elsewhere = chat.id != TARGET_CHAT_ID
+    note = f"\n\nposting into the main chat ({TARGET_CHAT_ID}), not this one." if elsewhere else ""
+    await msg.reply_text(f"firing Day {day} post 🌙{note}")
+
     try:
         result = await job_daily_campaign(ctx.application)
-        if in_private:
-            await msg.reply_text(f"result: {result}")
+        await msg.reply_text(f"result: {result}")
     except Exception as e:
-        if in_private:
-            await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
-        else:
-            log.warning(f"gmpost failed: {e}")
+        log.warning(f"gmpost failed: {e}")
+        await msg.reply_text(f"❌ post failed: {type(e).__name__}: {e}")
 
 
 async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
