@@ -4072,3 +4072,12 @@ def main():
     scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
     scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
     scheduler.add_job(job_x_milestone,        "cron", hour=20, minute=0, args=[app])
+    scheduler.add_job(job_x_shill,            "cron", hour=23, minute=15, args=[app])
+    scheduler.start()
+
+    log.info("Tsukiverse Bot running")
+    app.run_polling(allowed_updates=["message"])
+
+
+if __name__ == "__main__":
+    main()
