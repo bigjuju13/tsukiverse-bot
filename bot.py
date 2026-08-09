@@ -58,6 +58,8 @@ log = logging.getLogger("tsuki-bot")
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 ANTHROPIC_API_KEY  = os.environ["ANTHROPIC_API_KEY"]
 TARGET_CHAT_ID     = int(os.environ["TARGET_CHAT_ID"])
+# Config warnings go HERE, not to the community. DM the bot /chatid to get it.
+ADMIN_CHAT_ID      = int(os.environ.get("ADMIN_CHAT_ID", "0") or 0)
 PORT               = int(os.environ.get("PORT", 8080))
 
 # —— Daily $1B campaign post ————————————————————————————————————————
@@ -67,49 +69,78 @@ PHOTOS_DIR     = os.path.join(os.path.dirname(os.path.abspath(__file__)), "photo
 
 
 def _resolve_db_path() -> str:
-    """Find a PERSISTENT home for the database.
+    """Find the persistent volume WHEREVER Railway actually mounted it.
 
-    The old one-liner was:
-        DB_PATH = "/data/tsuki.db" if os.path.isdir("/data") else "tsuki.db"
-
-    That silently fell back to the container disk, which Railway destroys on
-    every redeploy. Nothing warned you. GM streaks reset, learned knowledge
-    vanished, and the bot looked perfectly healthy the whole time.
-
-    This version actually WRITES a test file to prove the volume works, and
-    makes a lot of noise in the logs if it doesn't.
+    This used to hardcode /data. Railway has no default mount path, you type
+    one when you attach the volume, so /data only worked if you happened to
+    type /data. When a volume is attached Railway injects
+    RAILWAY_VOLUME_MOUNT_PATH into the service, which is the authoritative
+    answer, so that is checked first and the hardcoded guesses are only a
+    fallback. Every candidate is probed by actually WRITING to it, because a
+    directory that exists but is read-only is the same disaster as no volume.
     """
-    vol = "/data"
-    if os.path.isdir(vol):
-        probe = os.path.join(vol, ".write_probe")
+    candidates = []
+    for name in ("DB_VOLUME_PATH", "RAILWAY_VOLUME_MOUNT_PATH"):
+        v = (os.environ.get(name, "") or "").strip()
+        if v:
+            candidates.append((v, f"env {name}"))
+    for guess in ("/data", "/app/data", "/mnt/data", "/var/data", "/storage"):
+        candidates.append((guess, "common path"))
+
+    tried = []
+    for path, why in candidates:
+        if not os.path.isdir(path):
+            tried.append(f"{path} ({why}): does not exist")
+            continue
+        probe = os.path.join(path, ".write_probe")
         try:
             with open(probe, "w") as f:
                 f.write("ok")
             os.remove(probe)
-            log.info(f"Persistent volume OK. Database at {vol}/tsuki.db")
-            return os.path.join(vol, "tsuki.db")
+            log.info(f"Persistent volume OK at {path} (found via {why}). "
+                     f"Database at {path}/tsuki.db")
+            return os.path.join(path, "tsuki.db")
         except Exception as e:
-            log.error(f"/data exists but is NOT writable: {e}")
-    else:
-        log.error("/data does not exist. No volume is attached to this service.")
+            tried.append(f"{path} ({why}): NOT WRITABLE, {type(e).__name__}")
 
     log.error("=" * 70)
     log.error("!! NO PERSISTENT STORAGE. EVERYTHING WILL BE WIPED ON REDEPLOY !!")
-    log.error("!! Chat history, learned knowledge and lore updates will not last !!")
-    log.error("!! Fix: Railway -> your service -> ... menu -> Attach Volume    !!")
-    log.error("!! Mount path must be exactly: /data                            !!")
+    for t in tried:
+        log.error(f"!!   tried {t}")
+    rv = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "")
+    if rv:
+        log.error(f"!! Railway says the volume is at '{rv}' but it is not usable.")
+        log.error("!! If it exists but is not writable, set RAILWAY_RUN_UID=0 on the service.")
+    else:
+        log.error("!! Railway did NOT set RAILWAY_VOLUME_MOUNT_PATH, so no volume is")
+        log.error("!! attached to THIS service. Attach one, any mount path will do.")
+    try:
+        log.error(f"!! directories at /: {sorted(os.listdir('/'))[:24]}")
+    except Exception:
+        pass
     log.error("=" * 70)
     return "tsuki.db"
 
 
 DB_PATH = _resolve_db_path()
-DB_IS_PERSISTENT = DB_PATH.startswith("/data")
+# persistent means "we resolved to a real volume", not "the path says /data".
+DB_IS_PERSISTENT = os.path.isabs(DB_PATH)
 
 # X (Twitter) posting — optional, bot runs fine without these
-X_API_KEY       = os.environ.get("X_API_KEY", "")
-X_API_SECRET    = os.environ.get("X_API_SECRET", "")
-X_ACCESS_TOKEN  = os.environ.get("X_ACCESS_TOKEN", "")
-X_ACCESS_SECRET = os.environ.get("X_ACCESS_SECRET", "")
+def _envclean(name: str) -> str:
+    """Read an env var and forgive the usual paste damage: surrounding quotes,
+    stray whitespace, a trailing newline. A key with a trailing space fails
+    auth with a message that never mentions whitespace, so this is cheap."""
+    v = (os.environ.get(name, "") or "").strip()
+    if len(v) > 1 and v[0] == v[-1] and v[0] in ("\"", "'"):
+        v = v[1:-1].strip()
+    return v
+
+
+X_API_KEY       = _envclean("X_API_KEY")
+X_API_SECRET    = _envclean("X_API_SECRET")
+X_ACCESS_TOKEN  = _envclean("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = _envclean("X_ACCESS_SECRET")
 X_ENABLED       = all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET])
 
 # Optional. If set, tweet reading goes through the official API first and
@@ -2692,8 +2723,9 @@ async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     The boot counter is the real test. It only increments if the database
     persisted from the last start. If it always reads 1, no volume is
     attached and everything is being wiped every deploy."""
-    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
-        await update.message.reply_text("admins only 🐈‍⬛")
+    msg = update.effective_message
+    if not await is_project_admin(ctx, update):
+        await msg.reply_text("admins only 🐈‍⬛")
         return
 
     boots = kv_get("boot_count", "?")
@@ -2742,7 +2774,7 @@ async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             "⚠️ boot count is 1. If it's still 1 after your next redeploy,",
             "the volume isn't actually holding data.",
         ]
-    await update.message.reply_text("\n".join(lines))
+    await msg.reply_text("\n".join(lines))
 
 
 async def cmd_summary(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -3932,40 +3964,77 @@ async def bot_chat_rights(ctx, chat_id: int) -> str:
 
 
 async def cmd_xtest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Admin: prove the X credentials actually work, without posting anything.
-    Reports exactly which of the four keys is missing when they are."""
+    """Prove the X credentials, and when they look missing, show what this
+    PROCESS can actually see. \"It says missing but I set them\" is almost
+    always one of: the service was never redeployed after adding them, the
+    variable is spelled differently (X's portal calls the fourth one
+    \"Access Token Secret\", so people save it as X_ACCESS_TOKEN_SECRET), or
+    they landed on a different Railway service. This prints enough to tell
+    those apart in one message, without ever revealing a secret."""
+    msg = update.effective_message
     if not await is_project_admin(ctx, update):
-        await update.effective_message.reply_text("admins only \U0001f408\u200d\u2b1b")
+        await msg.reply_text("admins only \U0001f408\u200d\u2b1b")
         return
-    missing = [n for n, v in (("X_API_KEY", X_API_KEY), ("X_API_SECRET", X_API_SECRET),
-                              ("X_ACCESS_TOKEN", X_ACCESS_TOKEN),
-                              ("X_ACCESS_SECRET", X_ACCESS_SECRET)) if not v]
+
+    def mask(v: str) -> str:
+        if not v:
+            return "EMPTY"
+        return f"{len(v)} chars, {v[:3]}...{v[-3:]}"
+
+    wanted = (("X_API_KEY", X_API_KEY), ("X_API_SECRET", X_API_SECRET),
+              ("X_ACCESS_TOKEN", X_ACCESS_TOKEN), ("X_ACCESS_SECRET", X_ACCESS_SECRET))
+    missing = [n for n, v in wanted if not v]
+
     if missing:
-        await update.effective_message.reply_text(
-            "\U0001f426 X posting is OFF.\n\n"
-            "missing env vars:\n" + "\n".join(f" \u251c {m}" for m in missing[:-1])
-            + f"\n\u2514 {missing[-1]}\n\n"
-            "add them in Railway \u2192 Variables, redeploy, run /xtest again.")
+        # what X-ish names DOES this process have? spelling errors show up here
+        seen = sorted(k for k in os.environ
+                      if any(t in k.upper() for t in ("X_", "TWITTER", "TOKEN", "SECRET", "API")))
+        seen_block = "\n".join(f" \u2022 {k}" for k in seen[:25]) or " \u2022 (none at all)"
+        await msg.reply_text(
+            "\U0001f426 X posting is OFF.\n"
+            "\n"
+            "this process cannot see:\n"
+            + "\n".join(f" \u251c {n}" for n in missing[:-1])
+            + f"\n\u2514 {missing[-1]}\n"
+            "\n"
+            "env var names it CAN see:\n" + seen_block + "\n"
+            "\n"
+            "if the names above look right, the service was not redeployed after "
+            "you added them. railway only hands new variables to a NEW process, so "
+            "hit Deploy (not Restart) and run /xtest again.\n"
+            "\n"
+            "watch for X_ACCESS_TOKEN_SECRET: the portal calls it \u201caccess token "
+            "secret\u201d but this bot wants X_ACCESS_SECRET.")
         return
+
     try:
         import tweepy
         client = tweepy.Client(consumer_key=X_API_KEY, consumer_secret=X_API_SECRET,
                                access_token=X_ACCESS_TOKEN, access_token_secret=X_ACCESS_SECRET)
         me = client.get_me()
         handle = me.data.username if me and me.data else "?"
-        await update.effective_message.reply_text(
-            f"\u2705 X credentials work.\n\n"
+        await msg.reply_text(
+            f"\u2705 X credentials work.\n"
+            f"\n"
             f" \u251c authenticated as: @{handle}\n"
-            f" \u251c write access: looks good (creds accepted)\n"
-            f"\u2514 scheduled posts will go out on the normal timetable\n\n"
+            f" \u251c key lengths: {mask(X_API_KEY)}\n"
+            f"\u2514 scheduled posts will go out on the normal timetable\n"
+            f"\n"
             f"send a real one now with /xpost <text>")
     except Exception as e:
-        await update.effective_message.reply_text(
-            f"\u274c X auth failed: {type(e).__name__}: {e}\n\n"
-            f"usual causes:\n"
-            f" \u251c app permissions set to Read only \u2014 set Read and Write, then REGENERATE the access token\n"
-            f" \u251c access token generated before permissions were changed\n"
-            f"\u2514 keys pasted with whitespace")
+        await msg.reply_text(
+            f"\u274c X auth failed: {type(e).__name__}: {e}\n"
+            f"\n"
+            f"all four variables ARE present:\n"
+            f" \u251c X_API_KEY: {mask(X_API_KEY)}\n"
+            f" \u251c X_API_SECRET: {mask(X_API_SECRET)}\n"
+            f" \u251c X_ACCESS_TOKEN: {mask(X_ACCESS_TOKEN)}\n"
+            f"\u2514 X_ACCESS_SECRET: {mask(X_ACCESS_SECRET)}\n"
+            f"\n"
+            f"so this is the app itself:\n"
+            f" \u251c permissions set to Read only \u2192 set Read and Write, then REGENERATE "
+            f"the access token\n"
+            f"\u2514 access token generated BEFORE the permission change is read-only forever")
 
 
 async def cmd_xpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -4098,32 +4167,42 @@ async def cmd_photos(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_voldebug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """Prints the ACTUAL reason /data isn't persisting."""
-    if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
-        await update.message.reply_text("admins only 🐈‍⬛")
+    """Says exactly why storage is or is not working, naming every path tried."""
+    msg = update.effective_message
+    if not await is_project_admin(ctx, update):
+        await msg.reply_text("admins only 🐈‍⬛")
         return
-    lines = [f"◆ /data exists: {os.path.isdir('/data')}"]
-    if os.path.isdir("/data"):
-        import stat
-        st = os.stat("/data")
-        lines.append(f"◆ owner uid: {st.st_uid}, mode: {oct(stat.S_IMODE(st.st_mode))}")
-        lines.append(f"◆ process uid: {os.getuid()}")
+
+    rv = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "")
+    rn = os.environ.get("RAILWAY_VOLUME_NAME", "")
+    lines = [f"💾 storage\n",
+             f"🔹 in use: {DB_PATH}",
+             f"🔹 persistent: {'YES' if DB_IS_PERSISTENT else 'NO'}",
+             f"🔹 RAILWAY_VOLUME_NAME: {rn or '(not set)'}",
+             f"🔹 RAILWAY_VOLUME_MOUNT_PATH: {rv or '(not set)'}",
+             ""]
+    for path in [p for p in (os.environ.get("DB_VOLUME_PATH", ""), rv,
+                             "/data", "/app/data", "/mnt/data", "/storage") if p]:
+        if not os.path.isdir(path):
+            lines.append(f"  {path}: missing")
+            continue
         try:
-            p = "/data/_probe.txt"
-            with open(p, "w") as f:
+            probe = os.path.join(path, ".probe")
+            with open(probe, "w") as f:
                 f.write("ok")
-            os.remove(p)
-            lines.append("✅ write test passed — /data is writable")
-            lines.append("if dbcheck still shows tsuki.db, the path was resolved before "
-                         "the mount existed. redeploy (not restart) and check again.")
+            os.remove(probe)
+            lines.append(f"  {path}: ✅ writable")
         except Exception as e:
-            lines.append(f"❌ write test FAILED — {type(e).__name__}: {e}")
-            lines.append("fix: start command → chmod -R 777 /data 2>/dev/null; python bot.py")
-    else:
-        lines.append("the volume is not mounted in THIS container. it's attached to the "
-                     "other service, a different environment, or the mount path isn't "
-                     "exactly /data. check this service's Settings → Volumes.")
-    await update.message.reply_text("\n".join(lines))
+            lines.append(f"  {path}: ❌ {type(e).__name__}")
+
+    if not rv:
+        lines += ["", "railway is not reporting a volume on THIS service.",
+                  "attach one: service → ⋯ → Attach Volume. any mount path works,",
+                  "the bot now reads railway's own path automatically."]
+    elif not DB_IS_PERSISTENT:
+        lines += ["", f"railway says the volume is at {rv} but it is not writable.",
+                  "set RAILWAY_RUN_UID=0 on the service and redeploy."]
+    await msg.reply_text("\n".join(lines))
 
 
 async def job_summary(app):
@@ -5370,16 +5449,80 @@ STARTUP_LINES = [
 ]
 
 
-async def on_startup(app):
-    """Fires once after connect. Confirms a redeploy happened without dumping
-    wallet history or other backlogged data into the chat."""
+async def on_error(update, ctx):
+    """Any handler that raises now SAYS SO, in the chat, instead of vanishing.
+
+    A command that silently does nothing is the worst failure mode there is:
+    it looks identical to a permissions problem, a deploy problem and a typo.
+    This makes every crash name itself."""
+    log.error(f"handler error: {ctx.error}", exc_info=ctx.error)
     try:
-        line = random.choice(STARTUP_LINES)
-        if not DB_IS_PERSISTENT:
-            line += "\n\n⚠️ heads up: no persistent storage attached, so nothing is being saved. admins run /dbcheck"
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=line)
+        msg = getattr(update, "effective_message", None)
+        if msg:
+            await msg.reply_text(
+                f"\u274c that command crashed: {type(ctx.error).__name__}: "
+                f"{str(ctx.error)[:250]}\n\nthe full trace is in the railway logs.")
+    except Exception:
+        pass
+
+
+async def on_startup(app):
+    """Fires once after connect, and now REPORTS ITS OWN CONFIG.
+
+    Env vars only reach a NEW process, so 'I definitely added it' and 'the
+    running process can see it' are different claims. Printing the truth on
+    every boot means nobody has to run a command to find out which one is
+    happening, and a bad deploy announces itself instead of hiding."""
+    problems = []
+    if not DB_IS_PERSISTENT:
+        problems.append("no volume at /data, nothing is being saved")
+    missing_x = [n for n, v in (("X_API_KEY", X_API_KEY), ("X_API_SECRET", X_API_SECRET),
+                                ("X_ACCESS_TOKEN", X_ACCESS_TOKEN),
+                                ("X_ACCESS_SECRET", X_ACCESS_SECRET)) if not v]
+    if missing_x:
+        problems.append("X is off, this process cannot see: " + ", ".join(missing_x))
+
+    boots = kv_get("boot_count", "?")
+    log.info("=" * 70)
+    log.info(f"BOOT #{boots} | db={DB_PATH} persistent={DB_IS_PERSISTENT} | "
+             f"X={'on' if X_ENABLED else 'OFF'} | replies={X_REPLIES_ENABLED} | "
+             f"grok={'on' if XAI_API_KEY else 'off'} | campaign_start={CAMPAIGN_START}")
+    if problems:
+        for p in problems:
+            log.error(f"CONFIG PROBLEM: {p}")
+    log.info("=" * 70)
+
+    # the community gets the friendly line and nothing else
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=random.choice(STARTUP_LINES))
     except Exception as e:
         log.warning(f"Startup message failed: {e}")
+
+    # the config report is operational noise, so it goes to the admin DM only
+    report = (f"🔧 boot #{boots}\n"
+              f"\n"
+              f" ├ db: {DB_PATH}\n"
+              f" ├ persistent: {'yes' if DB_IS_PERSISTENT else 'NO'}\n"
+              f" ├ volume path railway reports: "
+              f"{os.environ.get('RAILWAY_VOLUME_MOUNT_PATH') or 'none set'}\n"
+              f" ├ X posting: {'on' if X_ENABLED else 'OFF'}\n"
+              f" ├ X replies: {'on' if X_REPLIES_ENABLED else 'off'}\n"
+              f" ├ grok pulse: {'on' if XAI_API_KEY else 'off'}\n"
+              f"└ campaign start: {CAMPAIGN_START}\n")
+    if problems:
+        report += "\n⚠️ problems\n" + "\n".join(f" • {p}" for p in problems)
+        report += "\n\n/dbcheck and /xtest for detail"
+    else:
+        report += "\n✅ everything is wired up"
+
+    if ADMIN_CHAT_ID:
+        try:
+            await app.bot.send_message(chat_id=ADMIN_CHAT_ID, text=report)
+        except Exception as e:
+            log.warning(f"Admin config report failed: {e}")
+    else:
+        log.warning("ADMIN_CHAT_ID not set, so config reports stay in the logs. "
+                    "DM the bot /chatid and set that number as ADMIN_CHAT_ID.")
 
 
 def main():
@@ -5413,6 +5556,7 @@ def main():
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & ~filters.ChatType.PRIVATE, handle_message))
     app.add_handler(CallbackQueryHandler(puppet_callback, pattern=r"^pup:"))
+    app.add_error_handler(on_error)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
 
     scheduler = AsyncIOScheduler()
