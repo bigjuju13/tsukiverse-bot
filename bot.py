@@ -4361,6 +4361,47 @@ async def cmd_xpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
          f"instance {INSTANCE}, X_ENABLED={X_ENABLED}\n\nit would have said:\n\n{body}"))
 
 
+async def cmd_xreplies(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Why the reply engine is or is not talking. Every reason it can stay
+    quiet, in one message, instead of guessing at Railway logs."""
+    if not await is_project_admin(ctx, update):
+        await update.effective_message.reply_text("admins only \U0001f408\u200d\u2b1b")
+        return
+    try:
+        last = json.loads(kv_get("x_last_poll", "{}") or "{}")
+    except Exception:
+        last = {}
+    lines = [
+        f" \u251c X_ENABLED: {X_ENABLED}",
+        f" \u251c replies switched on: {X_REPLIES_ENABLED}   (X_REPLIES=off disables)",
+        f" \u251c polling every: {X_MENTION_POLL_MIN} min",
+        f" \u251c answers mentions newer than: {X_MENTION_MAX_AGE_MIN} min",
+        f" \u251c used today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}",
+        f" \u251c my handle: @{kv_get('x_me_handle') or '(not resolved yet)'}",
+        f" \u251c last seen mention id: {kv_get('x_mentions_since') or '(none yet)'}",
+        f"\u2514 storage persists: {DB_IS_PERSISTENT}",
+    ]
+    if not last:
+        detail = ("the poll has not run yet. it runs on an interval, so give it "
+                  f"{X_MENTION_POLL_MIN} min after a deploy.")
+    elif last.get("error"):
+        detail = f"last poll ERRORED at {last['at']}:\n{last['error']}"
+    elif last.get("skipped"):
+        detail = f"last poll skipped at {last['at']}: {last['skipped']}"
+    elif last.get("gate_rejected"):
+        detail = (f"at {last['at']} it found a mention from @{last['gate_rejected']} but "
+                  "no draft survived the reply gate after 3 tries. that gate blocks "
+                  "prices, market caps, invented years and multi-block replies.")
+    else:
+        detail = (f"last poll {last.get('at')}: saw {last.get('seen', 0)} mentions, "
+                  f"{last.get('fresh', 0)} worth answering, "
+                  f"{last.get('too_old', 0)} older than the window.")
+    await update.effective_message.reply_text(
+        "\U0001f4ac reply engine\n\n" + "\n".join(lines) + "\n\n" + detail
+        + ("\n\n\u26a0 no volume attached, so every redeploy forgets which mentions "
+           "it already answered." if not DB_IS_PERSISTENT else ""))
+
+
 async def cmd_spend(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """What the bot has actually cost today and over the last week."""
     if not await is_project_admin(ctx, update):
@@ -6203,32 +6244,86 @@ if they ask about the lore, give the real dates. never argue price, never give a
     return out
 
 
+# How recent a mention has to be to still be worth answering. This replaces the
+# old "first run sets a baseline and replies to nothing" rule, which failed in
+# two ways at once: the baseline lived in the database, the database has no
+# volume attached, so every redeploy wiped it and the bot re-baselined and went
+# quiet again. And the baseline was only ever written once a mention existed,
+# so the FIRST person to ever reply was silently consumed as the marker.
+# An age window survives a wiped database: worst case after a redeploy it
+# answers a couple of genuinely recent mentions, which is the correct behaviour
+# anyway. The daily cap bounds it.
+X_MENTION_MAX_AGE_MIN = int(os.environ.get("X_MENTION_MAX_AGE_MIN", "45") or 45)
+
+
+def _already_replied(tid: str) -> bool:
+    try:
+        return str(tid) in set(json.loads(kv_get("x_replied_ids", "[]") or "[]"))
+    except Exception:
+        return False
+
+
+def _mark_replied(tid: str):
+    try:
+        ids = json.loads(kv_get("x_replied_ids", "[]") or "[]")
+    except Exception:
+        ids = []
+    ids.append(str(tid))
+    kv_set("x_replied_ids", json.dumps(ids[-300:]))
+
+
+def _note_poll(**kw):
+    """Last poll's outcome, so /xreplies can answer 'why is it quiet'."""
+    kw["at"] = datetime.now(PROJECT_TZ).strftime("%H:%M:%S")
+    kv_set("x_last_poll", json.dumps(kw))
+
+
 async def job_x_mentions(app):
     if not (X_ENABLED and X_REPLIES_ENABLED):
+        _note_poll(skipped=f"X_ENABLED={X_ENABLED} X_REPLIES_ENABLED={X_REPLIES_ENABLED}")
         return
     try:
         client = _x_client()
         me_id = kv_get("x_me_id")
-        if not me_id:
+        me_handle = kv_get("x_me_handle")
+        if not me_id or not me_handle:
             me = client.get_me()
             me_id = str(me.data.id)
+            me_handle = (me.data.username or "").lower()
             kv_set("x_me_id", me_id)
+            kv_set("x_me_handle", me_handle)
         since = kv_get("x_mentions_since") or None
         resp = client.get_users_mentions(
-            id=me_id, since_id=since, max_results=10,
-            tweet_fields=["author_id", "conversation_id"],
+            id=me_id, since_id=since, max_results=20,
+            tweet_fields=["author_id", "conversation_id", "created_at"],
             expansions=["author_id"], user_fields=["username"])
     except Exception as e:
         log.warning(f"mentions poll failed: {e}")
+        _note_poll(error=f"{type(e).__name__}: {e}"[:180])
         return
     tweets = resp.data or []
     if not tweets:
+        _note_poll(seen=0)
         return
     kv_set("x_mentions_since", str(max(int(t.id) for t in tweets)))
-    if since is None:
-        log.info("mentions baseline initialised")     # first run: don't reply to backlog
-        return
     users = {u.id: u.username for u in (resp.includes or {}).get("users", [])}
+    now = datetime.now(timezone.utc)
+    fresh = []
+    too_old = 0
+    for t in tweets:
+        ca = getattr(t, "created_at", None)
+        if ca is not None:
+            age = (now - ca).total_seconds() / 60
+            if age > X_MENTION_MAX_AGE_MIN:
+                too_old += 1
+                continue
+        if _already_replied(t.id):
+            continue
+        fresh.append(t)
+    _note_poll(seen=len(tweets), fresh=len(fresh), too_old=too_old)
+    tweets = fresh
+    if not tweets:
+        return
     if _replies_today() >= X_REPLY_CAP_PER_DAY:
         log.info(f"reply budget spent for today ({X_REPLY_CAP_PER_DAY})")
         return
@@ -6237,12 +6332,17 @@ async def job_x_mentions(app):
         if replied >= X_REPLY_CAP_PER_RUN or _replies_today() >= X_REPLY_CAP_PER_DAY:
             break
         handle = users.get(t.author_id, "")
-        if not handle or handle.lower() in ("tsukiversebot",):
+        # never reply to yourself. this used to be hardcoded to the wrong
+        # handle, so the guard did nothing at all.
+        if not handle or handle.lower() == (kv_get("x_me_handle") or "").lower():
             continue
         try:
             reply = write_x_reply(t.text or "", handle)
             if not reply or len(reply) < 4:
+                _note_poll(seen=len(tweets), gate_rejected=handle)
+                log.info(f"no reply survived the gate for @{handle}")
                 continue
+            _mark_replied(t.id)
             client.create_tweet(text=reply, in_reply_to_tweet_id=t.id)
             replied += 1
             _count_reply()
@@ -6482,7 +6582,7 @@ def main():
         ("xtest", cmd_xtest), ("xpost", cmd_xpost),
         ("rk", cmd_rk), ("rkimport", cmd_rkimport),
         ("news", cmd_news), ("whisper", cmd_whisper), ("silence", cmd_silence),
-        ("pulse", cmd_pulse), ("spend", cmd_spend),
+        ("pulse", cmd_pulse), ("spend", cmd_spend), ("xreplies", cmd_xreplies),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
