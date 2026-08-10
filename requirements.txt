@@ -1,3 +1,8 @@
-python-telegram-bot==21.6
-anthropic>=0.25.0
-apscheduler==3.10.4
+# Tsukiverse bot — everything the one process needs.
+# tweepy was the missing one: without it every X call dies with
+# ModuleNotFoundError and the bot looks like a credentials problem.
+python-telegram-bot>=21.0
+anthropic>=0.40.0
+httpx>=0.27.0
+APScheduler>=3.10.0
+tweepy>=4.14.0
