@@ -192,7 +192,10 @@ DEV_USERNAME = "dvid665"
 # ── X reading ─────────────────────────────────────────────────────────────────
 THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
 
-_anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+# timeout matters more than it looks: these calls are synchronous and run on
+# the event loop, so the worst-case hang time here is the worst-case freeze
+# time for the entire bot, Telegram polling included.
+_anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=45.0, max_retries=1)
 
 
 def _with_date(system):
@@ -1177,6 +1180,43 @@ def get_recent_summaries(chat_id: int, limit: int = 3) -> list[str]:
     return [r[0] for r in rows]
 
 
+# only the unambiguous markdown: **double-starred** spans and whole lines
+# wrapped in single stars. a lone * inside a sentence ("2*5") is left alone.
+_MD_BOLD = re.compile(r"\*\*([^*\n]+)\*\*")
+_MD_LINE = re.compile(r"^\*([^*\n]+)\*\s*$", re.M)
+_MD_HEAD = re.compile(r"^#{1,4}\s+", re.M)
+
+
+def _tidy_chat_text(text: str) -> str:
+    """Model output arrives with markdown the chat renders literally, since
+    these messages send as plain text (Markdown parse mode dies on unbalanced
+    characters in quoted chat). **bold** and # headings are stripped to clean
+    words; a heading does its job in telegram by being on its own line."""
+    text = _MD_HEAD.sub("", text or "")
+    text = _MD_BOLD.sub(r"\1", text)
+    return _MD_LINE.sub(r"\1", text)
+
+
+async def send_chunked(send, text: str, chunk: int = 3900, **kw):
+    """Send text through any reply/send coroutine, split on paragraph
+    boundaries under Telegram's 4096 cap. One long lore answer used to bounce
+    with 'message is too long' and the user got a crash notice instead."""
+    text = _tidy_chat_text(text).strip()
+    while text:
+        if len(text) <= chunk:
+            await send(text, **kw)
+            return
+        cut = text.rfind("\n\n", 0, chunk)
+        if cut < chunk // 2:
+            cut = text.rfind("\n", 0, chunk)
+        if cut < chunk // 2:
+            cut = text.rfind(" ", 0, chunk)
+        if cut < chunk // 2:
+            cut = chunk
+        await send(text[:cut].rstrip(), **kw)
+        text = text[cut:].lstrip()
+
+
 def save_conversation_message(user_id: int, role: str, content: str,
                               scope: str = "group"):
     """scope='dm' rows belong to a private conversation. They are NEVER read
@@ -1644,8 +1684,8 @@ def detect_coincidence(tweet: dict) -> str | None:
             f"👁 pattern spotted\n\n"
             f"@{first} posted, then @{second}.\n"
             f"{pattern}.\n\n"
-            f"🔹 {tweet.get('url','')}\n"
-            f"🔹 {other_url or ''}"
+            f"▪️ {tweet.get('url','')}\n"
+            f"▪️ {other_url or ''}"
         )
     return None
 
@@ -1665,7 +1705,7 @@ async def check_and_announce_coincidence(bot, chat_id: int, tweet: dict, post_x:
         log.warning(f"coincidence announce failed: {e}")
         return
     if post_x:
-        post_to_x(alert.replace("👁 ", "").split("🔹")[0].strip(), signoff=False)
+        post_to_x(alert.replace("👁 ", "").split("▪️")[0].strip(), signoff=False)
 
 
 def format_tweet(t: dict, max_len: int = 600) -> str:
@@ -1814,11 +1854,11 @@ def fmt_price(p: dict, symbol: str) -> str:
     arrow  = "📈" if float(change or 0) >= 0 else "📉"
     sign   = "+" if float(change or 0) >= 0 else ""
     return (
-        f"📊 ${symbol}\n\n"
-        f"🔹 Price: ${float(price):.8f}\n"
-        f"🔹 24h: {arrow} {sign}{change}%\n"
-        f"🔹 Volume: ${vol:,.0f}\n"
-        f"🔹 MC: ${mc:,.0f}"
+        f"<b>${symbol}</b>\n\n"
+        f"▪️ price: ${float(price):.8f}\n"
+        f"▪️ 24h: {arrow} {sign}{change}%\n"
+        f"▪️ volume: ${vol:,.0f}\n"
+        f"▪️ mc: ${mc:,.0f}"
     )
 
 
@@ -2054,7 +2094,8 @@ def _upload_x_media(path: str):
         return None
 
 
-def post_to_x(text: str, signoff: bool = True, image_path: str | None = None) -> str | None:
+def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
+              append_url: str | None = None) -> str | None:
     """The only door out to X. Nothing bypasses enforce_x_format. Returns the
     posted tweet's URL (truthy) so callers can raid it in the telegram.
 
@@ -2064,7 +2105,13 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None) ->
     reads as an ad, and the reference account never did that."""
     if not X_ENABLED:
         return None
-    body = enforce_x_format(text, signoff=signoff)
+    # a URL always wraps to t.co and counts 23 chars regardless of its real
+    # length, so the body budget shrinks by 25 and the url is appended AFTER
+    # formatting, where the trimmer can never mangle it
+    body = enforce_x_format(text, signoff=signoff,
+                            limit=280 - 25 if append_url else 280)
+    if append_url:
+        body = body + "\n\n" + append_url
     wrong_tense = _future_written_as_past(body)
     if wrong_tense:
         log.error(f"BLOCKED an X post: {wrong_tense}\n---\n{body}\n---")
@@ -2871,30 +2918,30 @@ if you genuinely do not have a specific detail, say which part you are unsure of
 
 def build_summary(messages: list) -> str:
     if not messages:
-        return "*Tsukiverse Catch-Up* 🌙\n\n*What Happened*\n• dead silent. either everyone's asleep or everyone's staring at the chart 🐈‍⬛"
+        return "Tsukiverse Catch-Up 🌙\n\nWhat Happened\n• dead silent. either everyone's asleep or everyone's staring at the chart 🐈‍⬛"
     chat_log = "\n".join(
         f"[{m['full_name']} (@{m['username'] or 'anon'})]: {m['text']}" for m in messages
     )
     summary_prompt = """you write 8-hour chat summaries for the tsuki x rwa telegram community. you are always told today's date in this prompt. work from that and never assume what year it is.
 
-use this exact format. *single asterisks* for bold in telegram markdown:
+use this exact format, PLAIN TEXT ONLY, no asterisks, no markdown of any kind:
 
-*Tsukiverse Catch-Up* 🌙
+Tsukiverse Catch-Up 🌙
 
-*What Happened*
+What Happened
 • [one punchy sentence. enough detail to know what actually happened. names, numbers, context.]
 • [one sentence]
 • [one sentence]
 • [max 5 points, each on its own line]
 
-🔥 *Highlights*
+🔥 Highlights
 • [name]: "[real quote or close paraphrase]"
 • [name]: "[real quote or close paraphrase]"
 • [name]: "[real quote or close paraphrase]"
 
 [one line sign-off. varies every time. lowercase. spare. a little dry humour is welcome.] 🐈‍⬛
 
-rules: *single asterisks* for bold headings only. each bullet on its own line. no dividers. lowercase except proper nouns and tickers. no AI filler. quotes must sound like real people. you're allowed to be a bit cheeky about what people said, affectionately. if chat was quiet, one bullet saying so, skip highlights."""
+rules: no asterisks anywhere, headings are plain lines. each bullet on its own line. no dividers. lowercase except proper nouns and tickers. no AI filler. quotes must sound like real people. you're allowed to be a bit cheeky about what people said, affectionately. if chat was quiet, one bullet saying so, skip highlights."""
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=700,
@@ -2939,26 +2986,27 @@ async def is_project_admin(ctx, update) -> bool:
 
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🐈‍⬛ Tsukiverse Bot — what I do\n\n"
-        "🐦 X links\n"
-        "🔹 /read <link> — I'll read the post and tell you what I think\n"
-        "🔹 /thread <link> — send me the last tweet, I'll rebuild the thread\n"
-        "🔹 just paste a link — I'll chime in if it's from someone we watch\n"
-        "🔹 /watching — who I'm watching\n"
-        "🔹 /posts [keyword] — search archived official posts\n\n"
-        "📊 Numbers\n"
-        "🔹 /price — TSUKI + RWA\n"
-        "🔹 /mc — market caps and milestone progress\n\n"
-        "🧩 Other\n"
-        "🔹 /trivia, /trboard, /roadmap, /links, /mood, /summary\n\n"
-        "admins: /dbcheck, /watch, /unwatch, /linkmode, /linkcooldown,\n"
-        "        /xhealth, /confirm\n\n"
-        "🕵️ the archive\n"
-        "🔹 /rk <keyword or date> — RK's documented posts, times in EST\n"
-        "🔹 /news — latest gamestop / RK / cohen headlines I've caught\n\n"
+        "🐈‍⬛ <b>Tsukiverse Bot</b>\n\n"
+        "<b>The archive</b>\n"
+        "▪️ /rk — RK's documented posts, times in EST\n"
+        "▪️ /news — latest gamestop / RK / cohen headlines\n"
+        "▪️ /silence — the silence board\n"
+        "▪️ /posts — search archived official posts\n\n"
+        "<b>X links</b>\n"
+        "▪️ /read — I'll read the post and tell you what I think\n"
+        "▪️ /thread — send the last tweet, I'll rebuild the thread\n"
+        "▪️ /watching — who I'm watching\n"
+        "▪️ or just paste a link, I'll chime in if it's from someone we watch\n\n"
+        "<b>Numbers</b>\n"
+        "▪️ /price — TSUKI + RWA\n"
+        "▪️ /mc — market caps and milestone progress\n"
+        "▪️ /roadmap · /links\n\n"
+        "<b>Community</b>\n"
+        "▪️ /shill — campaign image + a ready X post\n"
+        "▪️ /trivia · /trboard · /summary · /mood\n\n"
         "💬 you can DM me. private conversations stay between us.\n\n"
-        "or just tag me and ask. I've read everything, twice."
-    )
+        "or just tag me and ask. I've read everything, twice.",
+        parse_mode="HTML")
 
 
 async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -2995,10 +3043,10 @@ async def cmd_dbcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     lines = [
         "🗄 Database Check\n",
         f"{status}",
-        f"🔹 path: {DB_PATH}",
-        f"🔹 size: {size_str}",
-        f"🔹 boots recorded: {boots}",
-        f"🔹 first boot: {first_boot[:19].replace('T', ' ') if first_boot != 'unknown' else 'unknown'}",
+        f"▪️ path: {DB_PATH}",
+        f"▪️ size: {size_str}",
+        f"▪️ boots recorded: {boots}",
+        f"▪️ first boot: {first_boot[:19].replace('T', ' ') if first_boot != 'unknown' else 'unknown'}",
         "",
         "stored rows:",
     ]
@@ -3026,7 +3074,9 @@ async def cmd_summary(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     messages = get_messages_since(update.effective_chat.id, hours=8)
     summary = build_summary(messages)
     save_summary(update.effective_chat.id, summary)
-    await update.message.reply_text(summary, parse_mode="Markdown")
+    # plain text on purpose: the summary quotes members verbatim, and one
+    # unbalanced * or _ in anyone's message kills a Markdown parse
+    await send_chunked(update.message.reply_text, summary)
 
 
 async def cmd_chatid(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -3039,12 +3089,13 @@ async def cmd_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     parts = []
     if tsuki:
         parts.append(fmt_price(tsuki, "TSUKI"))
-        parts.append(f"🔹 https://dexscreener.com/solana/{TSUKI_PAIR}")
+        parts.append(f'▪️ <a href="https://dexscreener.com/solana/{TSUKI_PAIR}">chart</a>')
     if rwa:
         parts.append("\n" + fmt_price(rwa, "RWA"))
-        parts.append(f"🔹 https://dexscreener.com/solana/{RWA_PAIR}")
+        parts.append(f'▪️ <a href="https://dexscreener.com/solana/{RWA_PAIR}">chart</a>')
     if parts:
-        await update.message.reply_text("\n".join(parts))
+        await update.message.reply_text("\n".join(parts), parse_mode="HTML",
+                                        disable_web_page_preview=True)
     else:
         await update.message.reply_text("dexscreener is having a moment. try again in a sec.")
 
@@ -3052,68 +3103,74 @@ async def cmd_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_mc(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     tsuki = await fetch_dexscreener(TSUKI_PAIR)
     rwa = await fetch_dexscreener(RWA_PAIR)
-    lines = ["📊 Market Caps\n"]
+    lines = ["<b>Market Caps</b>\n"]
     if tsuki:
         mc = tsuki.get("marketCap", 0)
-        pct = (mc / 25_000_000) * 100
-        lines.append(f"🐈‍⬛ $TSUKI\n🔹 MC: ${mc:,.0f}\n🔹 Next: MC@25M — 9,999 NFTs + daily buy & burn\n🔹 {pct:.1f}% of the way there")
+        pct = min((mc / 25_000_000) * 100, 100)
+        bar = "▓" * int(pct // 10) + "░" * (10 - int(pct // 10))
+        lines.append(f"<b>$TSUKI</b>\n▪️ mc: ${mc:,.0f}\n▪️ next: 25M — 9,999 NFTs + daily buy &amp; burn\n▪️ {bar} {pct:.1f}%")
     if rwa:
-        lines.append(f"\n🐈‍⬛ $RWA\n🔹 MC: ${rwa.get('marketCap', 0):,.0f}\n🔹 Mission: 1BN MC for RWA")
-    await update.message.reply_text("\n".join(lines))
+        lines.append(f"\n<b>$RWA</b>\n▪️ mc: ${rwa.get('marketCap', 0):,.0f}\n▪️ mission: 1BN mc for RWA")
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
 async def cmd_links(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🔗 Tsuki x RWA — All Links\n\n"
-        "🐈‍⬛ Community\n"
-        "🔹 Linktree: https://linktr.ee/tsukionsol\n"
-        "🔹 Welcome PDF: https://tinyurl.com/tsukipdf\n"
-        "🔹 Website: https://tsukionsol.xyz\n"
-        "🔹 Telegram: https://t.me/tsukionsol\n\n"
-        "📊 Charts\n"
-        f"🔹 TSUKI: https://dexscreener.com/solana/{TSUKI_PAIR}\n"
-        f"🔹 RWA: https://dexscreener.com/solana/{RWA_PAIR}"
-    )
+        "<b>Tsuki x RWA — all links</b>\n\n"
+        "<b>Community</b>\n"
+        '▪️ <a href="https://linktr.ee/tsukionsol">linktree</a>\n'
+        '▪️ <a href="https://tinyurl.com/tsukipdf">welcome PDF</a>\n'
+        '▪️ <a href="https://tsukionsol.xyz">website</a>\n'
+        '▪️ <a href="https://t.me/tsukionsol">telegram</a>\n\n'
+        "<b>Charts</b>\n"
+        f'▪️ <a href="https://dexscreener.com/solana/{TSUKI_PAIR}">$TSUKI</a>\n'
+        f'▪️ <a href="https://dexscreener.com/solana/{RWA_PAIR}">$RWA</a>',
+        parse_mode="HTML", disable_web_page_preview=True)
 
 
 async def cmd_roadmap(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🗺 Tsuki x RWA Roadmap\n\n"
-        "✅ MC@100K — 5% supply burned\n"
-        "✅ MC@2.5M — AI character art released\n"
-        "✅ MC@5M — Major CT personality ongoing\n"
-        "✅ MC@15M — YouTube collab launched\n\n"
-        "⏳ MC@25M — 9,999 NFTs + daily buy & burn\n"
-        "⏳ MC@50M — Anime release announced\n"
-        "⏳ MC@150M — Roadmap V2\n\n"
-        "🎯 Mission: 1BN MC for RWA\n\n"
-        "🔹 https://tsukionsol.xyz"
-    )
+        "<b>Tsuki x RWA — roadmap</b>\n\n"
+        "<b>Done</b>\n"
+        "✅ 100K — 5% supply burned\n"
+        "✅ 2.5M — AI character art released\n"
+        "✅ 5M — major CT personality ongoing\n"
+        "✅ 15M — YouTube collab launched\n\n"
+        "<b>Ahead</b>\n"
+        "▪️ 25M — 9,999 NFTs + daily buy &amp; burn\n"
+        "▪️ 50M — anime release announced\n"
+        "▪️ 150M — roadmap V2\n\n"
+        "🎯 <b>Mission:</b> 1BN mc for RWA\n\n"
+        '▪️ <a href="https://tsukionsol.xyz">tsukionsol.xyz</a>',
+        parse_mode="HTML", disable_web_page_preview=True)
 
 
 async def cmd_posts(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     keyword = " ".join(ctx.args) if ctx.args else ""
     posts = search_x_archive(keyword=keyword, limit=5)
     if not posts:
-        msg = (f"🔹 nothing archived mentions \"{keyword}\" yet." if keyword
-               else "🔹 archive's empty. posts get saved as the accounts post them.")
+        msg = (f"▪️ nothing archived mentions \"{keyword}\" yet." if keyword
+               else "▪️ archive's empty. posts get saved as the accounts post them.")
         await update.message.reply_text(msg)
         return
-    lines = [f"🐈‍⬛ Recent posts" + (f" mentioning \"{keyword}\"" if keyword else ""), ""]
+    import html as _html
+    lines = ["<b>Recent posts</b>" + (f" mentioning \u201c{_html.escape(keyword)}\u201d" if keyword else ""), ""]
     for p in posts:
-        snippet = p["text"][:180] + ("..." if len(p["text"]) > 180 else "")
+        snippet = _html.escape(p["text"][:180] + ("..." if len(p["text"]) > 180 else ""))
         tag = "" if p.get("source", "official") == "official" else " (seen in chat)"
-        lines.append(f"🔹 {p['handle']}{tag}: {snippet}")
         if p["link"]:
-            lines.append(f"   {p['link']}")
+            lines.append(f'▪️ <a href="{_html.escape(p["link"], quote=True)}">{_html.escape(p["handle"])}</a>{tag}: {snippet}')
+        else:
+            lines.append(f"▪️ {_html.escape(p['handle'])}{tag}: {snippet}")
         lines.append("")
-    await update.message.reply_text("\n".join(lines))
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML",
+                                    disable_web_page_preview=True)
 
 
 async def cmd_mood(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     messages = get_messages_since(update.effective_chat.id, hours=24)
     if len(messages) < 5:
-        await update.message.reply_text("🔹 not enough chatter in 24h to read a mood. say something.")
+        await update.message.reply_text("▪️ not enough chatter in 24h to read a mood. say something.")
         return
     chat_log = "\n".join(f"[{m['full_name']}]: {m['text']}" for m in messages[-60:])
     try:
@@ -3127,9 +3184,9 @@ read what people are actually talking about, but always frame it through an opti
 format:
 🐈‍⬛ Community Mood
 
-🔹 [one upbeat line on overall sentiment]
-🔹 [one line on what people are focused on, framed positively]
-🔹 [one forward-looking line, a reason to stay excited]
+▪️ [one upbeat line on overall sentiment]
+▪️ [one line on what people are focused on, framed positively]
+▪️ [one forward-looking line, a reason to stay excited]
 
 lowercase except proper nouns and tickers. genuinely positive, never forced or cringe. confident, not desperate.""",
             messages=[{"role": "user", "content": f"recent chat:\n{chat_log}"}],
@@ -3137,7 +3194,7 @@ lowercase except proper nouns and tickers. genuinely positive, never forced or c
         await update.message.reply_text(msg.content[0].text)
     except Exception as e:
         log.warning(f"Mood error: {e}")
-        await update.message.reply_text("🔹 couldn't read the room. happens to the best of us.")
+        await update.message.reply_text("▪️ couldn't read the room. happens to the best of us.")
 
 
 async def cmd_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -3255,7 +3312,7 @@ async def cmd_thread(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_xhealth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     rows = get_fetch_stats(24)
     if not rows:
-        await update.message.reply_text("🔹 no fetches in the last 24h. quiet day.")
+        await update.message.reply_text("▪️ no fetches in the last 24h. quiet day.")
         return
     lines = ["🩺 Tweet fetch health, last 24h\n"]
     for source, ok, total in rows:
@@ -3267,9 +3324,9 @@ async def cmd_xhealth(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     cached = con.execute("SELECT COUNT(*) FROM tweet_cache").fetchone()[0]
     timeline = con.execute("SELECT COUNT(*) FROM post_timeline").fetchone()[0]
     con.close()
-    lines += ["", f"🔹 {cached:,} tweets cached", f"🔹 {timeline:,} posts on the coincidence timeline"]
+    lines += ["", f"▪️ {cached:,} tweets cached", f"▪️ {timeline:,} posts on the coincidence timeline"]
     if not X_BEARER_TOKEN:
-        lines += ["", "🔹 X_BEARER_TOKEN is not set, so the mirrors are doing all the work."]
+        lines += ["", "▪️ X_BEARER_TOKEN is not set, so the mirrors are doing all the work."]
     await update.message.reply_text("\n".join(lines))
 
 
@@ -3277,9 +3334,9 @@ async def cmd_linkcooldown(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     current = int(kv_get("link_cooldown", str(LINK_TAKE_COOLDOWN)) or LINK_TAKE_COOLDOWN)
     if not ctx.args:
         await update.message.reply_text(
-            f"🔹 current link cooldown: {current // 60} min\n\n"
+            f"▪️ current link cooldown: {current // 60} min\n\n"
             f"usage: /linkcooldown <minutes>\n"
-            f"🔹 higher = quieter. 0 means no cooldown, which you will regret"
+            f"▪️ higher = quieter. 0 means no cooldown, which you will regret"
         )
         return
     if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
@@ -3333,19 +3390,19 @@ async def cmd_watching(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text(
         f"👀 Watching ({len(handles)})\n\n"
-        + "\n".join(f"🔹 @{h}" for h in handles)
-        + f"\n\n🔹 mode: {mode}"
+        + "\n".join(f"▪️ @{h}" for h in handles)
+        + f"\n\n▪️ mode: {mode}"
     )
 
 
 async def cmd_linkmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not ctx.args:
         await update.message.reply_text(
-            f"🔹 current mode: {get_link_mode()}\n\n"
+            f"▪️ current mode: {get_link_mode()}\n\n"
             f"usage: /linkmode <off|watched|all>\n"
-            f"🔹 off — only speaks when asked\n"
-            f"🔹 watched — comments on links from the watch list\n"
-            f"🔹 all — has an opinion about every link. you have been warned"
+            f"▪️ off — only speaks when asked\n"
+            f"▪️ watched — comments on links from the watch list\n"
+            f"▪️ all — has an opinion about every link. you have been warned"
         )
         return
     if not await is_admin(ctx, update.effective_chat.id, update.effective_user.id):
@@ -3367,13 +3424,13 @@ async def cmd_trivia(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     active = get_trivia_active()
     if active:
         await update.message.reply_text(
-            f"🧩 there's already one live and nobody's got it yet\n\n🔹 {active['question']}"
+            f"🧩 there's already one live and nobody's got it yet\n\n▪️ {active['question']}"
         )
         return
     q = random.choice(TRIVIA_QUESTIONS)
     set_trivia_active(q["q"], q["a"])
     await update.message.reply_text(
-        f"🧩 Tsukiverse Trivia\n\n🔹 {q['q']}\n\n🔹 first correct answer takes it. no googling. I'll know."
+        f"🧩 Tsukiverse Trivia\n\n▪️ {q['q']}\n\n▪️ first correct answer takes it. no googling. I'll know."
     )
 
 
@@ -3578,14 +3635,19 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     # Trivia
     active = get_trivia_active()
-    if active and any(ans in text.lower() for ans in active["answers"]):
+    # word-boundary match, not substring: with answers like "moon" and "88",
+    # plain substring matching handed the point to whoever next said the most
+    # common word in the chat. user can be None for channel-forwarded posts.
+    if active and user and any(
+            re.search(r"(?<![a-z0-9])" + re.escape(ans) + r"(?![a-z0-9])", text.lower())
+            for ans in active["answers"]):
         clear_trivia_active()
         add_trivia_score(user.id, user.username)
         rows = get_trivia_leaderboard()
         score = next((s for u, s in rows if u == (user.username or "anon")), 1)
         await msg.reply_text(
             f"✅ correct, and annoyingly fast about it\n\n"
-            f"🔹 @{user.username or user.first_name}: {score} point{'s' if score != 1 else ''}"
+            f"▪️ @{user.username or user.first_name}: {score} point{'s' if score != 1 else ''}"
         )
         return
 
@@ -3639,7 +3701,13 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         log.warning(f"Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
     save_conversation_message(user.id, "assistant", response)
-    sent = await msg.reply_text(response, disable_web_page_preview=True)
+    sent = None
+
+    async def _send(t, **kw):
+        nonlocal sent
+        sent = await msg.reply_text(t, **kw)
+
+    await send_chunked(_send, response, disable_web_page_preview=True)
     if sent:
         save_bot_thread(sent.message_id, question, response)
 
@@ -3652,16 +3720,16 @@ async def handle_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if member.is_bot:
             continue
         name = member.first_name or "fren"
+        import html as _html
         await msg.reply_text(
-            f"🐈‍⬛ Welcome to the Tsukiverse, {name}\n\n"
-            f"🔹 Dev is here and always has been\n"
-            f"🔹 Everything is planned. There are no coincidences\n"
-            f"🔹 Start with the Welcome PDF, it covers the whole story\n\n"
-            f"📄 https://tinyurl.com/tsukipdf\n"
-            f"🔗 https://linktr.ee/tsukionsol\n\n"
-            f"/help for what i can do. tag @{ctx.bot.username} "
-            f"with any question and I'll answer, probably with attitude."
-        )
+            f"🐈‍⬛ <b>Welcome to the Tsukiverse, {_html.escape(name)}</b>\n\n"
+            f"▪️ dev is here and always has been\n"
+            f"▪️ everything is planned. there are no coincidences\n"
+            f"▪️ start with the <a href=\"https://tinyurl.com/tsukipdf\">welcome PDF</a>, it covers the whole story\n\n"
+            f'▪️ <a href="https://linktr.ee/tsukionsol">all the links</a>\n\n'
+            f"/help for what I can do. tag @{ctx.bot.username} "
+            f"with any question and I'll answer, probably with attitude.",
+            parse_mode="HTML", disable_web_page_preview=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -4398,8 +4466,11 @@ async def cmd_xreplies(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                   f"{last.get('too_old', 0)} older than the window.")
     await update.effective_message.reply_text(
         "\U0001f4ac reply engine\n\n" + "\n".join(lines) + "\n\n" + detail
-        + ("\n\n\u26a0 no volume attached, so every redeploy forgets which mentions "
-           "it already answered." if not DB_IS_PERSISTENT else ""))
+        + ("\n\n\u26a0 this process cannot use the volume. attached in the UI and "
+           "usable from this container are different claims: run /voldebug for the "
+           "exact reason, and check the deploy log for the NO PERSISTENT STORAGE "
+           "block. until it passes, every redeploy forgets what it already answered."
+           if not DB_IS_PERSISTENT else ""))
 
 
 async def cmd_spend(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -4559,10 +4630,10 @@ async def cmd_voldebug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     rv = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "")
     rn = os.environ.get("RAILWAY_VOLUME_NAME", "")
     lines = [f"💾 storage\n",
-             f"🔹 in use: {DB_PATH}",
-             f"🔹 persistent: {'YES' if DB_IS_PERSISTENT else 'NO'}",
-             f"🔹 RAILWAY_VOLUME_NAME: {rn or '(not set)'}",
-             f"🔹 RAILWAY_VOLUME_MOUNT_PATH: {rv or '(not set)'}",
+             f"▪️ in use: {DB_PATH}",
+             f"▪️ persistent: {'YES' if DB_IS_PERSISTENT else 'NO'}",
+             f"▪️ RAILWAY_VOLUME_NAME: {rn or '(not set)'}",
+             f"▪️ RAILWAY_VOLUME_MOUNT_PATH: {rv or '(not set)'}",
              ""]
     for path in [p for p in (os.environ.get("DB_VOLUME_PATH", ""), rv,
                              "/data", "/app/data", "/mnt/data", "/storage") if p]:
@@ -4593,10 +4664,12 @@ async def job_summary(app):
     messages = get_messages_since(TARGET_CHAT_ID, hours=8)
     summary = build_summary(messages)
     save_summary(TARGET_CHAT_ID, summary)
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=summary, parse_mode="Markdown")
+    await send_chunked(
+        lambda text, **kw: app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text, **kw),
+        summary)
 
 
-async def job_post(app):
+async def job_post(app):  # rotating info post, previews off below
     log.info("Posting rotating content")
     post = next_post()
     if post == "LIVE_MILESTONE":
@@ -4611,7 +4684,8 @@ async def job_post(app):
             )
         else:
             post = ROTATING_POSTS[0]
-    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=post)
+    await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=post,
+                               disable_web_page_preview=True)
 
 
 async def job_build_knowledge(app):
@@ -4659,6 +4733,15 @@ async def job_milestone_watch(app):
     mc = tsuki["marketCap"]
     raw = kv_get("mc_milestone_hit", "")
     already_hit = set(raw.split(",")) if raw else set()
+    if not raw:
+        # first run (or wiped DB): mark everything already below the current
+        # cap as hit WITHOUT announcing, or a redeploy replays months of
+        # milestone posts into the group and onto X.
+        already_hit = {label for threshold, label, _ in MC_MILESTONES if mc >= threshold}
+        kv_set("mc_milestone_hit", ",".join(sorted(already_hit)) or "-")
+        if already_hit:
+            log.info(f"milestones baselined at ${mc:,.0f}: {sorted(already_hit)}")
+            return
 
     newly_hit = []
     for threshold, label, message in MC_MILESTONES:
@@ -4703,8 +4786,8 @@ async def job_wallet_watch(app):
         short = sig[:8] + "..." + sig[-6:] if sig else "unknown"
         await app.bot.send_message(
             chat_id=TARGET_CHAT_ID,
-            text=(f"💼 Marketing Wallet Move\n\n🔹 Transaction detected\n"
-                  f"🔹 Signature: {short}\n\n🔹 https://solscan.io/tx/{sig}"),
+            text=(f"💼 Marketing Wallet Move\n\n▪️ Transaction detected\n"
+                  f"▪️ Signature: {short}\n\n▪️ https://solscan.io/tx/{sig}"),
         )
 
 
@@ -4768,7 +4851,7 @@ async def job_x_monitor(app):
 
             button = InlineKeyboardMarkup([[InlineKeyboardButton("⚔️ RAID IT", url=item["link"])]])
             body = (f"🚨 {feed['handle']} JUST POSTED 🚨\n\n{item['title']}\n\n"
-                    f"⚔️ like + repost + reply\n🔹 {item['link']}")
+                    f"⚔️ like + repost + reply\n▪️ {item['link']}")
             take = await tweet_take(item["link"], TARGET_CHAT_ID,
                                     "an official project account just posted this. give your take in "
                                     "one or two short lines. no preamble, do not restate the post.")
@@ -4848,7 +4931,7 @@ async def handle_private_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
         log.warning(f"DM Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
     save_conversation_message(user.id, "assistant", response, scope="dm")
-    await msg.reply_text(response, disable_web_page_preview=True)
+    await send_chunked(msg.reply_text, response, disable_web_page_preview=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -5077,7 +5160,7 @@ async def cmd_rk(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         con.close()
         await update.effective_message.reply_text(
             f"🗄 the RK archive holds {n} documented posts, times in EST.\n\n"
-            f"🔹 /rk uno reverse\n🔹 /rk 2024-05-16\n🔹 /rk time post")
+            f"▪️ /rk uno reverse\n▪️ /rk 2024-05-16\n▪️ /rk time post")
         return
     rows = search_rk_archive("rk " + query, limit=8)
     if not rows:
@@ -5127,7 +5210,7 @@ async def cmd_rkimport(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         added.append(f"{dt.strftime('%Y-%m-%d %-I:%M %p')} EST — {title[:60]}")
     report = ""
     if added:
-        report += "filed 🗄\n\n" + "\n".join(f"🔹 {a}" for a in added)
+        report += "filed 🗄\n\n" + "\n".join(f"▪️ {a}" for a in added)
     if failed:
         report += f"\n\ncouldn't fetch: {', '.join(failed)}"
     await update.effective_message.reply_text(report or "nothing imported")
@@ -5229,17 +5312,24 @@ async def job_edgar_watch(app):
     if not new:
         return
     kv_set("edgar_last_acc", filings[0]["acc"])
+    import html as _html
     for f in reversed(new[:3]):
-        desc = f" — {f['desc']}" if f.get("desc") else ""
-        body = (f"🚨 NEW GAMESTOP SEC FILING\n"
+        # claim the story so the Google News copy of this same filing, arriving
+        # twenty minutes later with a journalist's headline on it, is a dupe
+        _story_claim(f"gamestop sec filing files form {f['form']} {f.get('desc', '')}")
+        desc = f" — {_html.escape(f['desc'])}" if f.get("desc") else ""
+        body = (f"BREAKING 🚨\n"
                 f"\n"
-                f" ├ form: {f['form']}{desc}\n"
-                f" ├ filed: {f['date']}\n"
-                f"└ {_edgar_link(f)}\n"
+                f"<b>new gamestop SEC filing</b>\n"
                 f"\n"
-                f"straight off EDGAR. read it before someone tweets it wrong 👀")
+                f" ├ form: {_html.escape(f['form'])}{desc}\n"
+                f"└ filed: {f['date']}\n"
+                f"\n"
+                f'📰 <a href="{_html.escape(_edgar_link(f), quote=True)}">read it on EDGAR</a> '
+                f"before someone tweets it wrong 👀")
         try:
             await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body,
+                                       parse_mode="HTML",
                                        disable_web_page_preview=True)
         except Exception as e:
             log.warning(f"edgar announce failed: {e}")
@@ -5274,6 +5364,177 @@ def _news_mark(guids: set):
     kv_set("news_seen", json.dumps(list(guids)[-300:]))
 
 
+# ── The story registry ────────────────────────────────────────────────────────
+_STORY_STOP = {
+    "the", "a", "an", "of", "in", "on", "for", "to", "and", "or", "as", "at",
+    "is", "are", "was", "with", "by", "its", "his", "her", "this", "that",
+    "after", "amid", "over", "under", "into", "from", "new", "says", "said",
+    "report", "reports", "reportedly", "breaking", "news", "update", "just",
+}
+
+
+def _story_words(title: str) -> frozenset:
+    """A headline reduced to its load-bearing words. 'GameStop Files 8-K With
+    SEC - Reuters' and 'GameStop files new 8-K filing - CNBC' land on nearly
+    the same set, which is the whole point: outlets vary the dressing, not the
+    nouns."""
+    t = title.lower()
+    if " - " in t:
+        head, tail = t.rsplit(" - ", 1)
+        if len(tail) <= 30:                      # ' - Reuters' style source tag
+            t = head
+    words = re.findall(r"[a-z0-9$&]+", t)   # hyphen splits: "90-day" == "90 day"
+    out = set()
+    for w in words:
+        if w in _STORY_STOP or len(w) < 3 and not w.isdigit():
+            continue
+        # light stemming so files/filed/filing count as one word
+        for suf in ("ings", "ing", "ies", "ed", "es", "s"):
+            if len(w) > 4 and w.endswith(suf):
+                w = w[: -len(suf)]
+                break
+        out.add(w)
+    return frozenset(out)
+
+
+def _story_claim(title: str, ttl_hours: int = 48) -> bool:
+    """True exactly once per story per ttl, across EVERY news pipeline.
+
+    Compares keyword fingerprints with Jaccard overlap, so the same story from
+    a second outlet, or from Grok after the RSS already caught it, is a dupe
+    even though its guid, url and exact wording all differ."""
+    w = _story_words(title)
+    if not w:
+        return False
+    now = time.time()
+    try:
+        reg = json.loads(kv_get("story_registry", "[]") or "[]")
+    except Exception:
+        reg = []
+    reg = [r for r in reg if now - r.get("t", 0) < ttl_hours * 3600]
+    for r in reg:
+        rw = set(r.get("w", []))
+        if not rw:
+            continue
+        inter = len(w & rw)
+        # overlap coefficient, not jaccard: outlets rewrite the verbs and keep
+        # the nouns, so "announces $500M bitcoin purchase" and "buys $500M in
+        # bitcoin, shares jump" share 3 of 5 core words but only 3 of 8 total.
+        # the floor of 3 shared words stops two short generic headlines from
+        # gluing to each other.
+        if (inter >= 3 and inter / min(len(w), len(rw)) >= 0.6) \
+                or inter / len(w | rw) >= 0.5:
+            kv_set("story_registry", json.dumps(reg))
+            log.info(f"story dupe suppressed: {title[:80]}")
+            return False
+    reg.append({"t": now, "w": sorted(w)})
+    kv_set("story_registry", json.dumps(reg[-80:]))
+    return True
+
+
+def _x_breaking_ok() -> bool:
+    """Breaking posts to X carry the article URL, and a URL post bills at
+    ~$0.20 instead of $0.015. Four a day is the ceiling."""
+    d = datetime.now(PROJECT_TZ).date()
+    used = int(kv_get(f"xbreak:{d}", "0") or 0)
+    if used >= 4:
+        return False
+    kv_set(f"xbreak:{d}", str(used + 1))
+    return True
+
+
+async def _article_card(url: str) -> tuple[str, str | None]:
+    """Follow the link to the real article; bring back (final_url, image_path).
+    Google News hands out redirect monsters; the final URL is the clean one.
+    The image is the page's og:image, downloaded, or None. Never raises."""
+    try:
+        async with httpx.AsyncClient(
+                timeout=12, follow_redirects=True,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; TsukiBot/1.0)"}) as c:
+            r = await c.get(url)
+            final = str(r.url)
+            m = (re.search(r'property=["\']og:image["\'][^>]*content=["\']([^"\']+)', r.text)
+                 or re.search(r'content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']', r.text))
+            if not m:
+                return final, None
+            iu = m.group(1).replace("&amp;", "&")
+            ir = await c.get(iu)
+            if (ir.status_code == 200 and len(ir.content) > 5000
+                    and len(ir.content) < 5 * 1024 * 1024
+                    and ir.headers.get("content-type", "").startswith("image")):
+                path = f"/tmp/news-{hashlib.md5(iu.encode()).hexdigest()[:10]}.img"
+                with open(path, "wb") as f:
+                    f.write(ir.content)
+                return final, path
+            return final, None
+    except Exception as e:
+        log.info(f"article card fetch failed: {e}")
+        return url, None
+
+
+async def announce_breaking(app, title: str, link: str, via: str = "") -> None:
+    """THE one door for breaking news, telegram and X both.
+
+    Telegram gets: image (when the article has one), BREAKING 🚨 header, the
+    headline in bold, one in-voice line, and the source as a NAMED link — never
+    a raw URL, because a five-hundred-character Google redirect in the chat is
+    what 'spam' looks like even when the story only posts once."""
+    import html as _html
+    clean, source = title.strip(), ""
+    if " - " in clean:
+        head, tail = clean.rsplit(" - ", 1)
+        if len(tail) <= 30:
+            clean, source = head.strip(), tail.strip()
+    final_url, img = await _article_card(link)
+
+    take = ""
+    try:
+        take = claude.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=90,
+            system=("one dry, in-voice line reacting to this headline for the tsuki x rwa "
+                    "telegram. lowercase, no hashtags, no advice, no price prediction. "
+                    "if it touches the lore, say which thread. return only the line."),
+            messages=[{"role": "user", "content": clean}],
+        ).content[0].text.strip()
+    except Exception:
+        pass
+
+    label = _html.escape(source or via.lstrip("@") or "read the article")
+    cap = f"BREAKING 🚨\n\n<b>{_html.escape(clean)}</b>"
+    if take:
+        cap += f"\n\n🐈‍⬛ {_html.escape(take)}"
+    cap += f'\n\n📰 <a href="{_html.escape(final_url, quote=True)}">{label}</a>'
+    try:
+        if img:
+            with open(img, "rb") as f:
+                await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=f,
+                                         caption=cap[:1024], parse_mode="HTML")
+        else:
+            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=cap,
+                                       parse_mode="HTML",
+                                       disable_web_page_preview=True)
+    except Exception as e:
+        log.warning(f"breaking announce failed ({e}); sending plain")
+        try:
+            await app.bot.send_message(
+                chat_id=TARGET_CHAT_ID,
+                text=f"BREAKING 🚨\n\n{clean}\n\n📰 {final_url}",
+                disable_web_page_preview=True)
+        except Exception as e2:
+            log.warning(f"plain fallback failed too: {e2}")
+
+    if _x_breaking_ok():
+        xu = post_to_x(f"BREAKING 🚨: {clean}", signoff=False,
+                       image_path=img, append_url=final_url)
+        if xu:
+            await raid_alert(app, xu, clean, "broke the news")
+    if img:
+        try:
+            os.remove(img)
+        except Exception:
+            pass
+
+
 async def job_news_watch(app):
     import email.utils
     items = await fetch_rss(NEWS_FEED_URL)
@@ -5288,43 +5549,21 @@ async def job_news_watch(app):
     now = time.time()
     fired = 0
     for item in items:
-        if item["guid"] in seen or fired >= 2:
+        if item["guid"] in seen or fired >= 1:   # ONE story per poll, ever
             continue
         try:
             age = now - email.utils.parsedate_to_datetime(item["pub"]).timestamp()
         except Exception:
             age = 0
-        if age > 1800:          # older than 30 minutes is not breaking
-            seen.add(item["guid"])
-            continue
         seen.add(item["guid"])
+        if age > 1800:          # older than 30 minutes is not breaking
+            continue
+        # the story claim is what stops outlet #2, #3 and #7 of the same news
+        # from firing: different guid, same fingerprint
+        if not _story_claim(item["title"]):
+            continue
         fired += 1
-        title = item["title"]
-        body = (f"🚨 BREAKING\n"
-                f"\n"
-                f"{title}\n"
-                f"\n"
-                f"🔹 {item['link']}")
-        try:
-            take = claude.messages.create(
-                model="claude-haiku-4-5-20251001", max_tokens=90,
-                system=("one dry, in-voice line reacting to this headline for the tsuki x rwa "
-                        "telegram. lowercase, no hashtags, no advice, no price prediction. "
-                        "if it touches the lore, say which thread. return only the line."),
-                messages=[{"role": "user", "content": title}],
-            ).content[0].text.strip()
-            body += f"\n\n🐈‍⬛ {take}"
-        except Exception:
-            pass
-        try:
-            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body,
-                                       disable_web_page_preview=False)
-        except Exception as e:
-            log.warning(f"news announce failed: {e}")
-        if _NEWS_HOT.search(title):
-            xu = post_to_x(f"breaking: {title}", signoff=False)
-            if xu:
-                await raid_alert(app, xu, title, "broke the news")
+        await announce_breaking(app, item["title"], item["link"])
     _news_mark(seen)
 
 
@@ -5334,10 +5573,19 @@ async def cmd_news(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not items:
         await update.effective_message.reply_text("news wire's quiet or unreachable right now 🐈‍⬛")
         return
-    lines = [f"🔹 {i['title']}\n{i['link']}" for i in items[:5]]
+    import html as _html
+    lines = []
+    for i in items[:5]:
+        title, source = i["title"], ""
+        if " - " in title:
+            head, tail = title.rsplit(" - ", 1)
+            if len(tail) <= 30:
+                title, source = head, tail
+        src_tag = f" — <a href=\"{_html.escape(i['link'], quote=True)}\">{_html.escape(source or 'link')}</a>"
+        lines.append(f"▪️ {_html.escape(title)}{src_tag}")
     await update.effective_message.reply_text(
-        "📰 latest on gamestop / RK / cohen:\n\n" + "\n\n".join(lines),
-        disable_web_page_preview=True)
+        "<b>Latest on gamestop / RK / cohen</b>\n\n" + "\n\n".join(lines),
+        parse_mode="HTML", disable_web_page_preview=True)
 
 
 # ── Grok pulse — X-native breaking news, optional ─────────────────────────────
@@ -5396,30 +5644,19 @@ async def job_grok_pulse(app):
     verdict = await grok_breaking_scan()
     if not verdict:
         return
-    key = hashlib.md5((verdict.get("headline", "") + verdict.get("url", "")).encode()).hexdigest()
-    seen = _news_seen()
-    if key in seen:
-        return
-    seen.add(key)
-    _news_mark(seen)
     handle = verdict.get("handle", "")
     hkey = SILENCE_X_HANDLES.get(handle.lstrip("@").lower())
     if hkey:
         await update_silence(hkey, datetime.now(timezone.utc), app)
-    src = f" — @{handle.lstrip('@')}" if handle else ""
-    body = (f"🚨 BREAKING{src}\n"
-            f"\n"
-            f"{verdict.get('headline','')}\n"
-            f"\n"
-            f"🔹 {verdict.get('url','')}")
-    try:
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body,
-                                   disable_web_page_preview=False)
-    except Exception as e:
-        log.warning(f"grok announce failed: {e}")
-    xu = post_to_x(f"breaking{src.lower()}: {verdict.get('headline','')}", signoff=False)
-    if xu:
-        await raid_alert(app, xu, verdict.get("headline", ""), "broke it first")
+    headline = verdict.get("headline", "").strip()
+    if not headline:
+        return
+    # the shared claim is the fix for grok re-announcing what the RSS already
+    # posted (or what grok itself posted an hour ago and then forgot, back
+    # when its keys were being evicted from the news watcher's ledger)
+    if not _story_claim(headline):
+        return
+    await announce_breaking(app, headline, verdict.get("url", ""), via=handle)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -6052,10 +6289,9 @@ async def cmd_pulse(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     ctx.chat_data["pulse_draft"] = body
     ctx.chat_data["pulse_slug"] = room["slug"]
     await m.edit_text(
-        f"*what the room is doing* ({room.get('kind')}, strength {room.get('strength')})\n"
-        f"{room.get('theme')}\n\n*the post*\n\n{body}\n\n"
-        f"`/xpost` it yourself, or leave it and the scheduler will write its own.",
-        parse_mode="Markdown")
+        f"what the room is doing ({room.get('kind')}, strength {room.get('strength')})\n"
+        f"{room.get('theme')}\n\nthe post:\n\n{body}\n\n"
+        f"/xpost it yourself, or leave it and the scheduler will write its own.")
 
 
 async def job_whisper(app):
@@ -6293,8 +6529,12 @@ async def job_x_mentions(app):
             kv_set("x_me_id", me_id)
             kv_set("x_me_handle", me_handle)
         since = kv_get("x_mentions_since") or None
+        # user_auth=True is load-bearing: tweepy defaults reads to app-only
+        # bearer auth, which this OAuth1-only client does not have. get_me
+        # defaults to True, which is why /xtest passed while this line threw
+        # on every poll and the bot never replied to anyone.
         resp = client.get_users_mentions(
-            id=me_id, since_id=since, max_results=20,
+            id=me_id, since_id=since, max_results=20, user_auth=True,
             tweet_fields=["author_id", "conversation_id", "created_at"],
             expansions=["author_id"], user_fields=["username"])
     except Exception as e:
@@ -6446,7 +6686,25 @@ async def cmd_silence(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(silence_board())
 
 
+def _kv_janitor():
+    """Prune the dated bookkeeping keys (xplan:, spend:, xreplies:, xbreak:)
+    older than 14 days. They accrue ~10 rows a day forever otherwise, on the
+    volume whose whole job is to stay small and healthy."""
+    try:
+        cutoff = (datetime.now(PROJECT_TZ).date() - timedelta(days=14)).isoformat()
+        con = db()
+        for prefix in ("xplan:", "spend:", "xreplies:", "xbreak:"):
+            con.execute(
+                "DELETE FROM kv_store WHERE key LIKE ? AND substr(key, ?, 10) < ?",
+                (prefix + "%", len(prefix) + 1, cutoff))
+        con.commit()
+        con.close()
+    except Exception as e:
+        log.info(f"kv janitor skipped: {e}")
+
+
 async def job_silence_daily(app):
+    _kv_janitor()
     """11:11am New York, every day: the board goes to the group and to X.
     An account that does one thing at the same time forever gets checked."""
     board = silence_board()
@@ -6526,9 +6784,11 @@ async def _on_startup_report(app):
             log.error(f"CONFIG PROBLEM: {p}")
     log.info("=" * 70)
 
-    # the community gets the friendly line and nothing else
+    # deliberately NO message to the community on boot. a deploy-heavy day
+    # used to print "im back online" into the group repeatedly, which reads
+    # as instability. the report below goes to the admin DM only.
     try:
-        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=random.choice(STARTUP_LINES))
+        pass
     except Exception as e:
         log.warning(f"Startup message failed: {e}")
 
@@ -6595,7 +6855,11 @@ def main():
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
 
     global SCHEDULER
-    scheduler = SCHEDULER = AsyncIOScheduler()
+    scheduler = SCHEDULER = AsyncIOScheduler(job_defaults={
+        "coalesce": True,            # missed fires collapse into one, not a burst
+        "misfire_grace_time": 300,   # a busy loop delays a job, never discards it
+        "max_instances": 1,
+    })
     ny_tz = ZoneInfo("America/New_York")  # auto-handles EST/EDT, always lands at 9am local
     scheduler.add_job(job_summary,         "cron", hour="8,16,0", minute=0, timezone=ny_tz, args=[app])
     scheduler.add_job(job_post,            "cron", hour="*/4", minute=5, timezone=ny_tz, args=[app])
@@ -6616,7 +6880,7 @@ def main():
     # scheduler.start() deliberately does NOT happen here. See on_startup().
 
     log.info("Tsukiverse Bot running")
-    app.run_polling(allowed_updates=["message"])
+    app.run_polling(allowed_updates=["message", "callback_query"])
 
 
 if __name__ == "__main__":
