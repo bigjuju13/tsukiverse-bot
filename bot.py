@@ -575,6 +575,11 @@ def date_context() -> str:
             "tense, never say one came and went, never say nothing happened on one, "
             "never call one a miss. the only date that is a genuine miss is "
             "14 june 2026:\n" + "\n".join(rows))
+    out.append("and the reverse error is just as fatal: a date in the ALREADY "
+               "HAPPENED list is never 'tomorrow', never 'in N days', never "
+               "'coming up'. infinity day (8 august 2026) and every other passed "
+               "date is behind us. check the lists above before writing any "
+               "countdown language.")
     return "\n\n".join(out)
 
 
@@ -4119,26 +4124,116 @@ _OUTSIDE_NAME = re.compile(
 
 # Phrases that put an event in the past. Fatal if aimed at a date still ahead.
 _PAST_TENSE = re.compile(
-    r"\b(came and went|has (?:now )?passed|have passed|already (?:happened|been)|"
+    r"\b(came and went|has (?:now )?passed|have passed|already (?:happened|been|passed)|"
     r"nothing happened|was a miss|turned out to be nothing|passed without|"
+    r"is (?:now )?(?:over|behind us)|are (?:now )?(?:over|behind us)|"
     r"did not happen|didn'?t happen)\b", re.I)
 
 
-def _future_written_as_past(body: str) -> str:
-    """Catches '8 august 2026 came and went' written on 7 august 2026."""
-    if not _PAST_TENSE.search(body):
-        return ""
-    today = datetime.now(PROJECT_TZ).date()
+# Lore dates by NAME. "infinity day" is how the model actually writes about
+# 8 august; a gate that only knows "8 august 2026" never sees it coming.
+_DATE_ALIASES = [
+    (re.compile(r"\binfinity day\b", re.I), date(2026, 8, 8)),
+    (re.compile(r"\binternational cat day\b", re.I), date(2026, 8, 8)),
+    (re.compile(r"\bdog days\b", re.I), date(2026, 8, 11)),
+    (re.compile(r"\bspacex ipo\b", re.I), date(2026, 6, 12)),
+    (re.compile(r"\b433 date\b", re.I), date(2026, 6, 14)),
+    (re.compile(r"\belon('s)? (55th )?birthday\b|\belon turns 55\b", re.I), date(2026, 6, 28)),
+]
+
+# Language that anchors a date to NOW as still ahead. Deliberately narrow:
+# "tomorrow" and "in N days" are decisive; a bare "before" would also flag
+# legitimate history ("he posted two days before infinity day").
+_FUTURE_ANCHOR = re.compile(
+    r"\b(is\s+)?tomorrow\b|\bin\s+\d+\s+(?:more\s+)?days?\b|"
+    r"\b\d+\s+(?:more\s+)?days?\s+(?:away|out|left|until|till|to\s+go)\b|"
+    r"\bcounting\s+down\b|\balmost\s+here\b|\bcoming\s+up\b|"
+    r"\bupcoming\b|\bdraws?\s+(?:closer|near)\b|\bhasn'?t\s+happened\s+yet\b|"
+    r"\bstill\s+ahead\b|\bnot\s+long\s+now\b", re.I)
+
+_NUM = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+# "two days before infinity day" asserting NOW. The same words are legal
+# history when the sentence carries a past-tense verb ("he POSTED two days
+# before infinity day"), so that case is exempted below.
+_COUNTDOWN = re.compile(rf"\b{_NUM}\s+days?\s+(?:before|until|till|to)\b", re.I)
+_PAST_VERB = re.compile(
+    r"\b(posted|said|was|were|went|did|had|filed|landed|dropped|came|happened|"
+    r"returned|launched|broke|stayed|pinned|called|noticed|answered)\b", re.I)
+
+_WORDNUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+_CLAIMED_GAP = re.compile(
+    rf"\b(?:in\s+)?({_NUM})\s+(?:more\s+)?days?"
+    rf"(?:\s+(?:away|out|left|until|till|to\s+go|before|to))?\b", re.I)
+
+
+def _claimed_days(sentence: str) -> int | None:
+    m = _CLAIMED_GAP.search(sentence)
+    if not m:
+        return None
+    raw = m.group(1).lower()
+    return _WORDNUM.get(raw, int(raw) if raw.isdigit() else None)
+
+
+def _dates_in(sentence: str) -> list:
+    """Every lore date this sentence mentions, by number or by name."""
+    found = []
+    low = sentence.lower()
     for d, _ in LORE_DATES:
-        if d < today:
-            continue
         month = d.strftime("%B").lower()
-        pats = (rf"\b{d.day}\s+{month}\s+{d.year}\b",
-                rf"\b{month}\s+{d.day}(?:st|nd|rd|th)?,?\s+{d.year}\b")
-        if any(re.search(p, body, re.I) for p in pats):
-            return (f"writes about {_fmt_date(d)} as if it already happened. "
-                    f"today is {_fmt_date(today)}, so that date is still ahead")
+        if re.search(rf"\b{d.day}\s+{month}(?:\s+{d.year})?\b", low) \
+                or re.search(rf"\b{month}\s+{d.day}(?:st|nd|rd|th)?(?:,?\s+{d.year})?\b", low) \
+                or re.search(rf"\b{d.month}\s*/\s*{d.day}\b|\b{d.day}\s*/\s*{d.month}\b", low):
+            found.append(d)
+    for pat, d in _DATE_ALIASES:
+        if pat.search(sentence):
+            found.append(d)
+    return found
+
+
+def _date_tense_problem(body: str) -> str:
+    """BOTH tense errors, judged sentence by sentence.
+
+    A still-future date written as already over is a fake miss and poisons
+    the archive's credibility. A passed date written as still coming is worse:
+    it proves in public that the account does not know what day it is. Either
+    way the post must never leave the building."""
+    today = datetime.now(PROJECT_TZ).date()
+    for sentence in re.split(r"(?<=[.!?\n])\s+", body):
+        mentioned = _dates_in(sentence)
+        if not mentioned:
+            continue
+        past_lang = bool(_PAST_TENSE.search(sentence))
+        future_lang = bool(_FUTURE_ANCHOR.search(sentence))
+        for d in mentioned:
+            if d > today and past_lang:
+                return (f"writes about {_fmt_date(d)} as if it already happened. "
+                        f"today is {_fmt_date(today)}, so that date is still ahead")
+            if d < today and future_lang:
+                return (f"writes about {_fmt_date(d)} as still coming, but it "
+                        f"passed. today is {_fmt_date(today)}")
+            if d < today and _COUNTDOWN.search(sentence) \
+                    and not _PAST_VERB.search(sentence):
+                return (f"counts down to {_fmt_date(d)}, which already passed. "
+                        f"today is {_fmt_date(today)}")
+            # direction right, arithmetic wrong: "tomorrow" for a date four
+            # days out, or "in 2 days" when the real gap is 5. one wrong count
+            # in public costs more credibility than ten posts earn back.
+            if d > today and not _PAST_VERB.search(sentence):
+                gap = (d - today).days
+                if re.search(r"\btomorrow\b", sentence, re.I) and gap != 1:
+                    return (f"calls {_fmt_date(d)} tomorrow, but it is {gap} days "
+                            f"away. today is {_fmt_date(today)}")
+                n = _claimed_days(sentence)
+                if n is not None and n != gap:
+                    return (f"says {_fmt_date(d)} is {n} days away, but the real "
+                            f"gap is {gap}. today is {_fmt_date(today)}")
     return ""
+
+
+def _future_written_as_past(body: str) -> str:
+    """Kept as the name every call site uses; now covers both directions."""
+    return _date_tense_problem(body)
 
 
 def _shill_problem(text: str) -> str:
