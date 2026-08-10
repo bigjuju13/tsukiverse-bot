@@ -6163,7 +6163,22 @@ async def on_error(update, ctx):
         pass
 
 
+SCHEDULER = None
+
+
 async def on_startup(app):
+    """Runs inside the event loop that run_polling() creates, which is the only
+    place AsyncIOScheduler can legally be started."""
+    if SCHEDULER is not None and not SCHEDULER.running:
+        try:
+            SCHEDULER.start()
+            log.info(f"scheduler started with {len(SCHEDULER.get_jobs())} jobs")
+        except Exception as e:
+            log.error(f"scheduler failed to start: {e}")
+    await _on_startup_report(app)
+
+
+async def _on_startup_report(app):
     """Fires once after connect, and now REPORTS ITS OWN CONFIG.
 
     Env vars only reach a NEW process, so 'I definitely added it' and 'the
@@ -6257,7 +6272,8 @@ def main():
     app.add_error_handler(on_error)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
 
-    scheduler = AsyncIOScheduler()
+    global SCHEDULER
+    scheduler = SCHEDULER = AsyncIOScheduler()
     ny_tz = ZoneInfo("America/New_York")  # auto-handles EST/EDT, always lands at 9am local
     scheduler.add_job(job_summary,         "cron", hour="8,16,0", minute=0, timezone=ny_tz, args=[app])
     scheduler.add_job(job_post,            "cron", hour="*/4", minute=5, timezone=ny_tz, args=[app])
@@ -6275,7 +6291,7 @@ def main():
     scheduler.add_job(job_silence_daily, "cron", hour=11, minute=11, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_heartbeat,   "cron", minute="0,30", timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_mentions,    "interval", minutes=5, args=[app])
-    scheduler.start()
+    # scheduler.start() deliberately does NOT happen here. See on_startup().
 
     log.info("Tsukiverse Bot running")
     app.run_polling(allowed_updates=["message"])
