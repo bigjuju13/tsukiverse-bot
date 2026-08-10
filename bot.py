@@ -23,6 +23,7 @@ Notes for future maintenance:
 
 import asyncio
 import hashlib
+import uuid
 import json
 import logging
 import os
@@ -128,6 +129,12 @@ DB_IS_PERSISTENT = os.path.isabs(DB_PATH)
 
 # X (Twitter) posting — optional, bot runs fine without these
 PROCESS_START = datetime.now(timezone.utc)
+# A tag unique to THIS process. Two containers polling the same bot token both
+# receive commands, so answers alternate between them and the bot appears to
+# contradict itself: /xtest says the keys work, /xpost says they are missing.
+# Same token, two processes, two different answers. Stamping every diagnostic
+# with this makes that visible in one screenshot instead of an afternoon.
+INSTANCE = uuid.uuid4().hex[:4]
 
 
 def _identify_process() -> str:
@@ -139,7 +146,8 @@ def _identify_process() -> str:
     sha = (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "")[:7] or "?"
     age = int((datetime.now(timezone.utc) - PROCESS_START).total_seconds())
     age_s = f"{age // 3600}h {age % 3600 // 60}m" if age >= 3600 else f"{age // 60}m {age % 60}s"
-    return (f" \u251c service: {svc}\n"
+    return (f" \u251c instance: {INSTANCE}  <- run twice; a DIFFERENT tag means two bots are live\n"
+            f" \u251c service: {svc}\n"
             f" \u251c environment: {env}\n"
             f" \u251c build: {sha}\n"
             f"\u2514 this process has been alive {age_s}")
@@ -1975,8 +1983,46 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None) ->
         log.info("Posted to X" + (" with image" if media_ids else ""))
         return f"https://x.com/i/status/{tid}" if tid else None
     except Exception as e:
-        log.warning(f"X post error: {e}")
+        global LAST_X_ERROR
+        LAST_X_ERROR = f"{type(e).__name__}: {e}"
+        log.warning(f"X post error: {LAST_X_ERROR}")
         return None
+
+
+# The last thing X actually said. post_to_x has to swallow exceptions (a failed
+# whisper must not take the bot down), but swallowing them silently meant every
+# failure looked identical from Telegram, and "post failed" was being read as
+# "credentials missing" when it was really a 403.
+LAST_X_ERROR = ""
+
+
+def _x_failure_hint() -> str:
+    """Turn the raw X error into the thing to actually go and change."""
+    e = LAST_X_ERROR.lower()
+    if not LAST_X_ERROR:
+        if not X_ENABLED:
+            return ("X_ENABLED is False on this process, so it never called X at all. "
+                    "the four variables are not in THIS container.")
+        return "no error was recorded, which usually means it was blocked before it was sent."
+    if "modulenotfound" in e or "no module named" in e:
+        return "tweepy is not installed. requirements.txt is missing from the repo root."
+    # duplicate first: X returns it as a Forbidden, so the 403 branch would
+    # otherwise claim a read-only token and send you off regenerating keys.
+    if "duplicate" in e:
+        return "X rejects identical text twice. change a word and retry."
+    if "403" in e or "forbidden" in e or "not permitted" in e or "oauth1 app permissions" in e:
+        return ("403. your ACCESS TOKEN is read only. /xtest passes because reading your own "
+                "profile is a read. set the app to Read and write in User authentication "
+                "settings, then REGENERATE the access token and secret. the old ones keep "
+                "the old permission forever.")
+    if "402" in e or "payment" in e or "credit" in e or "insufficient" in e or "quota" in e:
+        return ("no credits. X is prepaid since february 2026. top up in the X Developer "
+                "Console and try again.")
+    if "401" in e or "unauthorized" in e:
+        return "401. the keys are wrong, or were regenerated after you pasted them."
+    if "429" in e or "rate limit" in e:
+        return "429, rate limited. wait and retry."
+    return "see the raw error above."
 
 
 async def raid_alert(app, url: str, preview: str, label: str = "just posted"):
@@ -4148,6 +4194,8 @@ async def cmd_xtest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             f" \u251c authenticated as: @{handle}\n"
             f" \u251c key lengths: {mask(X_API_KEY)}\n"
             f"\u2514 scheduled posts will go out on the normal timetable\n"
+            f"\ninstance {INSTANCE}. if /xpost now reports the keys missing, that "
+            f"reply came from a DIFFERENT process and two bots are running.\n"
             f"\n"
             f"send a real one now with /xpost <text>")
     except ModuleNotFoundError:
@@ -4199,7 +4247,11 @@ async def cmd_xpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     ok = post_to_x(text[1].strip())
     await update.effective_message.reply_text(
-        ("\u2705 posted:\n\n" if ok else "\u274c post failed (check /xtest). it would have said:\n\n") + body)
+        ("\u2705 posted:\n\n" + body) if ok else
+        (f"\u274c X refused it.\n\n"
+         f"what X actually said:\n{LAST_X_ERROR or '(nothing recorded)'}\n\n"
+         f"what that means:\n{_x_failure_hint()}\n\n"
+         f"instance {INSTANCE}, X_ENABLED={X_ENABLED}\n\nit would have said:\n\n{body}"))
 
 
 async def cmd_datecheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
