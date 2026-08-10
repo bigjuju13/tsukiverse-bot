@@ -204,7 +204,14 @@ def _with_date(system):
     if system is None:
         return stamp
     if isinstance(system, str):
-        return system if "TODAY'S DATE IS" in system else system + "\n\n" + stamp
+        if "TODAY'S DATE IS" in system:
+            return system
+        if len(system) >= 4000:
+            # keep the bulk separate so _cacheable can cache it and the daily
+            # stamp can sit outside the cached prefix
+            return [{"type": "text", "text": system},
+                    {"type": "text", "text": stamp}]
+        return system + "\n\n" + stamp
     if isinstance(system, list):
         joined = " ".join(b.get("text", "") for b in system if isinstance(b, dict))
         if "TODAY'S DATE IS" in joined:
@@ -213,13 +220,65 @@ def _with_date(system):
     return system
 
 
+# Caching needs a decent-sized prefix to be worth it. Below this the overhead
+# is not repaid, above it the saving is large: the voice prompt plus the lore
+# is the bulk of nearly every call, it is identical every time, and it was
+# being re-sent and re-billed in full on every single generation.
+_CACHE_MIN_CHARS = 4000
+
+
+def _cacheable(system):
+    """Mark the stable bulk of a system prompt as cacheable.
+
+    The date stamp is deliberately left OUTSIDE the cached block: it changes
+    daily, and putting it inside would invalidate the cache every midnight for
+    the sake of forty characters."""
+    if isinstance(system, str):
+        if len(system) < _CACHE_MIN_CHARS:
+            return system
+        return [{"type": "text", "text": system,
+                 "cache_control": {"type": "ephemeral"}}]
+    if isinstance(system, list) and system:
+        if any(isinstance(b, dict) and b.get("cache_control") for b in system):
+            return system                      # a call site already chose
+        big = max(range(len(system)),
+                  key=lambda i: len(system[i].get("text", "") or ""))
+        if len(system[big].get("text", "") or "") < _CACHE_MIN_CHARS:
+            return system
+        out = [dict(b) for b in system]
+        out[big]["cache_control"] = {"type": "ephemeral"}
+        return out
+    return system
+
+
+def _bill(resp):
+    """Roll today's token usage into the kv store so spending is a number the
+    bot can show you, not something you infer from a monthly invoice."""
+    try:
+        u = resp.usage
+        day = datetime.now(PROJECT_TZ).date().isoformat()
+        cur = json.loads(kv_get(f"spend:{day}", "{}") or "{}")
+        cur["calls"] = cur.get("calls", 0) + 1
+        cur["in"] = cur.get("in", 0) + int(getattr(u, "input_tokens", 0) or 0)
+        cur["out"] = cur.get("out", 0) + int(getattr(u, "output_tokens", 0) or 0)
+        cur["cache_write"] = cur.get("cache_write", 0) + int(
+            getattr(u, "cache_creation_input_tokens", 0) or 0)
+        cur["cache_read"] = cur.get("cache_read", 0) + int(
+            getattr(u, "cache_read_input_tokens", 0) or 0)
+        kv_set(f"spend:{day}", json.dumps(cur))
+    except Exception:
+        pass                                   # accounting must never break a post
+
+
 class _DatedMessages:
     def __init__(self, inner):
         self._inner = inner
 
     def create(self, **kw):
-        kw["system"] = _with_date(kw.get("system"))
-        return self._inner.create(**kw)
+        kw["system"] = _cacheable(_with_date(kw.get("system")))
+        resp = self._inner.create(**kw)
+        _bill(resp)
+        return resp
 
     def __getattr__(self, name):
         return getattr(self._inner, name)
@@ -4302,6 +4361,46 @@ async def cmd_xpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
          f"instance {INSTANCE}, X_ENABLED={X_ENABLED}\n\nit would have said:\n\n{body}"))
 
 
+async def cmd_spend(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """What the bot has actually cost today and over the last week."""
+    if not await is_project_admin(ctx, update):
+        await update.effective_message.reply_text("admins only \U0001f408\u200d\u2b1b")
+        return
+    # sonnet 4.6 list prices per million tokens. cache reads are a tenth of
+    # fresh input, which is the whole reason the caching change matters.
+    IN, OUT, CW, CR = 3.00, 15.00, 3.75, 0.30
+    today = datetime.now(PROJECT_TZ).date()
+    rows, total = [], 0.0
+    for i in range(7):
+        d = today - timedelta(days=i)
+        try:
+            v = json.loads(kv_get(f"spend:{d}", "{}") or "{}")
+        except Exception:
+            v = {}
+        if not v:
+            continue
+        cost = (v.get("in", 0) * IN + v.get("out", 0) * OUT
+                + v.get("cache_write", 0) * CW + v.get("cache_read", 0) * CR) / 1e6
+        total += cost
+        rows.append(f"{d}  ${cost:5.2f}  {v.get('calls', 0)} calls")
+    if not rows:
+        await update.effective_message.reply_text(
+            "no spend recorded yet. it starts counting from this deploy.")
+        return
+    try:
+        v = json.loads(kv_get(f"spend:{today}", "{}") or "{}")
+    except Exception:
+        v = {}
+    fresh, cached = v.get("in", 0), v.get("cache_read", 0)
+    hit = f"{100 * cached // max(1, fresh + cached)}%" if (fresh + cached) else "n/a"
+    await update.effective_message.reply_text(
+        "\U0001f4b8 anthropic spend\n\n" + "\n".join(rows)
+        + f"\n\n7 day total: ${total:.2f}"
+        + f"\nprojected month: ${total / max(1, len(rows)) * 30:.2f}"
+        + f"\ncache hit rate today: {hit}  (higher is cheaper)"
+        + f"\nx replies today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}")
+
+
 async def cmd_datecheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """What the bot currently believes about the calendar. If this is ever
     wrong, every post it writes will be wrong in the same way."""
@@ -5771,7 +5870,9 @@ async def read_the_room(hours: int = 14) -> dict | None:
     body = "\n".join(lines)[-9000:]
     try:
         msg = claude.messages.create(
-            model="claude-sonnet-4-6",
+            # structured extraction, not voice work: haiku does this as well
+            # for a fraction of the price, and it reads 9k of chat every day
+            model="claude-haiku-4-5-20251001",
             max_tokens=400,
             system=(date_context() + "\n\n"
                     "you read a crypto community telegram and report what the room is doing. "
@@ -5998,7 +6099,24 @@ async def fetch_rss_resilient(url: str) -> list[dict]:
 #  pile-on cannot drain the API budget. Set X_REPLIES=off to disable.
 # ══════════════════════════════════════════════════════════════════════════════
 X_REPLIES_ENABLED = os.environ.get("X_REPLIES", "on").lower() != "off"
-X_REPLY_CAP_PER_RUN = 3          # max replies per 5-minute poll
+# Reads are billed per POST RETURNED, not per poll, so an empty check costs
+# nothing. Polling every minute instead of every five is therefore close to
+# free when the mentions are quiet, and turns a worst case of 5 minutes of
+# silence into about 60 seconds plus the few seconds it takes to write.
+X_MENTION_POLL_MIN = max(1, int(os.environ.get("X_MENTION_POLL_MIN", "1") or 1))
+X_REPLY_CAP_PER_RUN = int(os.environ.get("X_REPLY_CAP_PER_RUN", "4") or 4)
+# A ceiling on the DAY, not just the poll. The per-run cap alone allowed ~5,700
+# replies a day in theory, and each one is a model call plus up to two redrafts.
+X_REPLY_CAP_PER_DAY = int(os.environ.get("X_REPLY_CAP_PER_DAY", "30") or 30)
+
+
+def _replies_today() -> int:
+    return int(kv_get(f"xreplies:{datetime.now(PROJECT_TZ).date()}", "0") or 0)
+
+
+def _count_reply():
+    d = datetime.now(PROJECT_TZ).date()
+    kv_set(f"xreplies:{d}", str(_replies_today() + 1))
 X_REPLY_MAXLEN = 260
 
 
@@ -6111,9 +6229,12 @@ async def job_x_mentions(app):
         log.info("mentions baseline initialised")     # first run: don't reply to backlog
         return
     users = {u.id: u.username for u in (resp.includes or {}).get("users", [])}
+    if _replies_today() >= X_REPLY_CAP_PER_DAY:
+        log.info(f"reply budget spent for today ({X_REPLY_CAP_PER_DAY})")
+        return
     replied = 0
     for t in sorted(tweets, key=lambda x: int(x.id)):
-        if replied >= X_REPLY_CAP_PER_RUN:
+        if replied >= X_REPLY_CAP_PER_RUN or _replies_today() >= X_REPLY_CAP_PER_DAY:
             break
         handle = users.get(t.author_id, "")
         if not handle or handle.lower() in ("tsukiversebot",):
@@ -6124,6 +6245,7 @@ async def job_x_mentions(app):
                 continue
             client.create_tweet(text=reply, in_reply_to_tweet_id=t.id)
             replied += 1
+            _count_reply()
             log.info(f"replied to @{handle}")
             try:
                 await app.bot.send_message(
@@ -6360,7 +6482,7 @@ def main():
         ("xtest", cmd_xtest), ("xpost", cmd_xpost),
         ("rk", cmd_rk), ("rkimport", cmd_rkimport),
         ("news", cmd_news), ("whisper", cmd_whisper), ("silence", cmd_silence),
-        ("pulse", cmd_pulse),
+        ("pulse", cmd_pulse), ("spend", cmd_spend),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
@@ -6390,7 +6512,7 @@ def main():
     scheduler.add_job(job_whisper,      "cron", minute=17, timezone=ny_tz, args=[app])
     scheduler.add_job(job_silence_daily, "cron", hour=11, minute=11, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_heartbeat,   "cron", minute="0,30", timezone=ny_tz, args=[app])
-    scheduler.add_job(job_x_mentions,    "interval", minutes=5, args=[app])
+    scheduler.add_job(job_x_mentions,    "interval", minutes=X_MENTION_POLL_MIN, args=[app])
     # scheduler.start() deliberately does NOT happen here. See on_startup().
 
     log.info("Tsukiverse Bot running")
