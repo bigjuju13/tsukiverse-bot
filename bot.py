@@ -127,6 +127,24 @@ DB_PATH = _resolve_db_path()
 DB_IS_PERSISTENT = os.path.isabs(DB_PATH)
 
 # X (Twitter) posting — optional, bot runs fine without these
+PROCESS_START = datetime.now(timezone.utc)
+
+
+def _identify_process() -> str:
+    """Which service, which environment, which build, and how old is this
+    process. Without this, "the variable is missing" cannot be told apart from
+    "the variable is on a different service", and those have opposite fixes."""
+    svc = os.environ.get("RAILWAY_SERVICE_NAME") or "(not on railway?)"
+    env = os.environ.get("RAILWAY_ENVIRONMENT_NAME") or os.environ.get("RAILWAY_ENVIRONMENT") or "?"
+    sha = (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "")[:7] or "?"
+    age = int((datetime.now(timezone.utc) - PROCESS_START).total_seconds())
+    age_s = f"{age // 3600}h {age % 3600 // 60}m" if age >= 3600 else f"{age // 60}m {age % 60}s"
+    return (f" \u251c service: {svc}\n"
+            f" \u251c environment: {env}\n"
+            f" \u251c build: {sha}\n"
+            f"\u2514 this process has been alive {age_s}")
+
+
 def _envclean(name: str) -> str:
     """Read an env var and forgive the usual paste damage: surrounding quotes,
     stray whitespace, a trailing newline. A key with a trailing space fails
@@ -4092,9 +4110,17 @@ async def cmd_xtest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             "\n"
             "env var names it CAN see:\n" + seen_block + "\n"
             "\n"
-            "if the names above look right, the service was not redeployed after "
-            "you added them. railway only hands new variables to a NEW process, so "
-            "hit Deploy (not Restart) and run /xtest again.\n"
+            "the process asking:\n" + _identify_process() + "\n"
+            "\n"
+            "check that service name and environment against the ones you pasted "
+            "the keys into. variables live on ONE service in ONE environment, and "
+            "adding them to the project, to a database service, or to staging "
+            "while production is deployed all look exactly like this.\n"
+            "\n"
+            "if the service and environment are right, it was not redeployed: "
+            "railway only hands new variables to a NEW process. if this process "
+            "has been alive longer than since you added them, that is your answer. "
+            "hit Deploy, not Restart, then run /xtest again.\n"
             "\n"
             "watch for X_ACCESS_TOKEN_SECRET: the portal calls it \u201caccess token "
             "secret\u201d but this bot wants X_ACCESS_SECRET.")
