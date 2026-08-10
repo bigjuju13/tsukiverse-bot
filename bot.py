@@ -1770,7 +1770,48 @@ def fmt_price(p: dict, symbol: str) -> str:
 #  house rules live in exactly one place, so a new job physically cannot ship a
 #  post without the sign-off, or with an em dash, or with a half-built tree.
 # ══════════════════════════════════════════════════════════════════════════════
-X_SIGNOFF = "$TSUKI $RWA $GME"
+# X rejects any post carrying more than one cashtag: "Posts are limited to a
+# maximum of one cashtag ($SYMBOL)". The old sign-off had three, so every
+# campaign post and every daily log was refused with a 403 that read like a
+# permissions problem. The three tickers still all appear; only ONE of them
+# wears the $ on any given day, and which one rotates on a hash of the date so
+# each ticker gets its share of cashtag indexing over a week.
+X_TICKERS = ("TSUKI", "RWA", "GME")
+
+
+def x_signoff(d=None) -> str:
+    """No cashtags at all, by decision. X refuses any post with more than one
+    ($SYMBOL), and rotating which ticker wore the $ meant two of the three were
+    unsearchable on any given day anyway. Plain text costs nothing and posts
+    every time."""
+    return " ".join(X_TICKERS)
+
+
+X_SIGNOFF = x_signoff()
+
+_CASHTAG = re.compile(r"\$([A-Za-z][A-Za-z0-9]{0,5})\b")
+
+
+def _one_cashtag(t: str, keep_first: bool = True) -> str:
+    """Reduce a post to at most one cashtag.
+
+    keep_first=True leaves the first one and strips the $ from the rest, which
+    is right for a post with no sign-off. keep_first=False strips them ALL,
+    which is what a campaign post needs: the sign-off is about to add the one
+    cashtag the post is allowed, so any ticker in the body has to give up its
+    dollar sign or the total comes to two and X refuses the whole thing."""
+    if not keep_first:
+        return _CASHTAG.sub(lambda m: m.group(1), t)
+    seen = False
+
+    def repl(m):
+        nonlocal seen
+        if seen:
+            return m.group(1)
+        seen = True
+        return m.group(0)
+
+    return _CASHTAG.sub(repl, t)
 
 
 def tree(lines) -> str:
@@ -1903,9 +1944,12 @@ def enforce_x_format(text: str, signoff: bool = True, limit: int = 280) -> str:
     t = re.sub(r"\n{3,}", "\n\n", t)
     # drop any sign-off the model wrote itself, in whatever order or spacing
     t = re.sub(r"(?:[ \n]*\$(?:TSUKI|RWA|GME)\b)+[ \n]*$", "", t).rstrip()
+    # Every post, sign-off or not, goes out with the $ stripped.
     if not signoff:
-        return _trim_to(t, limit)
-    return _trim_to(t, limit - len(X_SIGNOFF) - 2) + "\n\n" + X_SIGNOFF
+        return _one_cashtag(_trim_to(t, limit), keep_first=False)
+    sign = x_signoff()
+    body = _one_cashtag(_trim_to(t, limit - len(sign) - 2), keep_first=False)  # noqa
+    return body + "\n\n" + sign
 
 
 def _trim_to(t: str, room: int) -> str:
@@ -2006,8 +2050,12 @@ def _x_failure_hint() -> str:
         return "no error was recorded, which usually means it was blocked before it was sent."
     if "modulenotfound" in e or "no module named" in e:
         return "tweepy is not installed. requirements.txt is missing from the repo root."
-    # duplicate first: X returns it as a Forbidden, so the 403 branch would
-    # otherwise claim a read-only token and send you off regenerating keys.
+    # Read the message before the status code. X returns cashtag limits,
+    # duplicates and permission failures all as 403 Forbidden, and matching on
+    # "403" first sent a real cashtag error out labelled as a read-only token.
+    if "cashtag" in e:
+        return ("X allows only ONE cashtag per post. the sign-off now writes $ on one "
+                "ticker and leaves the other two plain, rotating daily. redeploy and retry.")
     if "duplicate" in e:
         return "X rejects identical text twice. change a word and retry."
     if "403" in e or "forbidden" in e or "not permitted" in e or "oauth1 app permissions" in e:
