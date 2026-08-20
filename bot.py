@@ -7796,11 +7796,12 @@ def _reply_problem(text: str) -> str | None:
     return None
 
 
-def write_x_reply(their_text: str, their_handle: str, vip: bool = False) -> str:
+def write_x_reply(their_text: str, their_handle: str, vip: bool = False,
+                  qt: bool = False) -> str:
     """One in-voice reply, gated and retried. Returns "" if nothing survives,
     and the caller skips rather than posting something it had to settle for."""
     for attempt in range(3):
-        out = _write_x_reply_once(their_text, their_handle, vip=vip)
+        out = _write_x_reply_once(their_text, their_handle, vip=vip, qt=qt)
         problem = _reply_problem(out)
         if not problem:
             return out
@@ -7809,10 +7810,20 @@ def write_x_reply(their_text: str, their_handle: str, vip: bool = False) -> str:
     return ""
 
 
-def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False) -> str:
+def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,
+                        qt: bool = False) -> str:
     """One in-voice reply. Same knowledge, same rules, reply register."""
     vip_brief = ""
-    if vip:
+    if qt:
+        vip_brief = (
+            "\n\nSPECIAL CASE: you are QUOTE-TWEETING a new post from @"
+            + their_handle + ". you are NOT talking to them, you are talking to "
+            "YOUR timeline about what they just posted. one take, 1-2 sentences, "
+            "under 200 characters: the connection only your archive would see, or "
+            "the dry observation that makes people check the original. never "
+            "summarise their post (it is attached below yours), never address "
+            "them as 'you', never fawn. your usual register, aimed outward.")
+    elif vip:
         streak = ""
         vip_brief = (
             "\n\nSPECIAL CASE: you are replying to a NEW POST from @"
@@ -7920,6 +7931,31 @@ def _note_poll(**kw):
 VIP_REPLY_HANDLES = {"greg16676935420", "ryancohen", "tsukionsolana",
                      "theroaringkitty", "elonmusk", "blknoiz06", "gamestop"}
 VIP_REPLY_COOLDOWN_H = 4          # per handle. greg or elon alone could eat the day.
+# ── the mid-tier sniper: accounts 5-20x our size, where a reply stays in the
+# top 10-20 and actually converts to follows. managed at runtime: /snipers
+MID_REPLY_COOLDOWN_H = 6
+MID_REPLY_CAP_PER_DAY = int(os.environ.get("X_MID_CAP_PER_DAY", "6") or 6)
+QT_CAP_PER_DAY = int(os.environ.get("X_QT_CAP_PER_DAY", "2") or 2)
+# a VIP post that hits one of these is a QUOTE-TWEET moment, not a reply:
+# the take goes on top of their reach instead of under it.
+_QT_TRIGGER = re.compile(
+    r"\b(665|433|1166|gamestop|gme|roaring\s?kitty|kitty|grok|coincidence|"
+    r"cat|cats|moon|8/8|meme)\b", re.I)
+
+
+def _midtier() -> list:
+    try:
+        return json.loads(kv_get("midtier_handles", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _mid_reply_ok(handle: str) -> bool:
+    last = float(kv_get(f"midreply:{handle.lower()}", "0") or 0)
+    if time.time() - last < MID_REPLY_COOLDOWN_H * 3600:
+        return False
+    kv_set(f"midreply:{handle.lower()}", str(time.time()))
+    return True
 VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "8") or 8)
 CASHTAG_CAP_PER_DAY = int(os.environ.get("X_CASHTAG_CAP_PER_DAY", "8") or 8)
 
@@ -8149,7 +8185,30 @@ async def job_x_prowl(app):
             if ca and (now - ca).total_seconds() > 3600:
                 continue                          # older than an hour is cold
             if vip:
-                if not _vip_reply_ok(handle):
+                # QUOTE-TWEET moment? the take goes on top of their reach.
+                if (_QT_TRIGGER.search(t.text or "") and _bucket_count("xqt") < QT_CAP_PER_DAY
+                        and label == "vip"):
+                    take = write_x_reply(t.text or "", handle, vip=True, qt=True)
+                    if take:
+                        try:
+                            enforced = enforce_x_format(take, signoff=False)
+                            client.create_tweet(text=enforced, quote_tweet_id=t.id)
+                            _bucket_add("xqt")
+                            _mark_replied(t.id)
+                            _remember_own(enforced, kind="qt", tid="")
+                            log.info(f"quote-tweeted @{handle}")
+                            try:
+                                await app.bot.send_message(
+                                    chat_id=TARGET_CHAT_ID,
+                                    text=(f"\U0001f501 quote-tweeted @{handle} on X\n\n{enforced}"),
+                                    disable_web_page_preview=True)
+                            except Exception:
+                                pass
+                            continue
+                        except Exception as e:
+                            log.warning(f"qt of @{handle} failed: {e}")
+                            _x_err_note(f"qt @{handle}: {e}")
+                if not (_mid_reply_ok(handle) if label == "mid" else _vip_reply_ok(handle)):
                     continue
             else:
                 worthy, why = _reply_worthy(t)
@@ -8169,6 +8228,15 @@ async def job_x_prowl(app):
     vip_q = " OR ".join(f"from:{h}" for h in sorted(VIP_REPLY_HANDLES))
     await _hunt("vip", f"({vip_q}) -is:retweet -is:reply",
                 "x_prowl_vip_since", "xvip", VIP_REPLY_CAP_PER_DAY, True)
+    # the mid-tier sniper: same machinery, its own cooldowns and budget.
+    mids = _midtier()[:15]
+    if mids:
+        now_t = time.time()
+        if not all(now_t - float(kv_get(f"midreply:{h.lower()}", "0") or 0)
+                   < MID_REPLY_COOLDOWN_H * 3600 for h in mids):
+            mid_q = " OR ".join(f"from:{h}" for h in sorted(mids))
+            await _hunt("mid", f"({mid_q}) -is:retweet -is:reply",
+                        "x_prowl_mid_since", "xmid", MID_REPLY_CAP_PER_DAY, True)
     # cashtag hunting is OFF unless explicitly enabled: X's rules treat
     # unsolicited automated replies into strangers' threads as spam surface,
     # and this account's asset is not worth an API suspension. VIP replies
@@ -8236,6 +8304,13 @@ async def job_x_mentions(app):
     queued_ids = {q["id"] for q in queue}
     skipped = []
     me = (kv_get("x_me_handle") or "").lower()
+    # conversation ids of the bot's own recent posts: replies landing under
+    # them are the algorithm's favourite signal, and answering the first few
+    # FAST deepens the tree while the post is still in its decisive window.
+    try:
+        own_tids = {p["id"] for p in json.loads(kv_get("perf_posts", "[]") or "[]")}
+    except Exception:
+        own_tids = set()
     for t in sorted(fresh, key=lambda x: int(x.id)):
         if str(t.id) in queued_ids:
             continue
@@ -8245,14 +8320,23 @@ async def job_x_mentions(app):
         if not handle or handle.lower() == me:
             _mark_replied(t.id)
             continue
+        conv = str(getattr(t, "conversation_id", "") or "")
+        own_thread = conv in own_tids
+        if own_thread:
+            n_here = int(kv_get(f"ownthread:{conv}", "0") or 0)
+            if n_here >= 3:
+                own_thread = False         # tree is deep enough, normal rules
         worthy, why = _reply_worthy(t)
-        if not worthy:
+        if not worthy and not (own_thread and why.startswith("left on read")):
             _mark_replied(t.id)            # judged once, never revisited
             skipped.append(f"@{handle}: {why}")
             continue
+        if own_thread:
+            kv_set(f"ownthread:{conv}", str(int(kv_get(f"ownthread:{conv}", "0") or 0) + 1))
         queue.append({"id": str(t.id), "handle": handle,
                       "text": (t.text or "")[:500],
-                      "due": time.time() + _reply_delay_s(t.id)})
+                      "due": time.time() + (45 + int(t.id) % 76 if own_thread
+                                            else _reply_delay_s(t.id))})
         _mark_replied(t.id)                # queued = claimed
     # THE FIX for the silent reply death: this save was lost when the drain
     # was factored out. without it, mentions were appended to a local list,
@@ -8630,6 +8714,42 @@ def _game_score_submit(params: dict) -> str:
         return "error"
 
 
+async def cmd_snipers(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Manage the mid-tier reply-target list at runtime. Admin only.
+    /snipers            -> show the list
+    /snipers add h1 h2  -> add handles (no @ needed)
+    /snipers rm h1      -> remove"""
+    if not await is_project_admin(ctx, update):
+        return
+    args = (ctx.args or [])
+    mids = _midtier()
+    if args and args[0].lower() in ("add", "rm", "remove"):
+        handles = [a.lstrip("@").strip().lower() for a in args[1:] if a.strip()]
+        handles = [h for h in handles if re.fullmatch(r"[A-Za-z0-9_]{1,15}", h)]
+        if args[0].lower() == "add":
+            for h in handles:
+                if h not in mids:
+                    mids.append(h)
+            mids = mids[:15]
+        else:
+            mids = [m for m in mids if m not in handles]
+        kv_set("midtier_handles", json.dumps(mids))
+    if not mids:
+        await update.effective_message.reply_text(
+            "the mid-tier sniper list is empty.\n\n"
+            "add 10-15 lore-adjacent accounts in the 10k-100k range:\n"
+            "/snipers add handle1 handle2 ...\n\n"
+            "these get replies within the hour of posting, one per handle "
+            f"per {MID_REPLY_COOLDOWN_H}h, {MID_REPLY_CAP_PER_DAY}/day total.")
+        return
+    lines = [f" ├ @{m}" for m in mids]
+    lines[-1] = "└" + lines[-1][2:]
+    await update.effective_message.reply_text(
+        "<b>🎯 mid-tier snipers</b> (max 15)\n\n" + "\n".join(lines)
+        + f"\n\n{MID_REPLY_CAP_PER_DAY}/day · 1 per handle per {MID_REPLY_COOLDOWN_H}h"
+        + "\n/snipers add|rm handle...", parse_mode="HTML")
+
+
 async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """WHY IS IT QUIET — the one command that answers it."""
     if not await is_project_admin(ctx, update):
@@ -8664,6 +8784,7 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
            f"<b>replies</b>{nl}"
            f" ├ queue: {len(queue)} waiting{nl}"
            f" ├ sent today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}{nl}"
+           f" ├ QTs today: {_bucket_count('xqt')}/{QT_CAP_PER_DAY} · snipers: {len(_midtier())}{nl}"
            f"└ last poll: {kv_get('x_last_poll') or 'no poll data yet'}{nl}{nl}"
            f"<b>read on it</b>{nl}{_x_failure_hint()}")
     await update.effective_message.reply_text(
@@ -8700,6 +8821,7 @@ def main():
         ("predict", cmd_predict), ("resolve", cmd_resolve), ("misses", cmd_misses),
         ("submit", cmd_found),
         ("xdiag", cmd_xdiag), ("play", cmd_play), ("world", cmd_world),
+        ("snipers", cmd_snipers),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
