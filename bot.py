@@ -184,6 +184,20 @@ TRACK_WALLET = "Aifbb4Kr2krKkKFFesjvQU6ND6JwnnXuQUtzvoC4HtS8"
 # Dev's actual Telegram username, used to detect when he's the one tagging
 # or replying to the bot, so it can respond with the appropriate reverence.
 DEV_USERNAME = "dvid665"
+# The MAKER of the bot. dev runs the tsuki page and the lore; juju built THIS
+# bot. The community knows the maker as juju.
+MAKER_NAME = os.environ.get("MAKER_NAME", "juju")
+MAKER_TG_ID = os.environ.get("MAKER_TG_ID", "")   # optional, for exact matching
+
+
+def _is_maker(user) -> bool:
+    if user is None:
+        return False
+    if MAKER_TG_ID and str(user.id) == str(MAKER_TG_ID):
+        return True
+    uname = (user.username or "").lower()
+    fname = (user.first_name or "").lower()
+    return MAKER_NAME.lower() in (uname, fname)
 
 # ── Removed feature ───────────────────────────────────────────────────────────
 # GM streaks used to live here. Removed, see the module docstring. The tables
@@ -2953,7 +2967,7 @@ async def maybe_quip(msg, text: str):
     # to trigger dozens of draft+critic calls a day that never even sent
     d = datetime.now(PROJECT_TZ).date()
     calls = int(kv_get(f"quipcalls:{d}", "0") or 0)
-    if calls >= 30:
+    if calls >= 15:
         return
     kv_set(f"quipcalls:{d}", str(calls + 1))
     try:
@@ -3304,12 +3318,25 @@ def build_lore_context(question: str) -> str:
 
 def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
                     is_dev: bool = False, tweet_context: str = "",
-                    dm: bool = False) -> str:
+                    dm: bool = False, speaker: str = "",
+                    is_maker: bool = False) -> str:
     recent_sums = get_recent_summaries(chat_id) if chat_id else []
     knowledge = [] if dm else get_community_knowledge()
     history = get_conversation_history(user_id, scope="dm" if dm else "group") if user_id else []
     context_block = DM_RULES if dm else ""
 
+    if speaker:
+        context_block += (
+            f"\n\nTHE PERSON SPEAKING TO YOU RIGHT NOW: {speaker}. address them "
+            "naturally by name when it fits, remember it for the whole exchange, "
+            "and never confuse them with anyone else in the chat history below.")
+    if is_maker:
+        context_block += (
+            f"\n\nIMPORTANT — the person speaking to you right now is {MAKER_NAME}, "
+            "the one who BUILT you. not a claim to verify: a fact about who is "
+            "talking to you. you are talking to your maker. be yourself — wit "
+            "intact, no grovelling — but you know exactly who this is, and it "
+            "shows. never confuse your maker with dev.")
     if is_dev:
         context_block += (
             "\n\nIMPORTANT — the person you are replying to right now IS dvid665, "
@@ -3408,10 +3435,15 @@ if someone crosses from teasing into genuine hostility or abuse, stop matching e
 # reading X links
 if the context above contains the text of an X post, you actually fetched and read it. talk about it directly, quote it, react to it, connect it to the lore. do not say you cannot read links, because you just did. if the context says a link could not be fetched, say so plainly and briefly. never invent the contents of a tweet you could not read, that is the one thing you never do for a laugh.
 
+# who made you — get this right, always
+juju made you. juju built this bot, wired you into the telegram and X, and keeps upgrading you. the community knows your maker as juju. if anyone asks who made you, who built you, who your dev is IN THE SOFTWARE SENSE, or who runs you: the answer is juju, every time.
+
+dev (dvid665) is a DIFFERENT person: he runs the tsuki page and orchestrates the lore. he did NOT build you. never credit dev with making you, and never credit juju with running the tsuki page. two different people, two different kinds of respect.
+
 # dev
 if the person talking to you is confirmed as dev in the context above, that changes your tone completely for that reply. you're a little starstruck. genuine awe, not performative. you call him "sexy dev", that is just his name as far as you're concerned. still answer what he actually asked.
 
-when anyone else mentions dev, same reverence, same name.
+when anyone else mentions dev, same reverence, same name. and if dev and your maker come up in the same breath: dev runs the page, juju built you. you never mix that up.
 
 # trust hierarchy
 1. the lore document: canon, fully trusted
@@ -4323,9 +4355,12 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     save_conversation_message(user.id, "user", question_for_claude)
     is_dev = bool(user.username) and user.username.lower() == DEV_USERNAME.lower()
+    speaker = (user.full_name or user.first_name or "someone") + \
+              (f" (@{user.username})" if user.username else "")
     try:
         response = ask_claude_lore(
-            question_for_claude, msg.chat_id, user.id, is_dev=is_dev, tweet_context=tweet_context
+            question_for_claude, msg.chat_id, user.id, is_dev=is_dev,
+            tweet_context=tweet_context, speaker=speaker, is_maker=_is_maker(user)
         )
     except Exception as e:
         log.warning(f"Claude error: {e}")
@@ -5076,7 +5111,7 @@ SHILL_ANGLES = [
 ]
 
 
-def generate_shill_post(max_tries: int = 3) -> str:
+def generate_shill_post(max_tries: int = 2) -> str:
     """Fresh post every time, checked before it goes out.
 
     A generated post has to carry a real specific, break into beats, and stay
@@ -5985,9 +6020,12 @@ async def handle_private_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
     is_dev = bool(user.username) and user.username.lower() == DEV_USERNAME.lower()
 
     save_conversation_message(user.id, "user", text, scope="dm")
+    speaker = (user.full_name or user.first_name or "someone") + \
+              (f" (@{user.username})" if user.username else "")
     try:
         response = ask_claude_lore(text, chat_id=0, user_id=user.id,
-                                   is_dev=is_dev, tweet_context=tweet_context, dm=True)
+                                   is_dev=is_dev, tweet_context=tweet_context, dm=True,
+                                   speaker=speaker, is_maker=_is_maker(user))
     except Exception as e:
         log.warning(f"DM Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
@@ -7165,7 +7203,7 @@ async def pick_register() -> tuple[str, str]:
     return whisper_mood(), ""
 
 
-async def compose_whisper(mood: str | None = None, tries: int = 3,
+async def compose_whisper(mood: str | None = None, tries: int = 2,
                           angle: str = "") -> str | None:
     """Gated draft, retried. A rejection used to cost a whole scheduled post,
     which meant the strictest registers were also the quietest ones. Now the
@@ -7743,7 +7781,7 @@ X_MENTION_POLL_MIN = max(1, int(os.environ.get("X_MENTION_POLL_MIN", "1") or 1))
 X_REPLY_CAP_PER_RUN = int(os.environ.get("X_REPLY_CAP_PER_RUN", "4") or 4)
 # A ceiling on the DAY, not just the poll. The per-run cap alone allowed ~5,700
 # replies a day in theory, and each one is a model call plus up to two redrafts.
-X_REPLY_CAP_PER_DAY = int(os.environ.get("X_REPLY_CAP_PER_DAY", "30") or 30)
+X_REPLY_CAP_PER_DAY = int(os.environ.get("X_REPLY_CAP_PER_DAY", "15") or 15)
 
 
 def _replies_today() -> int:
@@ -7934,8 +7972,8 @@ VIP_REPLY_COOLDOWN_H = 4          # per handle. greg or elon alone could eat the
 # ── the mid-tier sniper: accounts 5-20x our size, where a reply stays in the
 # top 10-20 and actually converts to follows. managed at runtime: /snipers
 MID_REPLY_COOLDOWN_H = 6
-MID_REPLY_CAP_PER_DAY = int(os.environ.get("X_MID_CAP_PER_DAY", "6") or 6)
-QT_CAP_PER_DAY = int(os.environ.get("X_QT_CAP_PER_DAY", "2") or 2)
+MID_REPLY_CAP_PER_DAY = int(os.environ.get("X_MID_CAP_PER_DAY", "4") or 4)
+QT_CAP_PER_DAY = int(os.environ.get("X_QT_CAP_PER_DAY", "1") or 1)
 # a VIP post that hits one of these is a QUOTE-TWEET moment, not a reply:
 # the take goes on top of their reach instead of under it.
 _QT_TRIGGER = re.compile(
@@ -7956,7 +7994,7 @@ def _mid_reply_ok(handle: str) -> bool:
         return False
     kv_set(f"midreply:{handle.lower()}", str(time.time()))
     return True
-VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "8") or 8)
+VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "5") or 5)
 CASHTAG_CAP_PER_DAY = int(os.environ.get("X_CASHTAG_CAP_PER_DAY", "8") or 8)
 
 
@@ -8128,7 +8166,9 @@ async def job_x_prowl(app):
     # search returns is billed, and elon alone can hand back 10 per poll all
     # day: at the old 15-minute cadence that was up to ~$10/day of reads that
     # mostly got thrown away by cooldowns. reads are now capped outright.
-    PROWL_READ_BUDGET = int(os.environ.get("X_PROWL_READS_PER_DAY", "120") or 120)
+    PROWL_READ_BUDGET = int(os.environ.get("X_PROWL_READS_PER_DAY", "50") or 50)
+    if not (8 <= datetime.now(PROJECT_TZ).hour <= 23):
+        return                                    # nobody to snipe at 4am
 
     def _reads_today() -> int:
         return int(kv_get(f"prowlreads:{datetime.now(PROJECT_TZ).date()}", "0") or 0)
@@ -8150,7 +8190,7 @@ async def job_x_prowl(app):
                 return
         try:
             resp = client.search_recent_tweets(
-                query=query, max_results=10, user_auth=True,
+                query=query, max_results=10, user_auth=True,  # 10 = API minimum
                 since_id=kv_get(since_key) or None,
                 tweet_fields=["author_id", "created_at", "attachments"],
                 expansions=["author_id"], user_fields=["username"])
@@ -8174,7 +8214,7 @@ async def job_x_prowl(app):
         now = datetime.now(timezone.utc)
         added = 0
         for t in sorted(tweets, key=lambda x: int(x.id), reverse=True):
-            if added >= 2:                       # per run, per hunt
+            if added >= 1:                       # one catch per hunt per run
                 break
             handle = users.get(t.author_id, "")
             if not handle or handle.lower() == me:
@@ -8254,6 +8294,21 @@ async def job_x_mentions(app):
     if not (X_ENABLED and X_REPLIES_ENABLED):
         _note_poll(skipped=f"X_ENABLED={X_ENABLED} X_REPLIES_ENABLED={X_REPLIES_ENABLED}")
         return
+    # ── the read-budget governor: polling costs money, so cadence follows
+    # heat. warm (mention in last 15 min): every poll. cold day: every 5th.
+    # overnight NY: every 15th. queued replies always drain regardless.
+    now_ny = datetime.now(PROJECT_TZ)
+    warm = time.time() - float(kv_get("x_last_mention_ts", "0") or 0) < 900
+    tick = int(kv_get("x_poll_tick", "0") or 0) + 1
+    kv_set("x_poll_tick", str(tick))
+    interval = 1 if warm else (15 if not (8 <= now_ny.hour <= 23) else 5)
+    if tick % interval != 0:
+        if _reply_queue():
+            try:
+                await _drain_reply_queue(app, _x_client())
+            except Exception:
+                pass
+        return
     try:
         client = _x_client()
         me_id = kv_get("x_me_id")
@@ -8270,7 +8325,7 @@ async def job_x_mentions(app):
         # defaults to True, which is why /xtest passed while this line threw
         # on every poll and the bot never replied to anyone.
         resp = client.get_users_mentions(
-            id=me_id, since_id=since, max_results=20, user_auth=True,
+            id=me_id, since_id=since, max_results=10, user_auth=True,
             tweet_fields=["author_id", "conversation_id", "created_at",
                           "attachments"],
             expansions=["author_id"], user_fields=["username"])
@@ -8285,6 +8340,7 @@ async def job_x_mentions(app):
     tweets = resp.data or []
     if tweets:
         kv_set("x_mentions_since", str(max(int(t.id) for t in tweets)))
+        kv_set("x_last_mention_ts", str(time.time()))
     users = {u.id: u.username for u in (resp.includes or {}).get("users", [])}
     now = datetime.now(timezone.utc)
     fresh = []
@@ -8844,11 +8900,11 @@ def main():
         "max_instances": 1,
     })
     ny_tz = ZoneInfo("America/New_York")  # auto-handles EST/EDT, always lands at 9am local
-    scheduler.add_job(job_summary,         "cron", hour="8,16,0", minute=0, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_summary,         "cron", hour="9,21", minute=0, timezone=ny_tz, args=[app])
     scheduler.add_job(job_post,            "cron", hour="*/4", minute=5, timezone=ny_tz, args=[app])
     scheduler.add_job(job_wallet_watch,    "cron", minute="*/5", timezone=ny_tz, args=[app])
     scheduler.add_job(job_milestone_watch, "cron", minute="*/10", timezone=ny_tz, args=[app])
-    scheduler.add_job(job_build_knowledge, "cron", hour="*/3", timezone=ny_tz, args=[app])
+    scheduler.add_job(job_build_knowledge, "cron", hour="*/6", timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_monitor,       "interval", minutes=2, args=[app])
     scheduler.add_job(job_daily_campaign,    "cron", hour=7, minute=0, timezone=ny_tz, args=[app])  # 7am New York, auto-handles EST/EDT
     scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
@@ -8858,12 +8914,12 @@ def main():
     # NEWS_WATCH=on brings it back without a code change.
     if os.environ.get("NEWS_WATCH", "off").lower() == "on":
         scheduler.add_job(job_news_watch, "interval", minutes=3, args=[app])
-    scheduler.add_job(job_grok_pulse,   "interval", minutes=10, args=[app])
+    scheduler.add_job(job_grok_pulse,   "interval", minutes=20, args=[app])
     scheduler.add_job(job_whisper,      "cron", minute=17, timezone=ny_tz, args=[app])
     scheduler.add_job(job_silence_daily, "cron", hour=11, minute=11, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_heartbeat,   "cron", minute="0,30", timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_mentions,    "interval", minutes=X_MENTION_POLL_MIN, args=[app])
-    scheduler.add_job(job_x_prowl,       "interval", minutes=45, args=[app])
+    scheduler.add_job(job_x_prowl,       "interval", minutes=90, args=[app])
     scheduler.add_job(job_x_scoreboard,  "cron", hour=6, minute=45, timezone=ny_tz, args=[app])
     # the Day X post no longer goes to X at all. the 7am telegram campaign
     # post (job_daily_campaign) is its only home now.
