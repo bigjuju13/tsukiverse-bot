@@ -908,9 +908,36 @@ NEGATIVE_KEYWORDS = [
 # ── Ping server ───────────────────────────────────────────────────────────────
 class PingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        path, _, query = self.path.partition("?")
+        if path == "/game":
+            fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "game.html")
+            if os.path.isfile(fp):
+                with open(fp, encoding="utf-8") as fh:
+                    data = fh.read().encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                self.wfile.write(data)
+            else:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b"game.html not deployed next to bot.py")
+            return
+        if path == "/score":
+            params = urllib.parse.parse_qs(query)
+            out = _game_score_submit(params)
+            self.send_response(200 if out == "ok" else 400)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(out.encode())
+            return
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"alive.")
+
+    def do_POST(self):
+        self.do_GET()
 
     def log_message(self, *args):
         pass
@@ -2218,6 +2245,9 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
                 else client.create_tweet(text=body))
         tid = (resp.data or {}).get("id")
         log.info("Posted to X" + (" with image" if media_ids else ""))
+        kv_set("x_post_seq", str(int(kv_get("x_post_seq", "0") or 0) + 1))
+        kv_set("x_last_ok", datetime.now(PROJECT_TZ).strftime("%d %b %H:%M")
+               + f" ({_CURRENT_POST_KIND})")
         if tid:
             _remember_own(body, kind=_CURRENT_POST_KIND, tid=str(tid))
         return f"https://x.com/i/status/{tid}" if tid else None
@@ -2225,6 +2255,7 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
         global LAST_X_ERROR
         LAST_X_ERROR = f"{type(e).__name__}: {e}"
         log.warning(f"X post error: {LAST_X_ERROR}")
+        _x_err_note("post: " + LAST_X_ERROR)
         return None
 
 
@@ -2233,6 +2264,40 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
 # failure looked identical from Telegram, and "post failed" was being read as
 # "credentials missing" when it was really a 403.
 LAST_X_ERROR = ""
+
+
+def _x_err_note(err: str):
+    """Ring of the last 8 X failures with timestamps: /xdiag reads it, so a
+    3am failure is still diagnosable at breakfast instead of gone with the
+    log scroll."""
+    try:
+        ring = json.loads(kv_get("x_err_ring", "[]") or "[]")
+    except Exception:
+        ring = []
+    ring.append(datetime.now(PROJECT_TZ).strftime("%d %b %H:%M ") + err[:160])
+    kv_set("x_err_ring", json.dumps(ring[-8:]))
+
+
+# every "rejected:" / "gave up" / "critic failed" log line is also kept in
+# memory, because "the bot is silent" is almost always either X refusing the
+# post (the ring above) or the gates refusing every draft (this one).
+from collections import deque
+_GATE_LOG = deque(maxlen=40)
+
+
+class _GateCapture(logging.Handler):
+    def emit(self, record):
+        try:
+            m = record.getMessage()
+            if ("rejected" in m or "gave up" in m or "critic failed" in m
+                    or "BLOCKED an X post" in m):
+                _GATE_LOG.append(
+                    datetime.now(PROJECT_TZ).strftime("%H:%M ") + m[:150])
+        except Exception:
+            pass
+
+
+log.addHandler(_GateCapture())
 
 
 def _x_failure_hint() -> str:
@@ -2601,9 +2666,14 @@ def x_day_plan(d) -> dict:
     n = 4 + seed % 3
     slots = []
     x = seed
+    # peak ET engagement windows (8-10a, 12-2p, 5-7p) appear three times in
+    # the deck: early velocity decides reach, and velocity needs an audience
+    # that is actually awake and scrolling when the post lands.
+    peak = (8, 9, 12, 13, 17, 18, 19)
+    deck = list(range(8, 24)) + list(peak) * 2
     while len(slots) < n:
         x //= 13
-        h = 8 + x % 16                                  # 8am .. 11pm
+        h = deck[x % len(deck)]
         m = 30 * ((x // 100) % 2)
         if (h, m) not in slots:
             slots.append((h, m))
@@ -2785,9 +2855,14 @@ async def job_x_heartbeat(app):
     if not ptype:
         return
     guard = f"xplan:{now.date()}:{slot[0]}:{slot[1]}"
-    if kv_get(guard):
+    gval = kv_get(guard, "")
+    if gval and not gval.startswith("a"):
+        return                                  # done (or legacy marker)
+    attempts = int(gval[1:] or 0) if gval else 0
+    if attempts >= 3:
         return
-    kv_set(guard, "1")
+    kv_set(guard, f"a{attempts + 1}")
+    seq_before = kv_get("x_post_seq", "0")
     global _CURRENT_POST_KIND
     _CURRENT_POST_KIND = ptype
     log.info(f"x plan slot {slot} -> {ptype}")
@@ -2814,6 +2889,9 @@ async def job_x_heartbeat(app):
             await _x_post_whisper(app)
     except Exception as e:
         log.warning(f"x heartbeat error ({ptype}): {e}")
+        _x_err_note(f"heartbeat {ptype}: {e}")
+    if kv_get("x_post_seq", "0") != seq_before:
+        kv_set(guard, "done")                   # it went out; stop retrying
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -4604,15 +4682,17 @@ this rule is about dates and events only. never bolt a year onto something that 
 # every post carries a receipt
 a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. if you cannot name a specific, pick a different connection.
 
-# format
+# format — write like the account writes
 - lowercase throughout except tickers and proper nouns
-- double line breaks between every beat, always
-- tree lines for a chain of dates or maths, leading space on each branch and the corner on the last:
+- FULL SENTENCES that flow, the way a person types. one to three short
+  paragraphs, double line breaks between them. never a stack of chopped
+  one-line fragments
+- NEVER open with a date. the hook comes first — the claim, the thought,
+  the contrast — and dates arrive inside sentences doing work
+- a tree block is allowed ONLY when the sequence of dates IS the point:
  ├ comeback: 12 may 2024
  ├ add 116 weeks and 6 days
 └ 8 august 2026
-- dots for a flat list of parallel facts
-- never mix branches and dots in one block
 - under 240 characters before the sign-off
 - at most one 🌙 or 👀, and most posts have none
 
@@ -4954,25 +5034,77 @@ def _shill_problem_rest(text: str) -> str:
     return ""
 
 
+# The variety engine: a shill is a CONNECTION told through a FORM from an
+# ANGLE. 14 x 10 x 8 = 1,120 distinct briefs before the model varies a word.
+SHILL_CONNECTIONS = [
+    "the 1:1:1. tsuki posted the RK meme 11 may 2024 6:59pm; RK broke three years of silence exactly 1 day, 1 hour, 1 minute later",
+    "the prediction. tsuki posted the date 5/18/24 on 14 may 2024, and RK went silent on exactly that day",
+    "the resolution frame. RK posted a video at 8pm on 16 may 2024 and tsuki posted a frame from inside it within sixty seconds, sharper than the source",
+    "the uno reverse. tsuki posted the card 19 may 2024 while RK was silent; he returned 2 june 2024 holding the same card",
+    "the dark knight screenshot RK referenced live on stream 17 june 2024, which only ever existed on tsuki's account",
+    "665. cohen had tweeted trump 665 times, elon was following 665 accounts on 17 july 2024, and dev's handle carried 665 first, since may 2024",
+    "433. tsuki posted it 7 april 2025, RK ran his mile in 4:33.31, and 433 days after the clip is 14 june 2026",
+    "1,166 and 116w6d. RK's account had 1,166 posts; comeback 12 may 2024 plus 116 weeks 6 days lands on 8 august 2026, international cat day",
+    "the fives. tsuki posted 55 in december 2024. cohen bid 55.5 billion for ebay (handle ryan5050), spacex floated 555,555,555 shares, burry turned 55 in 2026",
+    "grok3@memphis. RWA's first post named it 24 october 2024; grok 3 did not exist publicly until 17 february 2025",
+    "elon's 'there are no coincidences' post of 18 may 2024, matching a lab-coat sketch already sitting on tsuki's site",
+    "the aristocats minute. tsuki posted it 11 may 2025 at 5:12pm then went silent; on 11 may 2026 at 5:13pm RK's account posted. one year and one minute",
+    "michael burry, the big short, and the 113 on his board",
+    "the archive itself. forty-plus dated connections, every one checkable, collected over two years and still growing",
+]
+SHILL_FORMS = [
+    "hook line, then a small tree block of the dates, then one flat closing line",
+    "two full paragraphs, no blocks, the dates living inside the sentences",
+    "open with the claim stated flat, spend the second paragraph on the receipt",
+    "open from the sceptic's side ('easiest explanation is coincidence...') and let the dates answer",
+    "explain it to someone who only knows gamestop, nothing else",
+    "the question form: ask the one question the dates raise, then leave it",
+    "one-two punch: a short paragraph, then a shorter one that lands",
+    "the contrast open (what most tickers are vs what this is), then one receipt",
+    "walk the timeline in one flowing paragraph, no block, end on the date that has not happened yet only if it truly has not",
+    "start mid-thought, like the reader walked in on you checking it again",
+]
+SHILL_ANGLES = [
+    "make a stranger want to check one timestamp for themselves",
+    "the odds: what would have to be true for this to be coincidence",
+    "the culture: gme taught people to read receipts, this is the graduate course",
+    "the AI angle: an account built to find patterns keeps finding these",
+    "the archive angle: it is written down, dated, and it keeps growing",
+    "the early angle: the number was there months before anyone looked",
+    "address the reader directly, once, without selling them anything",
+    "the understatement: state something enormous completely flat",
+]
+
+
 def generate_shill_post(max_tries: int = 3) -> str:
     """Fresh post every time, checked before it goes out.
 
     A generated post has to carry a real specific, break into beats, and stay
     off the purple prose. If it fails, the reason goes back to the model and it
     tries again. The static bank is the floor, never the ceiling."""
-    # a third of shills come straight from the hand-written bank: guaranteed
-    # voice, zero cost, and the bank doubles as the fallback when generation
-    # fails its gates.
-    if int(kv_get("shill_serve_n", "0") or 0) % 3 == 2:
-        kv_set("shill_serve_n", str(int(kv_get("shill_serve_n", "0") or 0) + 1))
-        pick = next_bank_shill()
-        _remember_shill(pick)
-        return pick
-    kv_set("shill_serve_n", str(int(kv_get("shill_serve_n", "0") or 0) + 1))
+    # every serve is generated fresh now: connection x form x angle gives
+    # over a thousand distinct briefs before the model's own variation, and
+    # the combo key is remembered so the same pairing cannot come back for
+    # thirty serves. the hand-written bank is the fallback floor only.
     recent = _recent_shills()
     avoid = ("\n\nrecent posts, do NOT repeat their angles or phrasing:\n"
              + "\n---\n".join(recent[-8:])) if recent else ""
-    shape = random.choice(SHILL_STRUCTURES)
+    try:
+        used = json.loads(kv_get("shill_combos", "[]") or "[]")
+    except Exception:
+        used = []
+    for _ in range(24):
+        ci = random.randrange(len(SHILL_CONNECTIONS))
+        fi = random.randrange(len(SHILL_FORMS))
+        ai = random.randrange(len(SHILL_ANGLES))
+        key = f"{ci}-{fi}-{ai}"
+        if key not in used:
+            break
+    used.append(key)
+    kv_set("shill_combos", json.dumps(used[-30:]))
+    shape = (f"the connection: {SHILL_CONNECTIONS[ci]}\n\n"
+             f"the form: {SHILL_FORMS[fi]}\n\n"
+             f"the angle: {SHILL_ANGLES[ai]}")
     feedback = ""
     for attempt in range(max_tries):
         try:
@@ -8173,6 +8305,7 @@ async def _drain_reply_queue(app, client):
                 pass
         except Exception as e:
             log.warning(f"reply to @{item['handle']} failed: {e}")
+            _x_err_note(f"reply @{item['handle']}: {e}")
     _reply_queue_save(remaining)
 
 
@@ -8377,6 +8510,166 @@ async def _on_startup_report(app):
                     "DM the bot /chatid and set that number as ADMIN_CHAT_ID.")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+#  MOON RUN — the standalone game, wired through Telegram's Games platform.
+#  The game is game.html, a self-contained HTML5 app served by this
+#  process's HTTP server at /game. Telegram keeps the per-chat leaderboards
+#  natively once scores go through setGameScore; the bot holds no game
+#  state at all.
+#
+#  one-time setup (BotFather):  /newgame -> pick this bot -> title, photo,
+#  short name "moonrun" (or set GAME_SHORT_NAME). done.
+# ══════════════════════════════════════════════════════════════════════════
+GAME_SHORT_NAME = os.environ.get("GAME_SHORT_NAME", "moonrun")
+
+
+def _game_base_url() -> str:
+    explicit = os.environ.get("GAME_URL", "")
+    if explicit:
+        return explicit.rstrip("/")
+    dom = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
+    return f"https://{dom}" if dom else ""
+
+
+def _game_sig(uid, c, m, i) -> str:
+    import hmac as _hmac
+    return _hmac.new(TELEGRAM_BOT_TOKEN.encode(),
+                     f"{uid}:{c}:{m}:{i}".encode(), hashlib.sha256).hexdigest()[:20]
+
+
+async def cmd_world(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """TSUKI WORLD — the 2D MMO. Separate service; this just hands out the door."""
+    url = os.environ.get("WORLD_URL", "")
+    if not url:
+        await update.effective_message.reply_text(
+            "tsuki world isn't deployed yet. deploy the tsuki-world service on "
+            "railway, then set WORLD_URL on this bot's service.")
+        return
+    await update.effective_message.reply_text(
+        "\U0001f30c <b>TSUKI WORLD</b>\n\nmake your cat. walk the night. "
+        "find the shrines. everyone in there is real.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
+            "\U0001f408\u200d\u2b1b enter the world", url=url)]]))
+
+
+async def cmd_play(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Launch MOON RUN. Telegram renders the game card + native scoreboard."""
+    try:
+        await ctx.bot.send_game(chat_id=update.effective_chat.id,
+                                game_short_name=GAME_SHORT_NAME)
+    except Exception as e:
+        log.warning(f"send_game failed: {e}")
+        await update.effective_message.reply_text(
+            "the game isn't registered yet. one-time setup:\n"
+            "\n"
+            " ├ open @BotFather → /newgame\n"
+            " ├ pick this bot, give it a title + photo\n"
+            f" ├ short name: {GAME_SHORT_NAME}\n"
+            f"└ game URL: {_game_base_url() or 'https://<your-railway-domain>'}/game\n"
+            "\n"
+            "then /play works everywhere, with telegram's own leaderboard.")
+
+
+async def game_launch_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if not q or not q.game_short_name:
+        try:
+            await q.answer()
+        except Exception:
+            pass
+        return
+    uid = q.from_user.id
+    c = q.message.chat_id if q.message else ""
+    m = q.message.message_id if q.message else ""
+    i = q.inline_message_id or ""
+    base = _game_base_url()
+    if not base:
+        await q.answer(text="game URL not configured (set GAME_URL)", show_alert=True)
+        return
+    url = (f"{base}/game?u={uid}&c={c}&m={m}&i={i}"
+           f"&sig={_game_sig(uid, c, m, i)}")
+    await q.answer(url=url)
+
+
+def _game_score_submit(params: dict) -> str:
+    """Called from the HTTP thread when the game posts a score. Verifies the
+    HMAC identity minted at launch, clamps the score, and hands it to
+    Telegram's native leaderboard."""
+    uid = params.get("u", [""])[0]
+    c = params.get("c", [""])[0]
+    m = params.get("m", [""])[0]
+    i = params.get("i", [""])[0]
+    sig = params.get("sig", [""])[0]
+    try:
+        score = max(0, min(int(params.get("s", ["0"])[0]), 100_000))
+    except ValueError:
+        return "bad score"
+    if sig != _game_sig(uid, c, m, i):
+        return "bad sig"
+    payload = {"user_id": int(uid), "score": score, "force": False}
+    if i:
+        payload["inline_message_id"] = i
+    else:
+        payload["chat_id"] = int(c)
+        payload["message_id"] = int(m)
+    try:
+        r = httpx.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setGameScore",
+                       json=payload, timeout=10)
+        body = r.json()
+        if body.get("ok"):
+            return "ok"
+        desc = str(body.get("description", ""))
+        # a lower-than-best score is not an error, it just doesn't move the board
+        if "BOT_SCORE_NOT_MODIFIED" in desc:
+            return "ok"
+        log.warning(f"setGameScore refused: {desc}")
+        return "refused"
+    except Exception as e:
+        log.warning(f"setGameScore failed: {e}")
+        return "error"
+
+
+async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """WHY IS IT QUIET — the one command that answers it."""
+    if not await is_project_admin(ctx, update):
+        return
+    now = datetime.now(PROJECT_TZ)
+    plan = x_day_plan(now.date())
+    plan_lines = []
+    for (h, m), kind in sorted(plan.items()):
+        g = kv_get(f"xplan:{now.date()}:{h}:{m}", "")
+        state = ("✅" if (g and not g.startswith("a")) else
+                 f"⚠️ tried {g[1:]}x" if g else
+                 "…" if (h, m) > (now.hour, 30 * (now.minute // 30)) else "❌ missed")
+        plan_lines.append(f" ├ {h:02d}:{m:02d} {kind} {state}")
+    if plan_lines:
+        plan_lines[-1] = "└" + plan_lines[-1][2:]
+    try:
+        errs = json.loads(kv_get("x_err_ring", "[]") or "[]")
+    except Exception:
+        errs = []
+    queue = _reply_queue()
+    gates = list(_GATE_LOG)[-6:]
+    nl = "\n"
+    txt = (f"<b>🔬 X diagnosis</b>{nl}{nl}"
+           f"<b>flags</b>{nl}"
+           f" ├ posting: {'on' if X_ENABLED else '❌ OFF — the 4 X vars are not in this container'}{nl}"
+           f"└ replies: {'on' if X_REPLIES_ENABLED else 'off'}{nl}{nl}"
+           f"<b>last successful post</b>{nl}{kv_get('x_last_ok') or '❌ none since this deploy'}{nl}{nl}"
+           f"<b>today's plan</b>{nl}" + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
+           f"<b>last X errors</b>{nl}" + (nl.join("• " + e for e in errs[-5:]) or "none recorded") + f"{nl}{nl}"
+           f"<b>recent gate rejections</b> (drafts killed before sending){nl}"
+           + (nl.join("• " + g for g in gates) or "none since boot") + f"{nl}{nl}"
+           f"<b>replies</b>{nl}"
+           f" ├ queue: {len(queue)} waiting{nl}"
+           f" ├ sent today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}{nl}"
+           f"└ last poll: {kv_get('x_last_poll') or 'no poll data yet'}{nl}{nl}"
+           f"<b>read on it</b>{nl}{_x_failure_hint()}")
+    await update.effective_message.reply_text(
+        txt[:4000], parse_mode="HTML", disable_web_page_preview=True)
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
@@ -8406,6 +8699,7 @@ def main():
         ("botmode", cmd_botmode), ("botstats", cmd_botstats),
         ("predict", cmd_predict), ("resolve", cmd_resolve), ("misses", cmd_misses),
         ("submit", cmd_found),
+        ("xdiag", cmd_xdiag), ("play", cmd_play), ("world", cmd_world),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
@@ -8414,6 +8708,10 @@ def main():
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & ~filters.ChatType.PRIVATE, handle_message))
     app.add_handler(CallbackQueryHandler(puppet_callback, pattern=r"^pup:"))
+    # the games-platform launch callback carries NO data (only
+    # game_short_name), so it cannot be pattern-matched: it is registered
+    # last and ignores anything that is not a game launch.
+    app.add_handler(CallbackQueryHandler(game_launch_callback))
     app.add_error_handler(on_error)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
 
