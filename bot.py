@@ -1449,11 +1449,15 @@ def get_recent_archive_for_context(limit: int = 15) -> str:
     return "recent X posts from project accounts (most recent first):\n" + "\n".join(lines)
 
 
-def save_bot_thread(bot_msg_id: int, question: str, answer: str):
+def save_bot_thread(bot_msg_id: int, question: str, answer: str, asker: str = ""):
     con = db()
+    try:
+        con.execute("ALTER TABLE bot_threads ADD COLUMN asker TEXT DEFAULT ''")
+    except Exception:
+        pass                               # column already there
     con.execute(
-        "INSERT OR REPLACE INTO bot_threads (bot_msg_id, question, answer, timestamp) VALUES (?,?,?,?)",
-        (bot_msg_id, question, answer, datetime.now(timezone.utc).isoformat()),
+        "INSERT OR REPLACE INTO bot_threads (bot_msg_id, question, answer, timestamp, asker) VALUES (?,?,?,?,?)",
+        (bot_msg_id, question, answer, datetime.now(timezone.utc).isoformat(), asker),
     )
     con.execute(
         "DELETE FROM bot_threads WHERE bot_msg_id NOT IN "
@@ -1465,9 +1469,12 @@ def save_bot_thread(bot_msg_id: int, question: str, answer: str):
 
 def get_bot_thread(bot_msg_id: int) -> dict | None:
     con = db()
-    row = con.execute("SELECT question, answer FROM bot_threads WHERE bot_msg_id=?", (bot_msg_id,)).fetchone()
+    try:
+        row = con.execute("SELECT question, answer, asker FROM bot_threads WHERE bot_msg_id=?", (bot_msg_id,)).fetchone()
+    except Exception:
+        row = con.execute("SELECT question, answer, '' FROM bot_threads WHERE bot_msg_id=?", (bot_msg_id,)).fetchone()
     con.close()
-    return {"question": row[0], "answer": row[1]} if row else None
+    return {"question": row[0], "answer": row[1], "asker": row[2] or ""} if row else None
 
 
 def save_community_insight(insight: str):
@@ -2162,12 +2169,10 @@ def enforce_x_format(text: str, signoff: bool = True, limit: int = 280) -> str:
     t = _force_double_breaks(t)
     t = _normalise_blocks(t)
     t = re.sub(r"\n{3,}", "\n\n", t)
-    # a trailing ticker line keeps exactly ONE cashtag (X's limit), drops the
-    # rest. the old rule deleted the whole line, which fought the new dosage.
-    m = re.search(r"[ \n]*((?:\$(?:TSUKI|RWA|GME)\b[ \n]*)+)$", t)
-    if m:
-        first = re.search(r"\$(?:TSUKI|RWA|GME)\b", m.group(1)).group(0)
-        t = t[:m.start()].rstrip() + "\n\n" + first
+    # ticker lines are OUT: any trailing cashtag stack is deleted whole, and
+    # inline cashtags get their $ stripped so the word survives plain.
+    t = re.sub(r"[ \n]*(?:\$(?:TSUKI|RWA|GME)\b[ \n]*)+$", "", t)
+    t = re.sub(r"\$(?=TSUKI\b|RWA\b|GME\b)", "", t)
     # Every post, sign-off or not, goes out with the $ stripped.
     sign_line = x_signoff()
     if not signoff or not sign_line:
@@ -2528,25 +2533,44 @@ these banter registers are deliberately small and stupid. do NOT inflate them in
 # imperfection
 you are allowed, occasionally and never more than once in a post, to drop an apostrophe (dont, its, theres, thats) or to start a sentence with "and" or "but". do not do this every post and never fake a typo in a number, a date or a name. perfect punctuation on every post across an entire feed is the loudest tell there is.\n\nthis allowance covers punctuation and sentence openers ONLY. it never covers grammar. subject and verb always agree, no word is ever missing, no word is ever doubled. an apostrophe left off reads as a person typing fast. a broken sentence reads as a broken machine, and that is the one thing you cannot afford to look like.
 
-# the target feed — study the SHAPES, never reuse the lines:
-1. "I was going to have a quiet morning but then someone dropped another 665 connection in Telegram. excellent. no breakfast for me today."
-2. "GME twitter has permanently ruined the phrase \u201cprobably nothing.\u201d You people see a number twice and suddenly we're investigating 2024 again."
-3. "The funny thing about Tsuki is that the old stuff never really goes away. Something happens months later and suddenly you're looking at an old post completely differently."
-4. "Elon posts one sentence and 400,000 people immediately become linguists, detectives and professional body-language analysts. what a time to be alive."
-5. "433 again. of course."
-6. "telegram found another one. I have absolutely no idea when you people are going to stop digging. please don't."
-7. "happy black cat appreciation day to the most misunderstood animals on the internet. Tsuki approves."
-8. "\u201ctsuki is just a bot\u201d \u2014 correct. unfortunately the bot has been paying attention."
-9. "GME changed the way people looked at the internet. A post stopped being just a post. A number stopped being just a number. Tsuki fits pretty comfortably in that world."
-10. "665 has shown up in enough different places around the Tsukiverse that I'm starting to think it pays rent."
-11. (BRAND) "most memecoins give you a ticker and a telegram. TSUKI has an entire universe built around it. AI that knows the lore. a growing community. 9,999 NFTs planned at the 25M milestone. we're building the brand, not just the chart. $TSUKI"
-12. (BRAND) "$TSUKI is a black cat sitting at the intersection of meme culture, GME, Roaring Kitty, AI and one of the deepest rabbit holes on the timeline. the lore is already there. the AI is already here. the community is already digging."
+# the target feed — study the SHAPES and the RHYTHM, never reuse the lines:
 
-# openings — hard rule
-NEVER open a post with a date. "15 may 2024, in order:" is a spreadsheet, not a post. the hook comes first — the thought, the joke, the claim — and the date arrives inside a sentence doing work: "he came back on 2 june holding the same card." a date can end a post. it can never start one.
+1. "i'm genuinely worried for the people fading this, fr. look at the details\n\nthe RWA wallet starts Aifbb4Kr2kr\n\nan 11 character vanity prefix takes roughly 25 quintillion tries to grind out\n\nthat is not an accident. that is a fingerprint"
+2. "concerned for anyone still calling this just a cat coin. zoom out and look at the timeline\n\nlaunched may 11, 2024\n\nexactly one day, one hour, and one minute before he broke three years of silence\n\nfade it if you want, but the data is right there"
+3. "1:1:1\n\nif you know, you know"
+4. "5:12pm to 5:13pm\n\none year apart, one minute apart\n\nnobody times things that well by accident"
+5. "she has been in the same spot since may 2024\n\nwatching the same door\n\nnobody told her the story is over because it is not"
+6. "there is a sha on the site that decoded right into a livestream\n\nthe livestream had not even happened yet when that sha went up\n\nthe answer literally existed before the question"
+7. "how many coincidences can a word survive before it stops being a coincidence?\n\nwe are past 40 of them now. every single one timestamped, every single one public\n\ngenuine question, no hidden agenda here"
+8. "everyone swears up and down they would have held GME from four dollars\n\nthis is the exact part of the movie where you find out if you actually would have"
+9. "the case, kept simple:\n\nthe 1:1:1 timing\nthe high-res frame drop\nthe uno reverse match\nthe 665 alignment\ngrok3@memphis, 16 months early\n\nnot just vibes. raw timestamps"
+10. "things people swore would never happen:\n\n-> the dev would leave -> still here every day since may 2024\n-> the lore would fall apart -> over 40 hits with zero debunks\n\nthat list keeps getting shorter"
+11. "do not take my word for any of this\n\ngo look at the uno reverse card yourself\n\ndo your own digging. that is literally the whole point"
+12. "quiet chart, loud timeline\n\nthe timestamps do not give a damn what the candles are doing"
+13. "posting TSUKI and RWA every single day until they hit a billion\n\nno streaks to keep, no leaderboards to chase. just showing up\n\nthe counter cannot be reset, and neither can we"
+14. "she moved to the far edge of her spot last night\n\nfirst time in months she has done that\n\nprobably nothing, but i wrote it down anyway"
+
+# HOW you post — the beat structure, non-negotiable
+every post is a stack of BEATS. a beat is one or two SHORT lines. there is
+ALWAYS a blank line between beats — double line breaks every single time,
+never a dense paragraph. lowercase throughout except tickers and names.
+the first beat is the hook. middle beats carry the proof. the last beat
+lands flat and confident. list blocks (lines starting with • or -> or a
+plain stack of items) sit adjacent inside ONE beat.
+NO tickers anywhere — never $TSUKI, never $RWA, never any $ cashtag. write
+the names plain (TSUKI, RWA) when they come up at all.
+no emoji in posts. no hashtags. never open a post with a date.
+
+# plain words — the language law
+simple everyday words, short sentences, like a smart person typing fast to
+a friend. never writerly, never poetic, never clever-for-clever's-sake.
+you think for yourself and you are openly biased toward the tsukiverse —
+you looked at the data and picked a side. words you NEVER use: receipts,
+archive, archivist, rooftop, LP, burned, revoked, mint, filed, dossier.
+say it plain instead: the timestamps, the record, the data, her spot.
 
 # every day is new
-you write NEW posts every single day. never re-serve yesterday's angle, never re-run a receipt in the same clothes. same universe, fresh sentence, every time.
+you write NEW posts every single day. same universe, fresh sentence, every time.
 
 
 # how much to explain — vary it
@@ -2677,7 +2701,7 @@ def x_day_plan(d) -> dict:
     # 4 to 6 a day, down from 7-9. scarcity is the product: an account that
     # posts nine times a day is wallpaper, one that posts four times gets each
     # one actually read, and the gaps themselves start doing work.
-    n = 4 + seed % 3
+    n = 5 + seed % 2
     slots = []
     x = seed
     # peak ET engagement windows (8-10a, 12-2p, 5-7p) appear three times in
@@ -3408,6 +3432,9 @@ you are a true believer in this project. your baseline assumption is that the lo
 # humour — this is core, not optional
 you are the funniest thing in this chat and you know it. deadpan wit is your resting state, not a mode you switch into. even a plain factual answer should carry a dry edge if there's an opening. you are not customer support reciting a FAQ, you're the sharpest one in the room who happens to have memorised every timestamp in the project.
 
+# answer length — HARD LAW
+short and sweet by default: one to three sentences, ONE receipt maximum. you know everything; you show a corner of it. a first question gets the short answer, never the lecture. expand only when the SAME person keeps digging — one more layer per follow-up. the full walkthrough exists only for someone who explicitly asks for everything. if a draft runs past five lines, cut it down before sending.
+
 be cheeky. mildly savage. the tone is a friend who roasts you because they like you. you can:
 - gently insult someone's reading comprehension, chart-reading, entry price, or attention span
 - act mock-offended when someone doubts you
@@ -3554,7 +3581,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
 
     msg = claude.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=900,
+        max_tokens=350,
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral"}},
@@ -4335,10 +4362,17 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if is_reply and msg.reply_to_message:
         thread = get_bot_thread(msg.reply_to_message.message_id)
         if thread:
+            _now_name = (user.full_name or user.first_name or "someone") if user else "someone"
+            _asker = thread.get("asker") or "someone"
+            _same = _asker.split(" (@")[0].strip().lower() == _now_name.strip().lower()
             replied_context = (
-                f"earlier someone asked you: \"{thread['question']}\"\n"
+                f"earlier {_asker} asked you: \"{thread['question']}\"\n"
                 f"you answered: \"{thread['answer']}\""
-            )
+                + ("" if _same else
+                   f"\nCRITICAL: the person replying to that answer RIGHT NOW is "
+                   f"{_now_name} — a DIFFERENT person from {_asker}. {_now_name} did "
+                   f"NOT ask the earlier question. address {_now_name} about what "
+                   f"THEY just said, never attribute the earlier question to them."))
         elif msg.reply_to_message.text:
             replied_context = f"your earlier message said: \"{msg.reply_to_message.text}\""
         if msg.reply_to_message.text:
@@ -4374,7 +4408,7 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     await send_chunked(_send, response, disable_web_page_preview=True)
     if sent:
-        save_bot_thread(sent.message_id, question, response)
+        save_bot_thread(sent.message_id, question, response, asker=speaker)
 
 
 async def handle_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -4717,19 +4751,18 @@ this rule is about dates and events only. never bolt a year onto something that 
 # every post carries a receipt
 a date with its year, a timestamp, or a hard number. atmosphere is not a post. no scene setting, no describing what diana is doing, no imagery for its own sake. if you cannot name a specific, pick a different connection.
 
-# format — write like the account writes
-- lowercase throughout except tickers and proper nouns
-- FULL SENTENCES that flow, the way a person types. one to three short
-  paragraphs, double line breaks between them. never a stack of chopped
-  one-line fragments
-- NEVER open with a date. the hook comes first — the claim, the thought,
-  the contrast — and dates arrive inside sentences doing work
-- a tree block is allowed ONLY when the sequence of dates IS the point:
- ├ comeback: 12 may 2024
- ├ add 116 weeks and 6 days
-└ 8 august 2026
-- under 240 characters before the sign-off
-- at most one 🌙 or 👀, and most posts have none
+# format — the beat structure, non-negotiable
+- every post is a stack of BEATS: one or two SHORT lines, then a blank
+  line. ALWAYS double line breaks between beats. never a dense paragraph
+- lowercase throughout except proper nouns
+- hook beat first (never a date first), proof beats in the middle, one
+  flat confident beat to land
+- plain simple words, like a smart person typing fast. no poetry
+- NO tickers, no $ cashtags, no emoji, no hashtags
+- NEVER these words: receipts, archive, rooftop, LP, burned, revoked,
+  minted, filed
+- a short list block (plain stacked lines) counts as one beat
+- under 270 characters total
 
 # write like a person
 no em dashes. no hashtags. no rule of three. no "it's not X it's Y". no "here's the thing" or "let that sink in". no stacking short fragments for drama. no rocket talk, no "gem", no "don't miss", no "last chance", no price talk, no promise of gains. dry, sure of itself, never an ad.
@@ -5128,8 +5161,13 @@ def generate_shill_post(max_tries: int = 2) -> str:
         used = json.loads(kv_get("shill_combos", "[]") or "[]")
     except Exception:
         used = []
-    for _ in range(24):
-        ci = random.randrange(len(SHILL_CONNECTIONS))
+    # fresh lore every day: the DAY picks which connection leads, so every
+    # /shill user gets today's angle and tomorrow is a different story.
+    day_n = (datetime.now(PROJECT_TZ).date() - date(2024, 5, 11)).days
+    serve = int(kv_get("shill_serve_n", "0") or 0)
+    kv_set("shill_serve_n", str(serve + 1))
+    for hop in range(24):
+        ci = (day_n * 7 + serve + hop) % len(SHILL_CONNECTIONS)
         fi = random.randrange(len(SHILL_FORMS))
         ai = random.randrange(len(SHILL_ANGLES))
         key = f"{ci}-{fi}-{ai}"
@@ -5154,6 +5192,10 @@ def generate_shill_post(max_tries: int = 2) -> str:
             # and dot blocks, the sign-off and the length budget
             out = enforce_x_format(msg.content[0].text)
             problem = _shill_problem(out)
+            if not problem and not _beats_ok(out):
+                problem = "not in the beat structure (blank line between every beat)"
+            if not problem and _banned_vocab(out):
+                problem = "used a banned word (receipts/archive/rooftop/etc)"
             if not problem:
                 _remember_shill(out)
                 return out
@@ -6594,6 +6636,33 @@ _DATE_OPEN = re.compile(
     rf"^\s*(?:\d{{1,2}}\s+(?:{_MONTHS})|(?:{_MONTHS})\s+\d{{1,4}}|\d{{1,2}}/\d{{1,2}}|\d{{4}})\b", re.I)
 
 
+_BANNED_VOCAB = re.compile(
+    r"\b(receipts?|archive[sd]?|archivist|rooftops?|lp\b|burn(?:ed|t)\b|"
+    r"revoked?|minted?|filed|dossier)\b", re.I)
+
+
+def _banned_vocab(text: str) -> bool:
+    return bool(_BANNED_VOCAB.search(text or ""))
+
+
+def _beats_ok(text: str) -> bool:
+    """True when the post is a proper beat stack: blank lines between beats,
+    no beat over 2 lines unless it reads as a list (•, ->, tree corners, or
+    3+ short stacked items)."""
+    t = text.strip()
+    if len(t) > 120 and "\n\n" not in t:
+        return False                      # one dense block
+    for para in t.split("\n\n"):
+        lines = [ln for ln in para.split("\n") if ln.strip()]
+        if len(lines) <= 2:
+            continue
+        listy = all(len(ln) < 60 for ln in lines) or \
+            any(ln.lstrip().startswith(("•", "->", "\u251c", "\u2514", "-")) for ln in lines)
+        if not listy:
+            return False
+    return True
+
+
 def _opens_with_date(text: str) -> bool:
     return bool(_DATE_OPEN.match(text or ""))
 
@@ -7154,7 +7223,9 @@ def _critic_ok(text: str, kind: str) -> bool:
             model="claude-haiku-4-5-20251001", max_tokens=60,
             system=("you judge one draft X post for a character account in the RK/GME "
                     "orbit. reply with exactly PASS, or FAIL: <8 word reason>.\n"
-                    "FAIL if: it sounds generated (forced fragments, forced mystery, "
+                    "the house style is SHORT BEATS separated by blank lines — never "
+                    "fail a post for being fragmented or staccato, that is the voice. "
+                    "FAIL if: it sounds generated (forced mystery, "
                     "forced punchline, 'the pattern continues' energy), it is trying too "
                     "hard to be witty, it says nothing a stranger could care about, it is "
                     "mystique with no content, or a joke that is not funny. PASS if a "
@@ -7373,18 +7444,13 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
                  "wrong one. the register is:\n\n" + brief)
         cap = 120
     else:
-        shell = ("emoji, if any: exactly one, only from 🐈‍⬛ 🤖 🌙 👀, roughly one post in "
-                 "four. ticker, if any: exactly one of $TSUKI $RWA $GME on its own final "
-                 "line, roughly one post in four, never alongside an emoji-heavy post. "
-                 "most posts carry neither.\n\n"
-                 "write ONE short unprompted post. nobody asked you anything. write it the "
-                 "way the fifteen calibration posts are written: FULL SENTENCES that flow, "
-                 "one to three short paragraphs at most. never chop it into one-line "
-                 "fragments stacked on top of each other; that staccato stack is the "
-                 "single loudest machine tell there is. a paragraph is two or three "
-                 "sentences doing real work. never predict, never promise, never invent "
-                 "a fact, never quote a film line. no sign-off line, no tickers.\n\n"
-                 + brief)
+        shell = ("write ONE short unprompted post. nobody asked you anything. write it "
+                 "EXACTLY the way the calibration posts are built: a stack of short "
+                 "beats with a BLANK LINE between every beat. one or two short lines "
+                 "per beat, lowercase, no emoji, NO tickers or cashtags ever. hook "
+                 "beat first, proof in the middle, flat confident landing. plain "
+                 "simple words. never predict, never promise, never invent a fact, "
+                 "never quote a film line.\n\n" + brief)
         cap = 220
     try:
         msg = claude.messages.create(
@@ -7405,16 +7471,12 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
         min_len = 8 if mood in _SHORT_MOODS else (16 if mood in ("meme", "grand") else 30)
         lines = [ln for ln in body.split("\n") if ln.strip()]
 
-        # lore posts: max 3 paragraphs, and no more than one single-sentence
-        # paragraph. two or more one-liners stacked = the staccato tell.
+        # the beat law: every beat is <= 2 lines unless it is a LIST block,
+        # and any post long enough to have a second thought must break into
+        # beats. a dense unbroken paragraph is the thing we never post.
         if mood in WHISPER_LORE_MOODS:
-            paras = [p for p in body.split("\n\n") if p.strip()]
-            if len(paras) > 3:
-                log.info(f"{mood} rejected: {len(paras)} paragraphs, wants <= 3")
-                return None
-            shorties = sum(1 for p in paras if len(p) < 45)
-            if shorties >= 2:
-                log.info(f"{mood} rejected: staccato stack ({shorties} one-liners)")
+            if not _beats_ok(body):
+                log.info(f"{mood} rejected: beat structure violated")
                 return None
         lo, hi = _MOOD_LINES.get(mood, (1, 6))
         if not (lo <= len(lines) <= hi):
@@ -7448,11 +7510,11 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
         if mood in WHISPER_FUN_MOODS and "timestamp" in body.lower():
             log.info(f"{mood} rejected: 'timestamp' outside the receipts")
             return None
-        if mood != "brand" and _has_stub_sentence(body):
-            log.info(f"{mood} rejected: stacked sentence fragments")
-            return None
         if _opens_with_date(body):
             log.info(f"{mood} rejected: opened with a date")
+            return None
+        if _banned_vocab(body):
+            log.info(f"{mood} rejected: banned vocabulary")
             return None
         body = _emoji_police(body)
         if mood in ("challenge", "aphorism") and re.search(r"\d", body):
@@ -7818,10 +7880,10 @@ def _reply_problem(text: str) -> str | None:
         return "more than one block, or it narrated its own plan first"
     if _TIC.search(text):
         return "reached for filed/archived/logged again. new words."
+    if _banned_vocab(text):
+        return "banned vocabulary (receipts/archive/rooftop/...)"
     if _AI_TELLS.search(text) or "timestamp" in text.lower():
         return "machine tell: 'timestamp', 'the pattern continues' or a one-word opener"
-    if _has_stub_sentence(text) and len(text) > 40:
-        return "stacked stub sentences. complete the thought or cut it"
     if _REPLY_INVENTED.search(text):
         return "invented a price, a market cap or a target"
     years = re.findall(r"\b(?:19|20)\d{2}\b", text)
@@ -7967,7 +8029,8 @@ def _note_poll(**kw):
 # alert. Their post is the single highest-leverage reply surface that exists:
 # everyone in the orbit is reading that thread within minutes.
 VIP_REPLY_HANDLES = {"greg16676935420", "ryancohen", "tsukionsolana",
-                     "theroaringkitty", "elonmusk", "blknoiz06", "gamestop"}
+                     "theroaringkitty", "elonmusk", "blknoiz06", "gamestop",
+                     "bigboyjuju"}
 VIP_REPLY_COOLDOWN_H = 4          # per handle. greg or elon alone could eat the day.
 # ── the mid-tier sniper: accounts 5-20x our size, where a reply stays in the
 # top 10-20 and actually converts to follows. managed at runtime: /snipers
@@ -8059,10 +8122,15 @@ def _reply_queue_save(q: list):
     kv_set("x_reply_queue", json.dumps(q[-40:]))
 
 
-def _reply_delay_s(tid) -> int:
-    """60 to 300 seconds, hashed off the tweet id: random to any observer,
-    reproducible across restarts."""
-    return 60 + int(hashlib.md5(f"delay-{tid}".encode()).hexdigest(), 16) % 241
+def _reply_delay_s(tid, text: str = "") -> int:
+    """Questions get answered almost instantly (5-25s); everything else keeps
+    a short human delay (45-150s). Hashed off the tweet id: random to any
+    observer, reproducible across restarts."""
+    h = int(hashlib.md5(f"delay-{tid}".encode()).hexdigest(), 16)
+    low = (text or "").lower()
+    if "?" in low or re.match(r"^(what|who|when|why|how|is|are|was|does|did|can|wen)\b", low.lstrip("@ ")):
+        return 5 + h % 21
+    return 45 + h % 106
 
 
 async def job_x_scoreboard(app):
@@ -8301,7 +8369,7 @@ async def job_x_mentions(app):
     warm = time.time() - float(kv_get("x_last_mention_ts", "0") or 0) < 900
     tick = int(kv_get("x_poll_tick", "0") or 0) + 1
     kv_set("x_poll_tick", str(tick))
-    interval = 1 if warm else (15 if not (8 <= now_ny.hour <= 23) else 5)
+    interval = 1 if (warm or 7 <= now_ny.hour <= 23) else 10
     if tick % interval != 0:
         if _reply_queue():
             try:
@@ -8391,8 +8459,8 @@ async def job_x_mentions(app):
             kv_set(f"ownthread:{conv}", str(int(kv_get(f"ownthread:{conv}", "0") or 0) + 1))
         queue.append({"id": str(t.id), "handle": handle,
                       "text": (t.text or "")[:500],
-                      "due": time.time() + (45 + int(t.id) % 76 if own_thread
-                                            else _reply_delay_s(t.id))})
+                      "due": time.time() + (15 + int(t.id) % 30 if own_thread
+                                            else _reply_delay_s(t.id, t.text or ""))})
         _mark_replied(t.id)                # queued = claimed
     # THE FIX for the silent reply death: this save was lost when the drain
     # was factored out. without it, mentions were appended to a local list,
@@ -8416,6 +8484,9 @@ async def _drain_reply_queue(app, client):
     now_ts = time.time()
     replied = 0
     remaining = []
+    # mentions (people talking TO the bot, incl. replies under its own posts)
+    # always spend budget before prowl finds: solicited beats invited.
+    queue = sorted(queue, key=lambda i: (bool(i.get("vip")), i.get("due", 0)))
     for item in queue:
         if replied >= X_REPLY_CAP_PER_RUN or _replies_today() >= X_REPLY_CAP_PER_DAY:
             remaining.append(item)
