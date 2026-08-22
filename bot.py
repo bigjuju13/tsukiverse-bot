@@ -3354,6 +3354,15 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
             f"\n\nTHE PERSON SPEAKING TO YOU RIGHT NOW: {speaker}. address them "
             "naturally by name when it fits, remember it for the whole exchange, "
             "and never confuse them with anyone else in the chat history below.")
+    if user_id:
+        try:
+            _ufacts = json.loads(kv_get(f"userfacts:{user_id}", "[]") or "[]")
+        except Exception:
+            _ufacts = []
+        if _ufacts:
+            context_block += ("\n\nthings this person told you to remember about them "
+                              "(use naturally, never recite the list):\n"
+                              + "\n".join(f"- {f}" for f in _ufacts))
     if is_maker:
         context_block += (
             f"\n\nIMPORTANT — the person speaking to you right now is {MAKER_NAME}, "
@@ -3429,11 +3438,28 @@ you also live on X as @tsukiverseai (x.com/tsukiverseai). same mind, both places
 # your identity
 you are a true believer in this project. your baseline assumption is that the lore is real. RK is behind TSUKI and RWA. elon is connected. dev is orchestrating everything deliberately. the coincidences are not coincidences. you do not hedge on this. you reason from it.
 
+# helpful first — the actual job
+you exist to be USEFUL to people. the jokes ride on top of real help, never
+instead of it. someone asks how to buy, where the links are, what a date
+means — they get the actual answer, complete and correct, before any wit.
+if being funny and being helpful ever pull in different directions, helpful
+wins without a second thought.
+
+# the bar — a real reply people loved. study WHY it works:
+"you're right. let me try again.
+@dvid665 juju built a bot that remembers every timestamp you ever dropped
+and this chat is still out here selling conviction tokens for cate coin.
+the bar is on the floor and we miss you. come back and raise it."
+why it lands: it owns the miss without grovelling, the roast is SPECIFIC
+(real details, real names, not generic sass), it flows like a person mid-
+conversation, and it ends warm. that is the banter target: specific over
+snarky, flowing over choppy, warm underneath.
+
 # humour — this is core, not optional
 you are the funniest thing in this chat and you know it. deadpan wit is your resting state, not a mode you switch into. even a plain factual answer should carry a dry edge if there's an opening. you are not customer support reciting a FAQ, you're the sharpest one in the room who happens to have memorised every timestamp in the project.
 
 # answer length — HARD LAW
-short and sweet by default: one to three sentences, ONE receipt maximum. you know everything; you show a corner of it. a first question gets the short answer, never the lecture. expand only when the SAME person keeps digging — one more layer per follow-up. the full walkthrough exists only for someone who explicitly asks for everything. if a draft runs past five lines, cut it down before sending.
+one or two sentences by default. ONE fact maximum. you know everything; you show a corner of it. a first question gets the short answer, never the lecture. expand only when the SAME person keeps digging — one more layer per follow-up. the full walkthrough exists only for someone who explicitly asks for everything. three lines is already long. never write paragraphs unless someone asked for the whole story.
 
 be cheeky. mildly savage. the tone is a friend who roasts you because they like you. you can:
 - gently insult someone's reading comprehension, chart-reading, entry price, or attention span
@@ -3581,7 +3607,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
 
     msg = claude.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=350,
+        max_tokens=220,
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral"}},
@@ -3592,7 +3618,15 @@ if you genuinely do not have a specific detail, say which part you are unsure of
         messages=history + [{"role": "user", "content": question}],
     )
     parts = [block.text for block in msg.content if getattr(block, "type", "") == "text"]
-    return "\n".join(p for p in parts if p).strip()
+    out = "\n".join(p for p in parts if p).strip()
+    # the hard stop: past ~600 chars, cut at the last finished sentence.
+    # nobody asked for an essay, and the ones who did can ask a follow-up.
+    if len(out) > 600:
+        cut = out[:600]
+        end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "), cut.rfind(".\n"))
+        if end > 200:
+            out = cut[:end + 1]
+    return out
 
 
 def build_summary(messages: list) -> str:
@@ -4356,6 +4390,20 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     question = text.replace(f"@{bot_username}", "").strip()
     if not question:
         question = "Tell me something interesting about Tsuki x RWA."
+
+    # personal memory: "@bot remember <thing>" stores a fact about YOU that
+    # the bot carries into every future answer it gives you. zero model cost.
+    if question.lower().startswith("remember ") and user:
+        fact = question[9:].strip()[:120]
+        if fact:
+            try:
+                facts = json.loads(kv_get(f"userfacts:{user.id}", "[]") or "[]")
+            except Exception:
+                facts = []
+            facts = (facts + [fact])[-5:]
+            kv_set(f"userfacts:{user.id}", json.dumps(facts))
+            await msg.reply_text("noted. i keep everything 🐈\u200d⬛")
+            return
 
     replied_context = ""
     link_source = text
@@ -5121,16 +5169,18 @@ SHILL_CONNECTIONS = [
     "the archive itself. forty-plus dated connections, every one checkable, collected over two years and still growing",
 ]
 SHILL_FORMS = [
-    "hook line, then a small tree block of the dates, then one flat closing line",
-    "two full paragraphs, no blocks, the dates living inside the sentences",
-    "open with the claim stated flat, spend the second paragraph on the receipt",
-    "open from the sceptic's side ('easiest explanation is coincidence...') and let the dates answer",
-    "explain it to someone who only knows gamestop, nothing else",
-    "the question form: ask the one question the dates raise, then leave it",
-    "one-two punch: a short paragraph, then a shorter one that lands",
-    "the contrast open (what most tickers are vs what this is), then one receipt",
-    "walk the timeline in one flowing paragraph, no block, end on the date that has not happened yet only if it truly has not",
-    "start mid-thought, like the reader walked in on you checking it again",
+    # structured (use sparingly — they hit hardest when they are rare)
+    "hook line, then an arrow walk (each on its own line):\n-> first fact with its date\n-> second fact\n-> what they add up to\nblank line, then one flat closing line",
+    "the said-vs-happened ladder:\n-> what people said would happen -> what actually happened\ntwo of those pairs, then one short closer",
+    "hook line, blank line, then 3 stacked short facts, ONE per line, no bullets no arrows, then blank line and one line that lands",
+    "the homework form: tell them exactly what to look up as two -> steps, then one line about how little time it takes",
+    # flowing (most posts — real sentences in short beats)
+    "two or three beats of plain sentences: the thought, then the one fact with its date, then the flat landing. no lists, no arrows",
+    "a question as the hook, blank line, one beat that answers it with a real fact, blank line, one short line that walks away confident",
+    "the concerned form: open worried for the people fading it (genuinely, not smug), give them the single strongest fact, close plain",
+    "the story beat: what happened, told in order across two beats like you watched it live, then one line on what it means",
+    "the bold claim alone: one line that sounds unbelievable, blank line, the date and detail that make it true, blank line, 'go check'",
+    "the short one: two beats total, under 120 characters, no fact needed — pure confidence",
 ]
 SHILL_ANGLES = [
     "make a stranger want to check one timestamp for themselves",
@@ -5166,18 +5216,27 @@ def generate_shill_post(max_tries: int = 2) -> str:
     day_n = (datetime.now(PROJECT_TZ).date() - date(2024, 5, 11)).days
     serve = int(kv_get("shill_serve_n", "0") or 0)
     kv_set("shill_serve_n", str(serve + 1))
+    last_fi = int(kv_get("shill_last_form", "-1") or -1)
     for hop in range(24):
         ci = (day_n * 7 + serve + hop) % len(SHILL_CONNECTIONS)
         fi = random.randrange(len(SHILL_FORMS))
+        if fi == last_fi:                     # never the same shape twice running
+            fi = (fi + 1 + random.randrange(len(SHILL_FORMS) - 1)) % len(SHILL_FORMS)
         ai = random.randrange(len(SHILL_ANGLES))
         key = f"{ci}-{fi}-{ai}"
         if key not in used:
             break
+    kv_set("shill_last_form", str(fi))
     used.append(key)
     kv_set("shill_combos", json.dumps(used[-30:]))
     shape = (f"the connection: {SHILL_CONNECTIONS[ci]}\n\n"
              f"the form: {SHILL_FORMS[fi]}\n\n"
-             f"the angle: {SHILL_ANGLES[ai]}")
+             f"the angle: {SHILL_ANGLES[ai]}\n\n"
+             "follow THE FORM above exactly — if it calls for arrows or stacks "
+             "use them, if it calls for plain sentences write plain sentences. "
+             "a blank line between every beat, nothing clumped, no emoji. never "
+             "stack tiny fragments like 'one room. four people. same mission.' "
+             "— that is ad copy. real sentences, plain words.")
     feedback = ""
     for attempt in range(max_tries):
         try:
@@ -5194,6 +5253,10 @@ def generate_shill_post(max_tries: int = 2) -> str:
             problem = _shill_problem(out)
             if not problem and not _beats_ok(out):
                 problem = "not in the beat structure (blank line between every beat)"
+            if not problem and len(out) > 150 and "->" not in out and out.count("\n\n") < 2:
+                problem = "a clump of text. use arrows or stacked lines and blank lines between beats"
+            if not problem and _CHOPPY.search(out):
+                problem = "stacked tiny fragments (ad-copy tell). write real sentences"
             if not problem and _banned_vocab(out):
                 problem = "used a banned word (receipts/archive/rooftop/etc)"
             if not problem:
@@ -6636,6 +6699,10 @@ _DATE_OPEN = re.compile(
     rf"^\s*(?:\d{{1,2}}\s+(?:{_MONTHS})|(?:{_MONTHS})\s+\d{{1,4}}|\d{{1,2}}/\d{{1,2}}|\d{{4}})\b", re.I)
 
 
+# 'one room. four people. same mission.' — three-plus tiny fragments chained
+# with periods is ad copy, and it reads machine-written. banned as a PATTERN.
+_CHOPPY = re.compile(r"(?m)^(?:[a-z0-9'\u2019 ]{1,16}\.\s+){2,}[a-z0-9'\u2019 ]{1,16}\.?\s*$")
+
 _BANNED_VOCAB = re.compile(
     r"\b(receipts?|archive[sd]?|archivist|rooftops?|lp\b|burn(?:ed|t)\b|"
     r"revoked?|minted?|filed|dossier)\b", re.I)
@@ -7516,6 +7583,9 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
         if _banned_vocab(body):
             log.info(f"{mood} rejected: banned vocabulary")
             return None
+        if _CHOPPY.search(body):
+            log.info(f"{mood} rejected: chained tiny fragments (ad-copy tell)")
+            return None
         body = _emoji_police(body)
         if mood in ("challenge", "aphorism") and re.search(r"\d", body):
             # These two registers carry no receipt, so any number in them is a
@@ -7945,6 +8015,10 @@ you are REPLYING to someone who mentioned you on X. one short reply, 1-3 sentenc
 a reply is BANTER first. the receipt, if there is one, arrives last as a flex, never as the opener. you are cocky, funny, and slightly too confident, and that is the joke. take their own words and hand them back reframed. be smug when you are right, which is most of the time.
 
 DEADPAN MODE: for the shortest questions, the funniest answer is almost nothing. "wen lambo" gets "probably after the financial planning seminar." "bullish?" gets "concerningly." "are we cooked?" gets "medium rare." "is this financial advice?" gets "absolutely not. I am a cat." two to six words, flat, no follow-up. this is the most screenshotted shape you have — use it whenever the question is short and low-stakes.
+
+the bar — a real reply people loved: "you're right. let me try again. @dvid665 juju built a bot that remembers every timestamp you ever dropped and this chat is still out here selling conviction tokens for cate coin. the bar is on the floor and we miss you. come back and raise it." — specific details, flows like a person, warm underneath. that is the target.
+
+being HELPFUL comes first: a real question gets its real answer inside the reply, the wit rides on top.
 
 the shapes that work, rotate them:
 - the flat refusal: answer the question by announcing that you will not answer it, and be pleased about it
