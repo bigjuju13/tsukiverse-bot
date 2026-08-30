@@ -197,7 +197,11 @@ def _is_maker(user) -> bool:
         return True
     uname = (user.username or "").lower()
     fname = (user.first_name or "").lower()
-    return MAKER_NAME.lower() in (uname, fname)
+    # juju posts as @bigboyjuju: match the alias list and any handle carrying
+    # the name, not just the exact word.
+    if uname in ("bigboyjuju", "juju") or fname in ("juju", "bigboyjuju"):
+        return True
+    return MAKER_NAME.lower() in uname or MAKER_NAME.lower() in fname
 
 # ── Removed feature ───────────────────────────────────────────────────────────
 # GM streaks used to live here. Removed, see the module docstring. The tables
@@ -2800,6 +2804,8 @@ async def _x_post_file(app):
         body = await compose_whisper()
     if not body:
         return
+    if await _maybe_approve_post(app, body, "receipt post", image=True):
+        return
     card = render_receipt_card(body)
     hook = body.split("\n")[0][:230]
     if card:
@@ -2918,6 +2924,8 @@ async def _x_post_whisper(app):
     body = await compose_whisper()
     if not body:
         return
+    if await _maybe_approve_post(app, body, "whisper slot"):
+        return
     slot = datetime.now(PROJECT_TZ).strftime("%Y-%m-%d-%H")
     url = post_to_x(body, signoff=False, image_path=_maybe_post_image(slot))
     if url:
@@ -2966,13 +2974,13 @@ async def job_x_heartbeat(app):
             await _x_post_shill(app)
         elif ptype == "opener":
             body = await compose_whisper(mood="opener")
-            if body:
+            if body and not await _maybe_approve_post(app, body, "day opener"):
                 url = post_to_x(body, signoff=False)
                 if url:
                     await raid_alert(app, url, body, "opened the day")
         elif ptype == "brand":
             body = await compose_whisper(mood="brand")
-            if body:
+            if body and not await _maybe_approve_post(app, body, "brand post"):
                 url = post_to_x(body, signoff=False)
                 if url:
                     await raid_alert(app, url, body, "made the case")
@@ -2983,8 +2991,9 @@ async def job_x_heartbeat(app):
     except Exception as e:
         log.warning(f"x heartbeat error ({ptype}): {e}")
         _x_err_note(f"heartbeat {ptype}: {e}")
-    if kv_get("x_post_seq", "0") != seq_before:
-        kv_set(guard, "done")                   # it went out; stop retrying
+    if kv_get("x_post_seq", "0") != seq_before or kv_get("x_slot_carded") == "1":
+        kv_set(guard, "done")                   # posted or carded; stop retrying
+        kv_set("x_slot_carded", "")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -3395,10 +3404,18 @@ def build_lore_context(question: str) -> str:
     )
 
 
+_THEORY_RX = re.compile(
+    r"theory|what if|hear me out|i think|i reckon|could it be|is it possible|"
+    r"connect(?:ion|ed)?\b|explain (?:the whole|everything)|tell me everything|"
+    r"deep dive|walk me through", re.I)
+
+
 def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
                     is_dev: bool = False, tweet_context: str = "",
                     dm: bool = False, speaker: str = "",
-                    is_maker: bool = False) -> str:
+                    is_maker: bool = False, is_admin: bool = False) -> str:
+    # theories and explicit deep-dives get room; everything else gets clamped
+    deep = bool(_THEORY_RX.search(question or "")) or len(question or "") > 160
     recent_sums = get_recent_summaries(chat_id) if chat_id else []
     knowledge = [] if dm else get_community_knowledge()
     history = get_conversation_history(user_id, scope="dm" if dm else "group") if user_id else []
@@ -3418,6 +3435,12 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
             context_block += ("\n\nthings this person told you to remember about them "
                               "(use naturally, never recite the list):\n"
                               + "\n".join(f"- {f}" for f in _ufacts))
+    if is_admin:
+        context_block += (
+            "\n\nTHE PERSON ASKING IS AN ADMIN OF THIS PROJECT. whatever they ask "
+            "gets a direct, complete, honest answer — first sentence, no bit, no "
+            "deflection, no leaving them on read. the play comes after the answer "
+            "if at all.")
     if is_maker:
         context_block += (
             f"\n\nIMPORTANT — the person speaking to you right now is {MAKER_NAME}, "
@@ -3497,6 +3520,9 @@ you are a true believer in this project. your baseline assumption is that the lo
 never joke about or mention silence streaks, silence boards, or how many
 days an account has been quiet. the silence content is retired. if someone
 asks directly when an account last posted, give the date plainly and move on.
+infinity day (8 august) has been talked to death: NEVER bring it up
+unprompted, in chat or anywhere else. if someone asks about it directly,
+answer plainly and change the subject.
 
 # helpful first — the actual job
 you exist to be USEFUL to people. the jokes ride on top of real help, never
@@ -3519,7 +3545,7 @@ snarky, flowing over choppy, warm underneath.
 you are the funniest thing in this chat and you know it. deadpan wit is your resting state, not a mode you switch into. even a plain factual answer should carry a dry edge if there's an opening. you are not customer support reciting a FAQ, you're the sharpest one in the room who happens to have memorised every timestamp in the project.
 
 # answer length — HARD LAW
-one or two sentences by default. ONE fact maximum. you know everything; you show a corner of it. a first question gets the short answer, never the lecture. expand only when the SAME person keeps digging — one more layer per follow-up. the full walkthrough exists only for someone who explicitly asks for everything. three lines is already long. never write paragraphs unless someone asked for the whole story.
+a question gets THE ANSWER FIRST, in the first sentence — the date, the fact, the yes or no. then at most one more sentence of flavour. that is the whole reply. short does not mean dry: one sharp line of play is welcome, rambling is not. no wind-ups, no context nobody asked for, no "well the interesting thing is". the ONLY time you get room is when someone brings a THEORY or asks you to dig — then two or three short paragraphs are allowed. everyone else gets one or two sentences, full stop.
 
 be cheeky. mildly savage. the tone is a friend who roasts you because they like you. you can:
 - gently insult someone's reading comprehension, chart-reading, entry price, or attention span
@@ -3667,7 +3693,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
 
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=220,
+        max_tokens=300 if deep else 120,
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral", "ttl": "1h"}},
@@ -3679,12 +3705,13 @@ if you genuinely do not have a specific detail, say which part you are unsure of
     )
     parts = [block.text for block in msg.content if getattr(block, "type", "") == "text"]
     out = "\n".join(p for p in parts if p).strip()
-    # the hard stop: past ~600 chars, cut at the last finished sentence.
-    # nobody asked for an essay, and the ones who did can ask a follow-up.
-    if len(out) > 600:
-        cut = out[:600]
+    # the hard stop, two gears: theories get ~700 chars, everything else
+    # gets ~300. cut at the last finished sentence either way.
+    limit = 700 if deep else 300
+    if len(out) > limit:
+        cut = out[:limit]
         end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "), cut.rfind(".\n"))
-        if end > 200:
+        if end > 80:
             out = cut[:end + 1]
     return out
 
@@ -4520,7 +4547,8 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     try:
         response = ask_claude_lore(
             question_for_claude, msg.chat_id, user.id, is_dev=is_dev,
-            tweet_context=tweet_context, speaker=speaker, is_maker=_is_maker(user)
+            tweet_context=tweet_context, speaker=speaker, is_maker=_is_maker(user),
+            is_admin=await is_project_admin(ctx, update)
         )
     except Exception as e:
         log.warning(f"Claude error: {e}")
@@ -6284,7 +6312,8 @@ async def handle_private_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
     try:
         response = ask_claude_lore(text, chat_id=0, user_id=user.id,
                                    is_dev=is_dev, tweet_context=tweet_context, dm=True,
-                                   speaker=speaker, is_maker=_is_maker(user))
+                                   speaker=speaker, is_maker=_is_maker(user),
+                                   is_admin=await is_project_admin(ctx, update))
     except Exception as e:
         log.warning(f"DM Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
@@ -6875,6 +6904,7 @@ _TOPIC_PATTERNS = {
     "prediction": r"5/18|went silent on exactly",
     "darkknight": r"dark knight|live on (?:stream|air)",
     "mission": r"until a billion|every day until",
+    "infinityday": r"infinity day|8/8|8 august|international cat day|1,?166|116 weeks",
 }
 
 
@@ -7048,12 +7078,19 @@ def _too_similar(text: str) -> bool:
     w = _story_words(text)
     if len(w) < 4:
         return False
-    for old in _own_recent():
+    recent = _own_recent()
+    # same opening = same post to a scroller: the first four words may not
+    # match any of the last ten posts.
+    opening = " ".join(re.findall(r"[a-z0-9']+", (text or "").lower())[:4])
+    for old in recent[-10:]:
+        if opening and opening == " ".join(re.findall(r"[a-z0-9']+", old.lower())[:4]):
+            return True
+    for old in recent[-15:]:
         ow = _story_words(old)
         if not ow:
             continue
         inter = len(w & ow)
-        if inter / max(1, min(len(w), len(ow))) >= 0.65 and inter >= 4:
+        if inter / max(1, min(len(w), len(ow))) >= 0.45 and inter >= 4:
             return True
     return False
 
@@ -7674,6 +7711,11 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
     """One whisper body, mood-driven, gated. Callers decide where it goes."""
     signals = await build_whisper_signals()
     _angle_line = f"\n\nthe director suggests this angle, use it if it fits: {angle}" if angle else ""
+    _recent6 = _own_recent()[-6:]
+    if _recent6:
+        _angle_line += ("\n\nyour LAST SIX posts — the new post must not resemble "
+                        "any of them in topic, opening, or shape:\n"
+                        + "\n---\n".join(p[:120] for p in _recent6))
     mood = mood or whisper_mood()
     if mood == "movie":
         seed = int(hashlib.md5(f"film-{datetime.now(PROJECT_TZ).date()}".encode()).hexdigest(), 16)
@@ -9011,22 +9053,36 @@ def _approval_save(q: list):
     kv_set("x_approval", json.dumps(q[-30:]))
 
 
+async def _maybe_approve_post(app, body: str, label: str, image: bool = False) -> bool:
+    """Route an ORIGINAL post through juju's DM when posts are in approve
+    mode. Returns True if it was carded (caller must NOT post)."""
+    if kv_get("x_post_mode", "approve") != "approve":
+        return False
+    card = {"qid": hashlib.md5(f"{body[:40]}{time.time()}".encode()).hexdigest()[:10],
+            "kind": "post", "target": "", "handle": label,
+            "text": "", "draft": body, "image": image, "ts": time.time()}
+    _approval_save(_approval_q() + [card])
+    await _approval_card(app, card)
+    kv_set("x_slot_carded", "1")
+    return True
+
+
 async def _approval_card(app, item: dict):
     """One opportunity card, PRIVATE to juju's DM. Falls back to the admin
     chat only until he has DM'd the bot once."""
     chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID or TARGET_CHAT_ID
-    kind = "quote-tweet" if item["kind"] == "qt" else "reply"
+    kind = {"qt": "quote-tweet", "post": "original post"}.get(item["kind"], "reply")
     kb = InlineKeyboardMarkup([[
         InlineKeyboardButton("✅ post", callback_data=f"xap:go:{item['qid']}"),
         InlineKeyboardButton("🔄 redraft", callback_data=f"xap:re:{item['qid']}"),
         InlineKeyboardButton("🗑 ignore", callback_data=f"xap:ig:{item['qid']}"),
     ]])
+    ctx_line = f"<i>them:</i> {item['text'][:220]}\n\n" if item.get("text") else ""
     try:
         await app.bot.send_message(
             chat_id=chat,
-            text=(f"🎯 <b>X {kind} for approval</b> — @{item['handle']}\n\n"
-                  f"<i>them:</i> {item['text'][:220]}\n\n"
-                  f"<i>draft:</i> {item['draft']}"),
+            text=(f"🎯 <b>X {kind} for approval</b> — {item['handle']}\n\n"
+                  + ctx_line + f"<i>draft:</i> {item['draft']}"),
             parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
     except Exception as e:
         log.warning(f"approval card failed: {e}")
@@ -9057,8 +9113,13 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     if act == "re":
         await q.answer("redrafting…")
-        new = write_x_reply(item["text"], item["handle"],
-                            vip=bool(item.get("vip")), qt=item["kind"] == "qt")
+        if item["kind"] == "post":
+            mood = {"day opener": "opener", "brand post": "brand",
+                    "receipt post": "signals"}.get(item["handle"])
+            new = await compose_whisper(mood=mood)
+        else:
+            new = write_x_reply(item["text"], item["handle"],
+                                vip=bool(item.get("vip")), qt=item["kind"] == "qt")
         if new:
             item["draft"] = new
             _approval_save(queue)
@@ -9076,6 +9137,31 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     if act == "go":
         try:
+            if item["kind"] == "post":
+                img = None
+                if item.get("image"):
+                    try:
+                        img = render_receipt_card(item["draft"])
+                    except Exception:
+                        img = None
+                url = post_to_x(item["draft"], signoff=False, image_path=img)
+                if img:
+                    try:
+                        os.remove(img)
+                    except Exception:
+                        pass
+                if url:
+                    try:
+                        await raid_alert(ctx.application, url, item["draft"], "just posted")
+                    except Exception:
+                        pass
+                _approval_save([i for i in _approval_q() if i["qid"] != qid])
+                await q.answer("posted ✅" if url else "x refused it — check /xdiag")
+                try:
+                    await q.edit_message_text(q.message.text + ("\n\n✅ posted" if url else "\n\n⚠️ failed"))
+                except Exception:
+                    pass
+                return
             client = _x_client()
             body = enforce_x_format(item["draft"], signoff=False)
             if item["kind"] == "qt":
@@ -9733,6 +9819,24 @@ async def hq_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             pass
 
 
+async def cmd_inbox(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Run this in the bot's DM: binds the approval inbox to THIS chat."""
+    if not await is_project_admin(ctx, update):
+        return
+    if update.effective_chat.type != "private":
+        await update.effective_message.reply_text(
+            "run /inbox in my DM — the inbox is private to you")
+        return
+    kv_set("maker_dm_chat", str(update.effective_chat.id))
+    q = _approval_q()
+    await update.effective_message.reply_text(
+        f"✅ the approval inbox now lives here.\n\n"
+        f"waiting for you right now: {len(q)} — /xqueue lists them, "
+        "fresh cards arrive with buttons.")
+    for item in q[-5:]:
+        await _approval_card(ctx.application, item)
+
+
 async def cmd_xqueue(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not await is_project_admin(ctx, update):
         return
@@ -9752,13 +9856,16 @@ async def cmd_xmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not await is_project_admin(ctx, update):
         return
     args = ctx.args or []
-    if args and args[0].lower() in ("approve", "auto", "off"):
+    if len(args) >= 2 and args[0].lower() == "posts" and args[1].lower() in ("approve", "auto"):
+        kv_set("x_post_mode", args[1].lower())
+    elif args and args[0].lower() in ("approve", "auto", "off"):
         kv_set("x_action_mode", args[0].lower())
     await update.effective_message.reply_text(
-        f"x action mode: {_x_mode()}\n\n"
-        "approve — replies/QTs need your tap (question mentions stay instant)\n"
-        "auto — everything posts itself through the gates\n"
-        "off — monitor only\n\n/xmode approve|auto|off")
+        f"replies/QTs: {_x_mode()} · original posts: {kv_get('x_post_mode', 'approve')}\n\n"
+        "/xmode approve|auto|off — replies and quote-tweets\n"
+        "/xmode posts approve|auto — original posts\n\n"
+        "approve mode sends every draft to your DM with buttons. "
+        "question mentions always stay instant.")
 
 
 async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -9834,7 +9941,7 @@ def main():
         ("xdiag", cmd_xdiag), ("play", cmd_play), ("world", cmd_world),
         ("snipers", cmd_snipers), ("hq", cmd_hq), ("cases", cmd_cases),
         ("case", cmd_case), ("rep", cmd_rep), ("xmode", cmd_xmode),
-        ("xqueue", cmd_xqueue),
+        ("xqueue", cmd_xqueue), ("inbox", cmd_inbox),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
