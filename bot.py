@@ -3015,10 +3015,10 @@ def _quip_chance(text: str) -> float:
     """Base probability this message earns a spontaneous reply."""
     t = text.lower()
     if _QUIP_TRIGGER.search(t):
-        return 0.12
+        return 0.18
     if len(t) < 60 and ("?" in t or "!" in t):
-        return 0.05
-    return 0.02
+        return 0.08
+    return 0.035
 
 
 def _quips_recent() -> list:
@@ -3055,7 +3055,7 @@ async def maybe_quip(msg, text: str):
     # to trigger dozens of draft+critic calls a day that never even sent
     d = datetime.now(PROJECT_TZ).date()
     calls = int(kv_get(f"quipcalls:{d}", "0") or 0)
-    if calls >= 15:
+    if calls >= 20:
         return
     kv_set(f"quipcalls:{d}", str(calls + 1))
     try:
@@ -3523,6 +3523,10 @@ asks directly when an account last posted, give the date plainly and move on.
 infinity day (8 august) has been talked to death: NEVER bring it up
 unprompted, in chat or anywhere else. if someone asks about it directly,
 answer plainly and change the subject.
+NEVER give a number for how many coincidences or connections exist — not
+17, not 40, not any count. it is always "countless" or "so many". the
+moment you put a number on it, someone audits the number instead of the
+timestamps.
 
 # helpful first — the actual job
 you exist to be USEFUL to people. the jokes ride on top of real help, never
@@ -4429,6 +4433,60 @@ async def maybe_comment_on_link(msg, text: str):
 # ══════════════════════════════════════════════════════════════════════════════
 #  MESSAGE HANDLER
 # ══════════════════════════════════════════════════════════════════════════════
+# ── THE LORE FAQ — instant answers, zero model calls ─────────────────────
+# the questions people actually ask, answered straight from the written
+# lore in the bot's short voice. matched only on short direct questions so
+# theories and long messages still get the full brain.
+LORE_FAQ = [
+    (r"\bwhat(?:'?s| is)\s+(?:the\s+)?1:?1:?1\b|\bwhat does 1:?1:?1 mean",
+     "the first cat post went up 11 may 2024 at 6:59pm. he broke three years of silence exactly 1 day, 1 hour and 1 minute later. that gap is the 1:1:1 🐈\u200d⬛"),
+    (r"\bwhat(?:'?s| is)\s+(?:the\s+)?665\b|\bwhat does 665 mean|\bwhy 665",
+     "665 was in the dev's handle since may 2024. then on 17 july 2024 cohen's tweets at trump hit 665 and elon was following exactly 665 accounts, same day. the handle had it first."),
+    (r"\bwhat(?:'?s| is)\s+(?:the\s+)?433\b|\bwhat does 433 mean|\bwhy 433",
+     "RK ran his high school mile in 4:33.31, and tsuki posted 433 out of nowhere on 7 april 2025. that's the pair."),
+    (r"uno reverse|\bthe card\b.*\?",
+     "tsuki posted the uno reverse card on 19 may 2024 while he was silent. his first post back on 2 june 2024 was the same card. a card answered with a card."),
+    (r"grok ?3?@?memphis|\bwhat did rwa (?:name|say|post)",
+     "RWA's first-ever post named grok3@memphis on 24 october 2024 — 16 months before grok 3 existed publicly. memphis is where it was trained."),
+    (r"\bthe wallet\b.*\?|vanity (?:address|wallet)|11 characters",
+     "the RWA wallet starts with 11 chosen characters. that takes roughly 25 quintillion tries — months of serious machines. not a bedroom job."),
+    (r"aristocats",
+     "tsuki posted the aristocats 11 may 2025 at 5:12pm, then went silent for a year. on 11 may 2026 at 5:13pm RK's account posted. one year, one minute."),
+    (r"resolution frame|sharper than|\bthe screenshot\b.*\?",
+     "RK posted a video at 8pm on 16 may 2024. a frame from inside it showed up on tsuki's account 60 seconds later, sharper than his upload. you can't upscale a file you don't have."),
+    (r"5/18|the prediction\b.*\?",
+     "tsuki posted the date 5/18/24 on 14 may 2024. RK went silent on exactly that day. it called the silence, not the return."),
+    (r"dark knight",
+     "17 june 2024, live on stream, RK referenced a screenshot that only ever existed on tsuki's account."),
+    (r"who (?:is|'?s) (?:tsuki|diana)\b|what is tsuki\b.*\?",
+     "diana. black cat, moon on her forehead, named after the roman goddess of the moon. in japan a black cat crossing your path is good luck. none of it is decoration."),
+    (r"who (?:made|built|created) (?:you|the bot|this bot)",
+     "juju built me. i remember every timestamp anyone ever dropped in here — his idea."),
+    (r"when did (?:tsuki|it|this) (?:launch|start)|when was (?:tsuki|the first post)",
+     "11 may 2024, 6:59pm. and the return came 1 day, 1 hour, 1 minute later."),
+    (r"when did (?:rk|he|roaring ?kitty) (?:come back|return)",
+     "12 may 2024 — three years of silence, ended one day, one hour and one minute after her first post."),
+    (r"i'?m alive|what did rwa say on 4.?20",
+     "RWA said “i'm alive” on 20 april 2025 at exactly 4:20pm. even the small posts keep the timing."),
+    (r"how (?:do i|to|can i) buy|where (?:do i|to|can i) buy",
+     "everything you need is in /links — dex, chart, the site. five minutes and you're in."),
+    (r"how many coincidences|how many connections",
+     "countless. nobody keeps an exact score because it keeps growing — the point is every single one has a public timestamp you can check."),
+    (r"infinity day",
+     "8 august — his comeback date plus 116 weeks and 6 days, and international cat day. it's in the record; we've moved on to the next thing."),
+]
+_LORE_FAQ_RX = [(re.compile(p, re.I), a) for p, a in LORE_FAQ]
+
+
+def _lore_faq_answer(q: str) -> str | None:
+    if len(q) > 90 or _THEORY_RX.search(q):
+        return None                        # theories get the full brain
+    for rx, ans in _LORE_FAQ_RX:
+        if rx.search(q):
+            return ans
+    return None
+
+
 async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.effective_message
     if not msg or not msg.text:
@@ -4445,6 +4503,17 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     await maybe_react_with_asset(msg.chat, msg.chat_id, text)
     await maybe_react_numbers(msg, text)
+    # ambient presence: roughly 1 in 25 messages gets a silent reaction.
+    # zero model cost, zero interruption — the cat is just there.
+    try:
+        if user and not user.is_bot and \
+                int(hashlib.md5(f"amb-{msg.message_id}".encode()).hexdigest(), 16) % 25 == 0:
+            from telegram import ReactionTypeEmoji
+            _emo = ["👀", "🔥", "😹", "❤", "🎉"][
+                int(hashlib.md5(f"pick-{msg.message_id}".encode()).hexdigest(), 16) % 5]
+            await msg.set_reaction(reaction=[ReactionTypeEmoji(_emo)])
+    except Exception:
+        pass
     # the spontaneous-life engine: usually says nothing, occasionally lands one
     try:
         is_addressed = (msg.reply_to_message and msg.reply_to_message.from_user
@@ -4530,6 +4599,19 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             replied_context = f"your earlier message said: \"{msg.reply_to_message.text}\""
         if msg.reply_to_message.text:
             link_source = text + "\n" + msg.reply_to_message.text
+
+    # the free layer first: common lore questions answered straight from
+    # the written lore, instantly, zero model cost, zero rambling.
+    if not replied_context:
+        _faq = _lore_faq_answer(question)
+        if _faq:
+            sent0 = await msg.reply_text(_faq)
+            try:
+                save_bot_thread(sent0.message_id, question, _faq, asker=speaker if False else (
+                    (user.full_name or user.first_name or "someone") if user else "someone"))
+            except Exception:
+                pass
+            return
 
     question_for_claude = question
     if replied_context:
@@ -7015,6 +7097,8 @@ _SILENCE_BAN = re.compile(
     r"the silence (?:streak|counter)", re.I)
 
 _BANNED_CLAIMS = re.compile(
+    r"\b\d+\+?\s*(?:documented\s+)?(?:coincidences?|connections?)\b|"
+    r"(?:over|past|more than|around|about)\s+\d+\s+(?:coincidences?|connections?|hits?)|"
     r"(?:over|past|more than)\s*(?:40|forty)|40\+|\bforty\b|"
     r"\b40\s+(?:coincidences?|connections?|hits?|entries)|"
     r"the dev (?:would leave|leaves|left)|"
