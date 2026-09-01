@@ -10081,15 +10081,38 @@ async def cmd_braintest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         verdict = (f"✅ brain is alive — answered in {ms}ms\n"
                    f"said: {said or '(empty)'}")
     except Exception as e:
+        es = str(e)
+        # the key's own fingerprint: the console lists every key by its last
+        # characters, so this is the one line that says WHICH key is loaded.
+        k = ANTHROPIC_API_KEY or ""
+        fp = f"{k[:14]}…{k[-6:]}" if len(k) > 24 else "(key looks malformed)"
+        if "credit" in es.lower():
+            read = ("\n\nwhat this means: the key WORKS — it authenticated "
+                    "fine. the org it belongs to has a zero api balance.\n\n"
+                    f"the key railway is holding: {fp}\n\n"
+                    "check, in order:\n"
+                    "1. console.anthropic.com/settings/billing — the API "
+                    "balance lives there and is SEPARATE from a claude.ai "
+                    "pro/max subscription. a subscription buys you nothing "
+                    "on the api.\n"
+                    "2. the org switcher, top left of the console. one login "
+                    "can own several orgs. buy in one, key from the other, "
+                    "and you get exactly this error.\n"
+                    "3. console.anthropic.com/settings/keys — find the key "
+                    f"ending {k[-6:] if len(k) > 24 else '??????'} and see "
+                    "which workspace it sits in. a workspace with a spend "
+                    "limit of zero refuses calls while the org has money.")
+        elif "model" in es.lower() or "not_found" in es.lower():
+            read = f"\n\nthe model id is wrong. key in use: {fp}"
+        elif "authentication" in es.lower() or "invalid x-api" in es.lower():
+            read = (f"\n\nthe key itself is rejected. railway is holding {fp} "
+                    "— if that is not a key you recognise in the console, "
+                    "it was rotated or pasted wrong.")
+        else:
+            read = f"\n\nkey in use: {fp}"
         verdict = ("❌ the call FAILED even after every fallback. "
                    "this exact text is the reason:\n\n"
-                   f"{str(e)[:600]}\n\n"
-                   "→ mentions 'credit'? the ANTHROPIC_API_KEY in railway "
-                   "belongs to a different workspace than the one you funded "
-                   "— make a key in the funded workspace and swap it in.\n"
-                   "→ mentions 'model'? the model id is wrong.\n"
-                   "→ mentions 'authentication' or 'invalid'? the key itself "
-                   "is bad or was rotated.")
+                   f"{es[:600]}" + read)
     try:
         ring = json.loads(kv_get("brain_err_ring", "[]") or "[]")
     except Exception:
