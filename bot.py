@@ -295,6 +295,47 @@ def _bill(resp):
         pass                                   # accounting must never break a post
 
 
+# the brain's black box recorder: every failed anthropic call is written
+# down with its REAL error text, so "brain's buffering" is never the end of
+# the story — /braintest reads this back.
+_MODEL_FALLBACK = {
+    # X posts publish on sonnet, so it is proven alive on this key. if the
+    # telegram haiku id is ever rejected, answers ride sonnet instead of dying.
+    "claude-haiku-4-5-20251001": "claude-sonnet-4-6",
+}
+
+
+def _note_brain_err(model, err, stage=""):
+    try:
+        ring = json.loads(kv_get("brain_err_ring", "[]") or "[]")
+        ring.append(f"{datetime.now(PROJECT_TZ).strftime('%d %b %H:%M')} "
+                    f"[{stage}] {model}: {str(err)[:300]}")
+        kv_set("brain_err_ring", json.dumps(ring[-12:]))
+    except Exception:
+        pass
+
+
+async def _brain_alert(ctx, err):
+    """when the brain fails in front of people, juju finds out WHY, in his
+    DMs, once per distinct error per day — not a flood, not a mystery."""
+    try:
+        e = str(err)[:300]
+        day = datetime.now(PROJECT_TZ).date().isoformat()
+        sig = hashlib.md5(f"{day}:{e[:120]}".encode()).hexdigest()[:10]
+        if kv_get(f"brain_alerted:{sig}"):
+            return
+        kv_set(f"brain_alerted:{sig}", "1")
+        chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+        if chat:
+            await ctx.bot.send_message(
+                chat, "🧠 people are getting 'brain's buffering'. "
+                      "the actual error behind it:\n\n"
+                      f"{e}\n\n"
+                      "run /braintest to re-check once it's fixed.")
+    except Exception:
+        pass
+
+
 class _DatedMessages:
     def __init__(self, inner):
         self._inner = inner
@@ -308,16 +349,31 @@ class _DatedMessages:
         hdrs = dict(kw.get("extra_headers") or {})
         hdrs.setdefault("anthropic-beta", "extended-cache-ttl-2025-04-11")
         kw["extra_headers"] = hdrs
+        # THE ARMOR (v18): one exotic ingredient must never take the whole
+        # brain down. stage 1 is the full call. stage 2 retries with the beta
+        # header and 1h ttl stripped — anything those extras caused vanishes,
+        # at 5-minute-cache prices. stage 3 swaps in a fallback model when
+        # the error is about the model itself. every failure is written to
+        # the black box so /braintest can show the real reason.
         try:
             resp = self._inner.create(**kw)
-        except Exception as e:
-            if "ttl" in str(e).lower() or "beta" in str(e).lower():
-                # fall back to default-TTL caching rather than dying
-                kw.pop("extra_headers", None)
-                kw["system"] = _strip_ttl(kw["system"])
+        except Exception as e1:
+            _note_brain_err(kw.get("model", "?"), e1, stage="full")
+            kw.pop("extra_headers", None)
+            kw["system"] = _strip_ttl(kw["system"])
+            try:
                 resp = self._inner.create(**kw)
-            else:
-                raise
+            except Exception as e2:
+                _note_brain_err(kw.get("model", "?"), e2, stage="plain")
+                es = str(e2).lower()
+                alt = _MODEL_FALLBACK.get(kw.get("model"))
+                if alt and ("model" in es or "not_found" in es or "404" in es):
+                    kw["model"] = alt
+                    resp = self._inner.create(**kw)
+                    _note_brain_err(alt, "recovered on fallback model",
+                                    stage="ok")
+                else:
+                    raise
         _bill(resp)
         return resp
 
@@ -4635,6 +4691,7 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         log.warning(f"Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
+        await _brain_alert(ctx, e)
     save_conversation_message(user.id, "assistant", response)
     sent = None
 
@@ -5795,7 +5852,8 @@ async def cmd_connect(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             "the trail runs out say 'we don't know where this leads yet' rather "
             "than dismissing it. keep it tight.",
             update.effective_chat.id)
-    except Exception:
+    except Exception as e:
+        _note_brain_err("connect", e, stage="cmd")
         out = "brain's buffering, run it again in a moment 🐈‍⬛"
     await send_chunked(update.effective_message.reply_text, out,
                        disable_web_page_preview=True)
@@ -6404,6 +6462,7 @@ async def handle_private_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
     except Exception as e:
         log.warning(f"DM Claude error: {e}")
         response = "brain's buffering. ask me again in a second 🐈‍⬛"
+        await _brain_alert(ctx, e)
     save_conversation_message(user.id, "assistant", response, scope="dm")
     await send_chunked(msg.reply_text, response, disable_web_page_preview=True)
 
@@ -10003,6 +10062,45 @@ async def cmd_xmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "question mentions always stay instant.")
 
 
+async def cmd_braintest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Fires ONE tiny live call on the exact model telegram answers use and
+    reports what actually happened — the raw API error, not the cat excuse."""
+    user = update.effective_user
+    if not (_is_maker(user) or await is_project_admin(ctx, update)):
+        return
+    m = await update.effective_message.reply_text("firing a live test call…")
+    t0 = time.time()
+    try:
+        r = claude.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=10,
+            system="reply with exactly: ok",
+            messages=[{"role": "user", "content": "say ok"}])
+        ms = int((time.time() - t0) * 1000)
+        said = "".join(b.text for b in r.content
+                       if getattr(b, "type", "") == "text").strip()[:40]
+        verdict = (f"✅ brain is alive — answered in {ms}ms\n"
+                   f"said: {said or '(empty)'}")
+    except Exception as e:
+        verdict = ("❌ the call FAILED even after every fallback. "
+                   "this exact text is the reason:\n\n"
+                   f"{str(e)[:600]}\n\n"
+                   "→ mentions 'credit'? the ANTHROPIC_API_KEY in railway "
+                   "belongs to a different workspace than the one you funded "
+                   "— make a key in the funded workspace and swap it in.\n"
+                   "→ mentions 'model'? the model id is wrong.\n"
+                   "→ mentions 'authentication' or 'invalid'? the key itself "
+                   "is bad or was rotated.")
+    try:
+        ring = json.loads(kv_get("brain_err_ring", "[]") or "[]")
+    except Exception:
+        ring = []
+    tail = ""
+    if ring:
+        tail = "\n\nlast recorded brain errors:\n" + \
+               "\n".join("• " + x for x in ring[-4:])
+    await m.edit_text((verdict + tail)[:4000])
+
+
 async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """WHY IS IT QUIET — the one command that answers it."""
     if not await is_project_admin(ctx, update):
@@ -10077,6 +10175,7 @@ def main():
         ("snipers", cmd_snipers), ("hq", cmd_hq), ("cases", cmd_cases),
         ("case", cmd_case), ("rep", cmd_rep), ("xmode", cmd_xmode),
         ("xqueue", cmd_xqueue), ("inbox", cmd_inbox),
+        ("braintest", cmd_braintest),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
