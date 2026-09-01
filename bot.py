@@ -2751,7 +2751,7 @@ def x_day_plan(d) -> dict:
     # 4 to 6 a day, down from 7-9. scarcity is the product: an account that
     # posts nine times a day is wallpaper, one that posts four times gets each
     # one actually read, and the gaps themselves start doing work.
-    n = 5 + seed % 2
+    n = 7
     slots = []
     x = seed
     # peak ET engagement windows (8-10a, 12-2p, 5-7p) appear three times in
@@ -5339,8 +5339,13 @@ def generate_shill_post(max_tries: int = 2) -> str:
     serve = int(kv_get("shill_serve_n", "0") or 0)
     kv_set("shill_serve_n", str(serve + 1))
     last_fi = int(kv_get("shill_last_form", "-1") or -1)
+    # the clock seeds the rotation, not a stored counter: a redeploy used to
+    # reset serve to 0 and every /shill after it retold connection #0. now
+    # day-of-year and hour move the base even if the database was wiped.
+    _now = datetime.now(PROJECT_TZ)
+    base = _now.timetuple().tm_yday * 13 + _now.hour * 3
     for hop in range(24):
-        ci = (serve * 11 + hop) % len(SHILL_CONNECTIONS)   # every pull, new lore
+        ci = (base + serve * 11 + hop) % len(SHILL_CONNECTIONS)
         fi = random.randrange(len(SHILL_FORMS))
         if fi == last_fi:                     # never the same shape twice running
             fi = (fi + 1 + random.randrange(len(SHILL_FORMS) - 1)) % len(SHILL_FORMS)
@@ -7684,27 +7689,49 @@ async def pick_register() -> tuple[str, str]:
     return whisper_mood(), ""
 
 
+def _pick_stronger(a: str, b: str) -> str:
+    """The A/B judge: which draft would actually stop a scroller. Haiku,
+    sixty tokens, fails open to A."""
+    try:
+        out = claude.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=8,
+            system=("two drafts of one X post from the same account. reply with "
+                    "exactly A or B: which one would make a stranger stop "
+                    "scrolling? judge the hook, the freshness, and whether it "
+                    "sounds like a person. penalise the one that feels like a "
+                    "template."),
+            messages=[{"role": "user", "content": f"A:\n{a}\n\nB:\n{b}"}],
+        ).content[0].text.strip().upper()
+        return b if out.startswith("B") else a
+    except Exception:
+        return a
+
+
 async def compose_whisper(mood: str | None = None, tries: int = 2,
                           angle: str = "") -> str | None:
-    """Gated draft, retried. A rejection used to cost a whole scheduled post,
-    which meant the strictest registers were also the quietest ones. Now the
-    gate just sends it back to be written again."""
+    """Two full drafts per slot, both gated, a judge picks the stronger.
+    Quality by tournament, not by hope."""
     if not mood:
         mood, angle = await pick_register()
         if mood == "pass":
             posted = int(kv_get(f"x_posts:{datetime.now(PROJECT_TZ).date()}", "0") or 0)
-            if posted >= 3:
+            if posted >= 5:
                 return None                 # the director chose silence, floor met
             mood, angle = whisper_mood(), ""   # floor not met: post anyway
-    for attempt in range(tries):
+    kind = ("brand case post: an unapologetic inventory of what the project has "
+            "actually built. a clean confident case IS the goal here, so do not "
+            "fail it for being promotional") if mood == "brand" else f"{mood} post"
+    passing = []
+    for attempt in range(tries + 1):
         body = await _compose_whisper_once(mood, angle=angle)
-        kind = ("brand case post: an unapologetic inventory of what the project has "
-                "actually built. a clean confident case IS the goal here, so do not "
-                "fail it for being promotional") if mood == "brand" else f"{mood} post"
         if body and _critic_ok(body, kind):
-            return body
-    log.info(f"whisper gave up on mood={mood} after {tries} drafts")
-    return None
+            passing.append(body)
+            if len(passing) == 2:
+                break
+    if not passing:
+        log.info(f"whisper gave up on mood={mood}")
+        return None
+    return passing[0] if len(passing) == 1 else _pick_stronger(passing[0], passing[1])
 
 
 async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str | None:
@@ -9414,6 +9441,30 @@ async def _on_startup_report(app):
         pass
     except Exception as e:
         log.warning(f"Startup message failed: {e}")
+
+    # repeat-proofing: if the deploy wiped the memory of recent posts, read
+    # the account's own last 20 posts back from X (one small read) so the
+    # similarity gates, topic cooldowns and opening dedup have real history.
+    try:
+        if X_ENABLED and not _own_recent():
+            client = _x_client()
+            me_id = kv_get("x_me_id")
+            if not me_id:
+                me = client.get_me()
+                me_id = str(me.data.id)
+                kv_set("x_me_id", me_id)
+            resp = client.get_users_tweets(id=me_id, max_results=20,
+                                           exclude=["retweets", "replies"],
+                                           user_auth=True)
+            for t in (resp.data or []):
+                _remember_own(t.text or "")
+                try:
+                    _topic_remember(t.text or "")
+                except Exception:
+                    pass
+            log.info(f"reseeded post memory from X: {len(resp.data or [])} posts")
+    except Exception as e:
+        log.info(f"post-memory reseed skipped: {e}")
 
     # the config report is operational noise, so it goes to the admin DM only
     report = (f"🔧 boot #{boots}\n"
