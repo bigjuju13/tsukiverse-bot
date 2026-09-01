@@ -215,6 +215,21 @@ THREAD_MAX_DEPTH = 4   # how far /thread climbs. each step is one fetch
 # time for the entire bot, Telegram polling included.
 _anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=45.0, max_retries=1)
 
+# when THIS process started. a container holds the environment it booted
+# with, so an env var edited in railway is invisible until this number
+# resets. it is the difference between "the key is wrong" and "the deploy
+# never happened".
+_PROC_START = time.time()
+
+
+def _uptime_str() -> str:
+    s = int(time.time() - _PROC_START)
+    if s < 90:
+        return f"{s}s"
+    if s < 5400:
+        return f"{s // 60}m"
+    return f"{s // 3600}h {(s % 3600) // 60}m"
+
 
 def _with_date(system):
     """Append today's date to whatever system prompt was passed.
@@ -10069,6 +10084,18 @@ async def cmd_braintest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not (_is_maker(user) or await is_project_admin(ctx, update)):
         return
     m = await update.effective_message.reply_text("firing a live test call…")
+    k = ANTHROPIC_API_KEY or ""
+    fp = f"{k[:14]}…{k[-6:]}" if len(k) > 24 else "(key looks malformed)"
+    # printed on success AND failure: if this key is not the one you just
+    # pasted into railway, the container never restarted and nothing you
+    # change in the dashboard has reached the bot yet.
+    who = (f"\n\nthis process: boot #{kv_get('boot_count', '?')}, "
+           f"up {_uptime_str()}\n"
+           f"key it booted with: {fp}\n"
+           "if that key is not the one now in railway, the variable was "
+           "saved but never deployed — railway stages variable edits behind "
+           "a 'deploy' button, and the old container keeps its old key until "
+           "you press it.")
     t0 = time.time()
     try:
         r = claude.messages.create(
@@ -10079,13 +10106,9 @@ async def cmd_braintest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         said = "".join(b.text for b in r.content
                        if getattr(b, "type", "") == "text").strip()[:40]
         verdict = (f"✅ brain is alive — answered in {ms}ms\n"
-                   f"said: {said or '(empty)'}")
+                   f"said: {said or '(empty)'}" + who)
     except Exception as e:
         es = str(e)
-        # the key's own fingerprint: the console lists every key by its last
-        # characters, so this is the one line that says WHICH key is loaded.
-        k = ANTHROPIC_API_KEY or ""
-        fp = f"{k[:14]}…{k[-6:]}" if len(k) > 24 else "(key looks malformed)"
         if "credit" in es.lower():
             read = ("\n\nwhat this means: the key WORKS — it authenticated "
                     "fine. the org it belongs to has a zero api balance.\n\n"
@@ -10112,7 +10135,7 @@ async def cmd_braintest(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             read = f"\n\nkey in use: {fp}"
         verdict = ("❌ the call FAILED even after every fallback. "
                    "this exact text is the reason:\n\n"
-                   f"{es[:600]}" + read)
+                   f"{es[:600]}" + read + who)
     try:
         ring = json.loads(kv_get("brain_err_ring", "[]") or "[]")
     except Exception:
