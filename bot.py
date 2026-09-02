@@ -163,11 +163,48 @@ def _envclean(name: str) -> str:
     return v
 
 
-X_API_KEY       = _envclean("X_API_KEY")
-X_API_SECRET    = _envclean("X_API_SECRET")
-X_ACCESS_TOKEN  = _envclean("X_ACCESS_TOKEN")
-X_ACCESS_SECRET = _envclean("X_ACCESS_SECRET")
+# The four credentials, each accepting the names people actually save them
+# under. The developer portal labels the fourth one "Access Token Secret",
+# so it lands in railway as X_ACCESS_TOKEN_SECRET perhaps more often than
+# not — and one wrong name silently disables ALL X posting, because
+# X_ENABLED is an AND across four variables. Reading the aliases costs
+# nothing and removes the most common way this account goes quiet.
+_X_ALIASES = {
+    "X_API_KEY": ("X_API_KEY", "X_CONSUMER_KEY", "TWITTER_API_KEY",
+                  "TWITTER_CONSUMER_KEY"),
+    "X_API_SECRET": ("X_API_SECRET", "X_API_KEY_SECRET", "X_CONSUMER_SECRET",
+                     "TWITTER_API_SECRET", "TWITTER_API_KEY_SECRET",
+                     "TWITTER_CONSUMER_SECRET"),
+    "X_ACCESS_TOKEN": ("X_ACCESS_TOKEN", "TWITTER_ACCESS_TOKEN"),
+    "X_ACCESS_SECRET": ("X_ACCESS_SECRET", "X_ACCESS_TOKEN_SECRET",
+                        "TWITTER_ACCESS_SECRET", "TWITTER_ACCESS_TOKEN_SECRET"),
+}
+# which spelling actually supplied each value, so /xdiag can say so
+X_VAR_SOURCE: dict[str, str] = {}
+
+
+def _envany(canonical: str) -> str:
+    for name in _X_ALIASES[canonical]:
+        v = _envclean(name)
+        if v:
+            X_VAR_SOURCE[canonical] = name
+            return v
+    return ""
+
+
+X_API_KEY       = _envany("X_API_KEY")
+X_API_SECRET    = _envany("X_API_SECRET")
+X_ACCESS_TOKEN  = _envany("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = _envany("X_ACCESS_SECRET")
 X_ENABLED       = all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET])
+
+
+def _x_missing() -> list:
+    """The credential names that are absent — the answer to 'why is it off'."""
+    return [n for n, v in (("X_API_KEY", X_API_KEY),
+                           ("X_API_SECRET", X_API_SECRET),
+                           ("X_ACCESS_TOKEN", X_ACCESS_TOKEN),
+                           ("X_ACCESS_SECRET", X_ACCESS_SECRET)) if not v]
 
 # Optional. If set, tweet reading goes through the official API first and
 # falls back to the public mirrors. Without it, the mirrors do all the work,
@@ -10271,9 +10308,13 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     nl = "\n"
     txt = (f"<b>🔬 X diagnosis</b>{nl}{nl}"
            f"<b>flags</b>{nl}"
-           f" ├ posting: {'on' if X_ENABLED else '❌ OFF — the 4 X vars are not in this container'}{nl}"
+           f" ├ posting: {'on' if X_ENABLED else '❌ OFF — missing: ' + ', '.join(_x_missing())}{nl}"
            f"└ replies: {'on' if X_REPLIES_ENABLED else 'off'}{nl}{nl}"
-           f"<b>last successful post</b>{nl}{kv_get('x_last_ok') or '❌ none since this deploy'}{nl}{nl}"
+           + (f"<b>credentials found</b>{nl}"
+              + nl.join(f" • {c} ← <code>{s}</code>"
+                        for c, s in sorted(X_VAR_SOURCE.items()))
+              + f"{nl}{nl}" if X_VAR_SOURCE and not X_ENABLED else "")
+           + f"<b>last successful post</b>{nl}{kv_get('x_last_ok') or '❌ none since this deploy'}{nl}{nl}"
            f"<b>today's plan</b>{nl}" + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
            f"<b>last X errors</b>{nl}" + (nl.join("• " + e for e in errs[-5:]) or "none recorded") + f"{nl}{nl}"
            f"<b>recent gate rejections</b> (drafts killed before sending){nl}"
