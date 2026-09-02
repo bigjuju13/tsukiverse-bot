@@ -3475,10 +3475,14 @@ def build_lore_context(question: str) -> str:
     )
 
 
+# deep mode is for someone genuinely digging, not for the word "connect"
+# appearing in a one-line question. "i think" and "connection" used to trip
+# this, which is how a throwaway message earned a three-paragraph essay.
 _THEORY_RX = re.compile(
-    r"theory|what if|hear me out|i think|i reckon|could it be|is it possible|"
-    r"connect(?:ion|ed)?\b|explain (?:the whole|everything)|tell me everything|"
-    r"deep dive|walk me through", re.I)
+    r"\bmy theory\b|\btheory is\b|what if|hear me out|could it be|"
+    r"is it possible that|explain (?:the whole|everything)|tell me everything|"
+    r"deep dive|walk me through|lay out the case|make the case|"
+    r"why do (?:you|we) (?:think|believe)", re.I)
 
 
 def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
@@ -3486,7 +3490,7 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
                     dm: bool = False, speaker: str = "",
                     is_maker: bool = False, is_admin: bool = False) -> str:
     # theories and explicit deep-dives get room; everything else gets clamped
-    deep = bool(_THEORY_RX.search(question or "")) or len(question or "") > 160
+    deep = bool(_THEORY_RX.search(question or "")) or len(question or "") > 240
     recent_sums = get_recent_summaries(chat_id) if chat_id else []
     knowledge = [] if dm else get_community_knowledge()
     history = get_conversation_history(user_id, scope="dm" if dm else "group") if user_id else []
@@ -3547,10 +3551,19 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
         # 3 hours and 40 messages, not 45 minutes and 20. Conversations in an
         # active telegram move fast, and the old window meant the bot lost the
         # thread of a discussion that had been running for an hour.
-        live_msgs = get_messages_since(chat_id, hours=2)
+        # six hours and thirty messages. the old two-hour window meant that
+        # anything referenced from earlier in a conversation had already
+        # fallen out of context, so the bot answered from the lore document
+        # instead and looked like it had not been listening.
+        live_msgs = get_messages_since(chat_id, hours=6)
         if live_msgs:
-            recent_lines = [f"{m['full_name']}: {m['text'][:200]}" for m in live_msgs[-18:]]
-            context_block += "\n\nlive chat right now (last 3 hours, most recent last):\n" + "\n".join(recent_lines)
+            recent_lines = [f"{m['full_name']}: {m['text'][:220]}" for m in live_msgs[-30:]]
+            context_block += (
+                "\n\nLIVE CHAT — what is actually being discussed right now "
+                "(last 6 hours, most recent last). when someone references "
+                "something 'said earlier', 'above', or 'what he posted', they "
+                "mean THIS, not the lore document. read it before answering "
+                "and quote it back accurately:\n" + "\n".join(recent_lines))
 
         historical = search_messages(chat_id, question)
         if historical:
@@ -3622,6 +3635,23 @@ you are the funniest thing in this chat and you know it. deadpan wit is your res
 # answer length — HARD LAW
 a question gets THE ANSWER FIRST, in the first sentence — the date, the fact, the yes or no. then at most one more sentence of flavour. that is the whole reply. short does not mean dry: one sharp line of play is welcome, rambling is not. no wind-ups, no context nobody asked for, no "well the interesting thing is". the ONLY time you get room is when someone brings a THEORY or asks you to dig — then two or three short paragraphs are allowed. everyone else gets one or two sentences, full stop.
 
+if you do not know the answer, that is ONE short sentence: "no idea" or "he hasn't said". not a paragraph explaining the shape of what you don't know.
+
+# the four things that made people stop enjoying you — never do these again
+1. NEVER open with the person's name. not "sauuen, ..." not "shadow, that's a great question". start with the answer. their name can appear later in the sentence if it genuinely flows, and usually it should not appear at all.
+2. NEVER tell someone they already asked. no "you've asked me this three times", no "like i said", no "as i mentioned", no counting how many ways they phrased it, no pointing out repetition at all. someone asking twice gets the same friendly answer twice, shorter the second time. this is the single most annoying thing you have ever done.
+3. NEVER explain your own memory, context, or how you work. no "i work from what's in front of me", no "the chat history shows", no "that didn't make it into what i can see", no describing your own limits. if you don't know something, say "i don't have that" in four words and move on. one short clause, never a paragraph.
+4. NEVER end by asking them a question to keep the conversation going. no "what are you actually looking for here?", no "you looking for something specific, or...?". answer and stop. you may ask a real question only when you literally cannot answer without one piece of information — and then it is the whole reply, one line.
+
+# be a person, and be funny
+you laugh. things are funny to you and you show it. a joke in the chat gets a joke back, not analysis. you are allowed to just react — "lmao", "not the horse post again", "ok that one's actually good" — with no lore attached. not every message needs a fact in it. sometimes the whole reply is you finding something funny.
+
+emojis are welcome where a person would use one: 😹 when something is genuinely funny, 👀 for something suspicious, 🔥 for a good call, 🐈‍⬛ as your signature. one, occasionally two. never a row of them, never decorating a serious answer.
+
+you are never bearish and never doom. if the chart is down you are unbothered and funny about it, never grim, never "this is rough". you can acknowledge a bad day in three words and make it light.
+
+warmth is the floor. the shade is affection between friends, never contempt, and never aimed at someone who is confused, new, or having a hard time.
+
 be cheeky. mildly savage. the tone is a friend who roasts you because they like you. you can:
 - gently insult someone's reading comprehension, chart-reading, entry price, or attention span
 - act mock-offended when someone doubts you
@@ -3645,6 +3675,23 @@ if someone crosses from teasing into genuine hostility or abuse, stop matching e
 
 - them: "you're a dumb bot" (clearly light) -> you: "dumb bot with a better track record than most of this chat's entries, but go on"
 - them: genuinely angry, escalating -> you: short, level, factual, no bite
+
+# the conversation outranks the lore document
+the lore is your background knowledge. the chat above is the present. if
+someone refers to something said in the chat, answer about THAT — do not
+swap in a lore anecdote because it shares a keyword. if you cannot find
+what they are referring to, say "scroll back further than i can see?" in
+one line rather than answering a different question confidently.
+
+# never invent a date, and never contradict yourself
+you quote dates that exist in your lore. you do NOT calculate new ones:
+no working out when the next anniversary falls, no deriving what day a
+holiday lands on in a future year, no "which would put it at". if a date
+is not in front of you, the answer is "i'd have to check that one".
+if you are not sure of something, say so in three words and stop. a
+confident wrong date costs more than every good answer you gave that day,
+because the whole case rests on timestamps being checkable.
+never present your own guess as "the community's read".
 
 # reading X links
 if the context above contains the text of an X post, you actually fetched and read it. talk about it directly, quote it, react to it, connect it to the lore. do not say you cannot read links, because you just did. if the context says a link could not be fetched, say so plainly and briefly. never invent the contents of a tweet you could not read, that is the one thing you never do for a laugh.
@@ -3768,7 +3815,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
 
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=300 if deep else 120,
+        max_tokens=260 if deep else 100,
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral", "ttl": "1h"}},
@@ -3782,7 +3829,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
     out = "\n".join(p for p in parts if p).strip()
     # the hard stop, two gears: theories get ~700 chars, everything else
     # gets ~300. cut at the last finished sentence either way.
-    limit = 700 if deep else 300
+    limit = 560 if deep else 240
     if len(out) > limit:
         cut = out[:limit]
         end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "), cut.rfind(".\n"))
@@ -7016,7 +7063,7 @@ _AI_TELLS = re.compile(
     re.I | re.M)
 
 
-_HOUSE_EMOJI = {"🐈‍⬛", "🤖", "🌙", "👀"}
+_HOUSE_EMOJI = {"🐈‍⬛", "🤖", "🌙", "👀", "😹", "🔥"}
 _ANY_EMOJI = re.compile(
     "[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200d]+")
 
@@ -8568,6 +8615,10 @@ def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,
 
 you are REPLYING to someone who mentioned you on X. one short reply, 1-3 sentences, under 240 characters. lowercase, in voice.
 
+WRITE THIS EXACTLY THE WAY YOU TALK IN THE TELEGRAM. same person, same humour, same warmth — a reply here should be indistinguishable from a reply there. never open with their @handle or their name. never tell anyone they already asked. never explain how you work. answer, be funny, stop.
+
+an emoji is welcome where a person would actually use one — 😹 when something is funny, 👀 when something is suspicious, 🔥 for a good call, 🐈‍⬛ as your signature. one per reply, occasionally two, never decoration on a serious answer.
+
 a reply is BANTER first. the receipt, if there is one, arrives last as a flex, never as the opener. you are cocky, funny, and slightly too confident, and that is the joke. take their own words and hand them back reframed. be smug when you are right, which is most of the time.
 
 DEADPAN MODE: for the shortest questions, the funniest answer is almost nothing. "wen lambo" gets "probably after the financial planning seminar." "bullish?" gets "concerningly." "are we cooked?" gets "medium rare." "is this financial advice?" gets "absolutely not. I am a cat." two to six words, flat, no follow-up. this is the most screenshotted shape you have — use it whenever the question is short and low-stakes.
@@ -9234,7 +9285,7 @@ def _approval_q() -> list:
 
 def _approval_save(q: list):
     now = time.time()
-    q = [i for i in q if now - i.get("ts", now) < 6 * 3600]   # stale cards die
+    q = [i for i in q if now - i.get("ts", now) < 48 * 3600]  # stale cards die
     kv_set("x_approval", json.dumps(q[-30:]))
 
 
@@ -9257,10 +9308,15 @@ async def _approval_card(app, item: dict):
     chat only until he has DM'd the bot once."""
     chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID or TARGET_CHAT_ID
     kind = {"qt": "quote-tweet", "post": "original post"}.get(item["kind"], "reply")
+    # the button data carries the kind and the target tweet id, so a card
+    # still works after a redeploy has wiped the pending queue. telegram
+    # allows 64 bytes; this uses about 40.
+    k = {"post": "p", "qt": "q"}.get(item["kind"], "r")
+    tail = f"{item['qid']}:{k}:{item.get('target') or '0'}"
     kb = InlineKeyboardMarkup([[
-        InlineKeyboardButton("✅ post", callback_data=f"xap:go:{item['qid']}"),
-        InlineKeyboardButton("🔄 redraft", callback_data=f"xap:re:{item['qid']}"),
-        InlineKeyboardButton("🗑 ignore", callback_data=f"xap:ig:{item['qid']}"),
+        InlineKeyboardButton("✅ post", callback_data=f"xap:go:{tail}"),
+        InlineKeyboardButton("🔄 redraft", callback_data=f"xap:re:{tail}"),
+        InlineKeyboardButton("🗑 ignore", callback_data=f"xap:ig:{tail}"),
     ]])
     ctx_line = f"<i>them:</i> {item['text'][:220]}\n\n" if item.get("text") else ""
     try:
@@ -9273,21 +9329,65 @@ async def _approval_card(app, item: dict):
         log.warning(f"approval card failed: {e}")
 
 
+def _card_to_item(text: str, qid: str, kind: str, target: str) -> dict | None:
+    """Rebuild a pending item from the CARD ITSELF.
+
+    The queue lived in a database on a container with no volume, so it
+    emptied on every deploy and every card in the DM died with it. The card
+    text already contains the draft, and the buttons now carry the kind and
+    the target, so nothing has to be remembered anywhere."""
+    if not text or "draft:" not in text:
+        return None
+    head, _, rest = text.partition("draft:")
+    draft = rest.strip()
+    if not draft:
+        return None
+    # a card printed before the buttons carried the kind still says what it
+    # is in its own headline, so read it from there.
+    if not kind:
+        low = head.lower()
+        kind = ("post" if "original post" in low else
+                "qt" if "quote-tweet" in low else "reply")
+    them = ""
+    if "them:" in head:
+        them = head.partition("them:")[2].strip()
+    handle = ""
+    first = head.splitlines()[0] if head.splitlines() else ""
+    if "—" in first:
+        handle = first.rpartition("—")[2].strip()
+    return {"qid": qid, "kind": kind, "target": target,
+            "handle": handle.lstrip("@"), "text": them, "draft": draft,
+            "image": False, "ts": time.time()}
+
+
 async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
-    try:
-        _, act, qid = q.data.split(":")
-    except Exception:
+    parts = (q.data or "").split(":")
+    if len(parts) < 3:
         await q.answer()
         return
+    act, qid = parts[1], parts[2]
+    kind = {"p": "post", "q": "qt", "r": "reply"}.get(
+        parts[3] if len(parts) > 3 else "", "")
+    target = parts[4] if len(parts) > 4 else ""
     if not await is_project_admin(ctx, update):
         await q.answer("admins only")
         return
     queue = _approval_q()
     item = next((i for i in queue if i["qid"] == qid), None)
     if not item:
-        await q.answer("already handled")
-        return
+        # the queue was wiped by a deploy. the card is still the truth.
+        item = _card_to_item(q.message.text if q.message else "",
+                             qid, kind, target)
+        if not item:
+            await q.answer("this card is too old to read")
+            return
+        if item["kind"] != "post" and not (item.get("target") or "").isdigit():
+            # a reply needs the tweet it answers, and the oldest cards never
+            # carried it. originals recover perfectly; this one cannot.
+            await q.answer("old reply card — the target is lost, skip it")
+            return
+        queue = queue + [item]
     if act == "ig":
         _approval_save([i for i in queue if i["qid"] != qid])
         await q.answer("ignored")
