@@ -2428,6 +2428,7 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
                + f" ({_CURRENT_POST_KIND})")
         if tid:
             _remember_own(body, kind=_CURRENT_POST_KIND, tid=str(tid))
+            _own_log_add(body, _CURRENT_POST_KIND, f"https://x.com/i/status/{tid}")
             try:
                 _topic_remember(body)
             except Exception:
@@ -2529,7 +2530,7 @@ async def raid_alert(app, url: str, preview: str, label: str = "just posted"):
     try:
         await app.bot.send_message(
             chat_id=TARGET_CHAT_ID,
-            text=(f"🐈‍⬛ the bot {label} on X\n\n{snippet}\n\n⚔️ first hour decides the reach"),
+            text=(f"🐈‍⬛ the bot {label} on X\n\n{snippet}\n\n{url}\n\n⚔️ first hour decides the reach"),
             disable_web_page_preview=True,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔁 Quote it", url=qt),
@@ -3652,6 +3653,7 @@ def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
     archive_ctx = get_recent_archive_for_context()
     if archive_ctx:
         context_block += "\n\n" + archive_ctx + "\n(these X posts are from the official accounts and are trusted source material)"
+    context_block += _own_posts_context()
     if not context_block:
         context_block = "no additional community context yet."
 
@@ -4004,7 +4006,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "▪️ /roadmap · /links\n\n"
         "<b>Community</b>\n"
         "▪️ /shill — campaign image + a ready X post\n"
-        "▪️ /trivia · /trboard · /summary · /mood\n\n"
+        "▪️ /summary · /mood\n\n"
         "💬 you can DM me. private conversations stay between us.\n\n"
         "or just tag me and ask. I've read everything, twice.",
         parse_mode="HTML")
@@ -4709,26 +4711,8 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if user and user.username and user.username.lower() == DEV_USERNAME.lower():
         await update_silence("dev", datetime.now(timezone.utc), ctx.application)
 
-    # Trivia
-    active = get_trivia_active()
-    # word-boundary match, not substring: with answers like "moon" and "88",
-    # plain substring matching handed the point to whoever next said the most
-    # common word in the chat. user can be None for channel-forwarded posts.
-    if active and user and any(
-            re.search(r"(?<![a-z0-9])" + re.escape(ans) + r"(?![a-z0-9])", text.lower())
-            for ans in active["answers"]):
-        clear_trivia_active()
-        add_trivia_score(user.id, user.username)
-        if kv_get("mystery_active") == "1":
-            kv_set("mystery_active", "")
-            _rep_add(user.id, user.first_name or user.username or "?", 15)
-        rows = get_trivia_leaderboard()
-        score = next((s for u, s in rows if u == (user.username or "anon")), 1)
-        await msg.reply_text(
-            f"✅ correct, and annoyingly fast about it\n\n"
-            f"▪️ @{user.username or user.first_name}: {score} point{'s' if score != 1 else ''}"
-        )
-        return
+    # trivia is retired: the answer matcher was handing out points to whoever
+    # next said "moon" or "cat" in normal conversation. nothing is matched.
 
     # Only respond when tagged or directly replied to
     bot_username = ctx.bot.username
@@ -7104,6 +7088,53 @@ def _own_recent() -> list:
         return []
 
 
+def _own_log() -> list:
+    """Structured record of what the account actually published: text, kind,
+    link, time. This is what the telegram brain reads when someone asks
+    'what did you post?' — so the answer is the real post with its link."""
+    try:
+        return json.loads(kv_get("own_post_log", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _own_log_add(text: str, kind: str, url: str = ""):
+    try:
+        log_ = _own_log()
+        log_.append({"t": time.time(), "kind": kind or "post",
+                     "text": (text or "")[:400], "url": url or ""})
+        kv_set("own_post_log", json.dumps(log_[-30:]))
+    except Exception:
+        pass
+
+
+def _own_posts_context(limit: int = 8) -> str:
+    """The block the telegram brain sees about its own X activity."""
+    rows = _own_log()[-limit:]
+    if not rows:
+        return ""
+    lines = []
+    for r in reversed(rows):
+        when = datetime.fromtimestamp(r["t"], PROJECT_TZ).strftime("%d %b %H:%M")
+        lines.append(f"- [{when}] ({r.get('kind', 'post')}) {r['text'][:220]}"
+                     + (f"  -> {r['url']}" if r.get("url") else ""))
+    return ("\n\nYOUR OWN RECENT X POSTS — you are @tsukiverseai and these are the "
+            "things YOU actually published, newest first. when anyone asks what you "
+            "posted, tweeted, said on X, or 'that post', THIS is the source: quote it "
+            "and give the link. never invent a post you did not make.\n" + "\n".join(lines))
+
+
+async def _announce_x(app, url: str, body: str, label: str, kind: str = "post"):
+    """One door for 'the bot did something on X' -> telegram. Logs it for the
+    brain and drops the raid card with the link in the text."""
+    _own_log_add(body, kind, url or "")
+    if url:
+        try:
+            await raid_alert(app, url, body, label)
+        except Exception as e:
+            log.warning(f"announce failed: {e}")
+
+
 def _remember_own(text: str, kind: str = "", tid: str = ""):
     posts = _own_recent()
     posts.append(text if isinstance(text, str) else str(text))
@@ -9242,18 +9273,15 @@ async def job_x_prowl(app):
                     if take:
                         try:
                             enforced = enforce_x_format(take, signoff=False)
-                            client.create_tweet(text=enforced, quote_tweet_id=t.id)
+                            r = client.create_tweet(text=enforced, quote_tweet_id=t.id)
                             _bucket_add("xqt")
                             _mark_replied(t.id)
-                            _remember_own(enforced, kind="qt", tid="")
+                            rid = ((getattr(r, "data", None) or {}).get("id")) if r else None
+                            rurl = f"https://x.com/i/status/{rid}" if rid else ""
+                            _remember_own(enforced, kind="qt", tid=str(rid or ""))
                             log.info(f"quote-tweeted @{handle}")
-                            try:
-                                await app.bot.send_message(
-                                    chat_id=TARGET_CHAT_ID,
-                                    text=(f"\U0001f501 quote-tweeted @{handle} on X\n\n{enforced}"),
-                                    disable_web_page_preview=True)
-                            except Exception:
-                                pass
+                            await _announce_x(app, rurl, enforced,
+                                              f"quote-tweeted @{handle}", kind="qt")
                             continue
                         except Exception as e:
                             log.warning(f"qt of @{handle} failed: {e}")
@@ -9565,15 +9593,20 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if new:
             item["draft"] = new
             _approval_save(queue)
+            _k = {"post": "p", "qt": "q"}.get(item["kind"], "r")
+            _tail = f"{qid}:{_k}:{item.get('target') or '0'}"
             kb = InlineKeyboardMarkup([[
-                InlineKeyboardButton("✅ post", callback_data=f"xap:go:{qid}"),
-                InlineKeyboardButton("🔄 redraft", callback_data=f"xap:re:{qid}"),
-                InlineKeyboardButton("🗑 ignore", callback_data=f"xap:ig:{qid}"),
+                InlineKeyboardButton("✅ post", callback_data=f"xap:go:{_tail}"),
+                InlineKeyboardButton("🔄 redraft", callback_data=f"xap:re:{_tail}"),
+                InlineKeyboardButton("🗑 ignore", callback_data=f"xap:ig:{_tail}"),
             ]])
+            _kind_word = {"qt": "quote-tweet", "post": "original post"}.get(item["kind"], "reply")
+            _who = item["handle"] if item["kind"] == "post" else f"@{item['handle']}"
+            _them = f"them: {item['text'][:220]}\n\n" if item.get("text") else ""
             try:
                 await q.edit_message_text(
-                    f"🎯 X {'quote-tweet' if item['kind']=='qt' else 'reply'} for approval — @{item['handle']}\n\n"
-                    f"them: {item['text'][:220]}\n\ndraft: {new}", reply_markup=kb)
+                    f"🎯 X {_kind_word} for approval — {_who}\n\n"
+                    f"{_them}draft: {new}", reply_markup=kb)
             except Exception:
                 pass
         return
@@ -9607,11 +9640,17 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             client = _x_client()
             body = enforce_x_format(item["draft"], signoff=False)
             if item["kind"] == "qt":
-                client.create_tweet(text=body, quote_tweet_id=item["target"])
+                r = client.create_tweet(text=body, quote_tweet_id=item["target"])
             else:
-                client.create_tweet(text=body, in_reply_to_tweet_id=item["target"])
+                r = client.create_tweet(text=body, in_reply_to_tweet_id=item["target"])
             _count_reply()
             _approval_save([i for i in queue if i["qid"] != qid])
+            rid = ((getattr(r, "data", None) or {}).get("id")) if r else None
+            rurl = f"https://x.com/i/status/{rid}" if rid else ""
+            _remember_own(body, kind=item["kind"], tid=str(rid or ""))
+            await _announce_x(ctx.application, rurl, body,
+                              f"{'quote-tweeted' if item['kind'] == 'qt' else 'replied to'} @{item['handle']}",
+                              kind=item["kind"])
             await q.answer("posted ✅")
             try:
                 await q.edit_message_text(q.message.text + "\n\n✅ posted")
@@ -9665,15 +9704,20 @@ async def _drain_reply_queue(app, client):
                 await _approval_card(app, card)
                 replied += 1
                 continue
-            client.create_tweet(text=reply, in_reply_to_tweet_id=item["id"])
+            r = client.create_tweet(text=reply, in_reply_to_tweet_id=item["id"])
             replied += 1
             _count_reply()
             log.info(f"replied to @{item['handle']}")
+            rid = ((getattr(r, "data", None) or {}).get("id")) if r else None
+            rurl = f"https://x.com/i/status/{rid}" if rid else ""
+            _remember_own(reply, kind="reply", tid=str(rid or ""))
+            _own_log_add(reply, "reply", rurl)
             try:
                 await app.bot.send_message(
                     chat_id=TARGET_CHAT_ID,
                     text=(f"\U0001f4ac replied on X to @{item['handle']}\n\n"
-                          f"them: {item['text'][:140]}\n\nme: {reply}"),
+                          f"them: {item['text'][:140]}\n\nme: {reply}"
+                          + (f"\n\n{rurl}" if rurl else "")),
                     disable_web_page_preview=True)
             except Exception:
                 pass
@@ -10255,8 +10299,7 @@ async def cmd_hq(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("🏆 investigators", callback_data="hq:rep")],
         [InlineKeyboardButton("🌳 lore tree", callback_data="hq:tree"),
          InlineKeyboardButton("🎯 predictions", callback_data="hq:predict")],
-        [InlineKeyboardButton("🕳 rabbit hole", callback_data="hq:rabbit"),
-         InlineKeyboardButton("🧠 trivia", callback_data="hq:trivia")],
+        [InlineKeyboardButton("🕳 rabbit hole", callback_data="hq:rabbit")],
     ])
     await update.effective_message.reply_text(
         "<b>🐈\u200d⬛ TSUKIVERSE HQ</b>\n\nX is where it gets noticed. "
@@ -10272,8 +10315,7 @@ async def hq_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
              "rep": "/rep — the leaderboard",
              "tree": "/tree — the knowledge tree · /tree 665 climbs a branch",
              "predict": "/predict — call the next clue",
-             "rabbit": "/rabbit — get something to dig into",
-             "trivia": "/trivia — test the chat"}
+             "rabbit": "/rabbit — get something to dig into"}
     if dest == "cases":
         await cmd_cases(update, ctx)
     elif dest == "rep":
@@ -10434,6 +10476,12 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
               + nl.join(f" • {c} ← <code>{s}</code>"
                         for c, s in sorted(X_VAR_SOURCE.items()))
               + f"{nl}{nl}" if X_VAR_SOURCE and not X_ENABLED else "")
+           + ((f"<b>this container is</b>{nl}"
+               f"{_identify_process().replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')}{nl}"
+               f"→ the X variables must be on THIS service, in THIS environment. "
+               f"open railway, find the service named above, and add them to its "
+               f"Variables tab — not the project's shared variables, not another "
+               f"service. then press Deploy.{nl}{nl}") if not X_ENABLED else "")
            + ((f"<b>X-shaped variables in this container</b> (names only){nl}"
                + (nl.join(f" • <code>{n}</code>" for n in _x_env_names())
                   or " • none at all — this service has no X variables on it, "
@@ -10466,7 +10514,6 @@ def main():
         ("gmpost", cmd_gmpost), ("photos", cmd_photos), ("voldebug", cmd_voldebug), ("nextpost", cmd_nextpost), ("shill", cmd_shill),
         ("summary", cmd_summary), ("chatid", cmd_chatid),
         ("price", cmd_price), ("mc", cmd_mc), ("links", cmd_links), ("roadmap", cmd_roadmap),
-        ("trivia", cmd_trivia), ("trboard", cmd_trboard),
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
         ("dbcheck", cmd_dbcheck), ("perms", cmd_perms), ("datecheck", cmd_datecheck),
         ("read", cmd_read),
@@ -10537,7 +10584,7 @@ def main():
     scheduler.add_job(job_x_scoreboard,  "cron", hour=6, minute=45, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_followers,   "cron", hour=6, minute=30, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_snapshots,   "interval", minutes=60, args=[app])
-    scheduler.add_job(job_daily_mystery, "cron", hour=15, minute=0, timezone=ny_tz, args=[app])
+    # daily mystery retired with the trivia system (v25)
     scheduler.add_job(job_weekly_recap,  "cron", day_of_week="sun", hour=17, minute=0, timezone=ny_tz, args=[app])
     # the Day X post no longer goes to X at all. the 7am telegram campaign
     # post (job_daily_campaign) is its only home now.
