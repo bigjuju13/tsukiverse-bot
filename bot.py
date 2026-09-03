@@ -199,6 +199,19 @@ X_ACCESS_SECRET = _envany("X_ACCESS_SECRET")
 X_ENABLED       = all([X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET])
 
 
+def _x_env_names() -> list:
+    """Every X-shaped variable NAME present in this process. Names only —
+    a value never leaves this function, so this is safe to print into a
+    chat. An unrecognised spelling shows up here immediately."""
+    out = []
+    for k in sorted(os.environ):
+        ku = k.upper()
+        if ku.startswith(("X_", "TWITTER_")) or "TWEET" in ku:
+            known = any(k in names for names in _X_ALIASES.values())
+            out.append(f"{k}{'' if known else '  ← not a name i read'}")
+    return out
+
+
 def _x_missing() -> list:
     """The credential names that are absent — the answer to 'why is it off'."""
     return [n for n, v in (("X_API_KEY", X_API_KEY),
@@ -2897,6 +2910,14 @@ def x_day_plan(d) -> dict:
     assigned = [types[order[i]] for i in range(n)]
     if "opener" in assigned:
         assigned[assigned.index("opener")], assigned[0] = assigned[0], "opener"
+    # reserve one slot a day for the bit — the CEO/hostile-takeover character
+    # is the account's best shape, so it is never left to chance. drop it on
+    # an afternoon/evening slot that is not the opener.
+    if "bit" not in assigned:
+        for i in range(n - 1, 0, -1):
+            if assigned[i] != "opener":
+                assigned[i] = "bit"
+                break
     return {slots[i]: assigned[i] for i in range(n)}
 
 
@@ -3092,6 +3113,12 @@ async def job_x_heartbeat(app):
                 url = post_to_x(body, signoff=False)
                 if url:
                     await raid_alert(app, url, body, "made the case")
+        elif ptype == "bit":
+            body = await compose_whisper(mood="bit")
+            if body and not await _maybe_approve_post(app, body, "bit post"):
+                url = post_to_x(body, signoff=False)
+                if url:
+                    await raid_alert(app, url, body, "ran the bit")
         elif ptype == "pulse":
             await _x_post_pulse(app)
         else:
@@ -6484,7 +6511,7 @@ async def job_x_monitor(app):
             # a VIP posted: queue a reply under their post, on the same human
             # 1-5 minute clock the mention replies use, one per handle per 4h
             if (X_ENABLED and X_REPLIES_ENABLED and handle_l in VIP_REPLY_HANDLES
-                    and refs and _vip_reply_ok(handle_l)):
+                    and refs and _vip_should_reply(handle_l, item["title"] or "")):
                 q = _reply_queue()
                 if not any(x.get("id") == str(tweet_id) for x in q):
                     q.append({"id": str(tweet_id), "handle": handle_l,
@@ -7631,7 +7658,7 @@ WHISPER_LORE_MOODS = ("signals", "movie", "musing", "question", "grand",
 # anchored to the universe — the story, the people, the numbers, the cat, the
 # community. humour stays, randomness goes.
 WHISPER_FUN_MOODS = ("absurd", "meme", "terse", "entitled", "threat", "tail",
-                     "flex", "wholesome", "brand")
+                     "flex", "wholesome", "brand", "bit")
 # lore weighted double: the content mix targets roughly 60/40 story to humour.
 WHISPER_MOODS = WHISPER_LORE_MOODS * 2 + tuple(
     m for m in WHISPER_FUN_MOODS if m != "brand")
@@ -7649,7 +7676,7 @@ _MOOD_MAXLEN = {
     "terse": 62, "flex": 100, "wholesome": 110, "challenge": 112,
     "aphorism": 130, "tease": 130, "absurd": 135, "shower": 135,
     "tail": 140, "invention": 140, "entitled": 145, "threat": 145,
-    "badmath": 165, "meme": 175, "tinfoil": 175, "brand": 270,
+    "badmath": 165, "meme": 175, "tinfoil": 175, "brand": 270, "bit": 280,
 }
 # Ceilings in words, where a character count is too blunt.
 _MOOD_MAXWORDS = {"terse": 9, "flex": 14, "challenge": 17}
@@ -7661,7 +7688,7 @@ _MOOD_LINES = {"terse": (1, 1), "challenge": (1, 1), "aphorism": (1, 1),
                "tail": (1, 1), "threat": (1, 1), "entitled": (1, 1),
                "badmath": (1, 1), "absurd": (1, 1), "wholesome": (1, 1),
                "tease": (1, 2), "tinfoil": (1, 2), "meme": (2, 4),
-               "brand": (2, 9)}
+               "brand": (2, 9), "bit": (1, 9)}
 
 # "filed" and its cousins became a verbal tic: nine of eleven banter drafts in
 # one run, and nearly every reply. One register (the archivist, on lore posts)
@@ -7680,6 +7707,18 @@ _TOO_DEEP = re.compile(
 # also covered "tail" and "entitled", which starved them: the straight half of
 # a tail and the whole point of a grievance are both ABOUT the archive.
 _SHALLOW_MOODS = {"shower", "invention", "badmath"}
+
+# the bit is comedy, and the two things that turn this comedy into a real
+# problem are a threat to leak someone's stuff and a demand for money. both
+# are rejected outright, plus any wallet-address-shaped string, so the
+# account never posts something that reads as extortion or a solicitation.
+_BIT_UNSAFE = re.compile(
+    r"\b(?:leak|leaking|circulat\w+|expos\w+|releas\w+|post(?:ing)?)\b[^.\n]{0,45}"
+    r"\b(?:image|images|photo|photos|pic|pics|footage|video|videos|dms?)\b"
+    r"|\b(?:send|remit|pay|deposit|transfer|wire)\b[^.\n]{0,35}"
+    r"\b(?:wallet|address|sol|usdc|eth|funds?|1\s*%|percent)\b"
+    r"|\b[1-9A-HJ-NP-Za-km-z]{32,44}\b",
+    re.I)
 
 # The lines that define the register, shown to the model as calibration. They
 # are all real: half are from the account this voice is modelled on, half are
@@ -8095,6 +8134,31 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
                  "meme becomes an IP (that shape, fresh words). end with $TSUKI on its own "
                  "line. never price talk, never promises, never urgency — inventory of what "
                  "is real, stated with total confidence.")
+    elif mood == "bit":
+        brief = (
+            "the BIT register — the recurring character that goes viral. you are "
+            "the tsukiverse cat that has appointed itself into escalating, entirely "
+            "fictional corporate power over this whole project: CEO, chairman, a "
+            "one-person board. write ONE deadpan corporate communique delivered with "
+            "total bureaucratic sincerity — an appointment, a memo, a vote, a "
+            "restructure, a mock-official announcement. the comedy is the gap "
+            "between the self-importance and the fact that you are a cat with zero "
+            "actual authority.\n\n"
+            "runners you can pull from (do not use every one, pick a fresh angle): "
+            "the dev (dvidsvj) is unaware of this hostile takeover; nobody was "
+            "consulted; the board (me) has already voted; appointing greg or the dev "
+            "to a made-up position they never asked for; a signing bonus of "
+            "'whatever arrives'; motion passed, meeting adjourned, i was the only "
+            "attendee. mock-formal is welcome — a 'Dear Greg,' opener, a sign-off, "
+            "a fake job title. multi-line reads like a real announcement: short "
+            "lines, blank line between beats.\n\n"
+            "it is affectionate ribbing of people who are IN on the joke (greg, the "
+            "dev, the community), never a real insult and never aimed at an outsider. "
+            "HARD LIMITS: never threaten to leak, circulate, expose or release "
+            "anyone's photos, images, messages or private info — not even as a bit. "
+            "never demand money, crypto or payment and never post a wallet address. "
+            "never promise price or returns. the joke is the absurd power-grab, "
+            "nothing that reads as a real threat or a real solicitation.")
     elif mood == "opener":
         brief = ("the DAY OPENER: the first post of the day. one fresh observation to "
                  "wake up to — what today's date is in this story, something you were "
@@ -8129,6 +8193,14 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
                  "price or market cap. follow the register brief exactly, including "
                  "the closing $TSUKI line.\n\n" + brief)
         cap = 200
+    elif mood == "bit":
+        shell = ("write ONE post in the BIT register below. it may be several short "
+                 "beats with blank lines between them, like a real announcement. "
+                 "mock-serious, deadpan, funny. never predict, never promise, never "
+                 "invent a real fact about a real person, no price talk, no tickers, "
+                 "no sign-off ticker line. follow the register brief exactly.\n\n"
+                 + brief)
+        cap = 260
     elif mood in WHISPER_FUN_MOODS:
         shell = ("write ONE short unprompted post. nobody asked you anything. ONE BLOCK, no "
                  "blank lines, no second beat. never predict, never promise, never invent a "
@@ -8159,7 +8231,7 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
             messages=[{"role": "user", "content": "say the thing"}],
         )
         text = msg.content[0].text.strip()
-        body = text.strip() if mood == "brand" else text.split("$TSUKI")[0].strip()
+        body = text.strip() if mood in ("brand", "bit") else text.split("$TSUKI")[0].strip()
         # Drafts came back as "entitled  I inspired the entire..." — the model
         # labelling its own homework. Strip a leading register name.
         # Only strips the LABEL pattern (a colon, or the double-space beat), so
@@ -8189,6 +8261,9 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
             return None
         if mood in _SHALLOW_MOODS and _TOO_DEEP.search(body):
             log.info(f"{mood} rejected: reached for meaning in a register that has none")
+            return None
+        if mood == "bit" and _BIT_UNSAFE.search(body):
+            log.info("bit rejected: tripped the threat/solicitation safety gate")
             return None
         # "filed" was appearing in nine banter drafts out of eleven. It belongs
         # to the archivist. The exception is entitled and threat, where filing a
@@ -8583,6 +8658,14 @@ _REPLY_INVENTED = re.compile(
     r"|\bfloor\b|\btarget\b", re.I)
 
 
+# words that leak the machinery into a reply. a stranger does not care what
+# the "archive" would "file" a "frame" as — that is insider noise that reads
+# as a bot. the reply has to sound like a person in the thread.
+_REPLY_WORDBAN = re.compile(
+    r"\b(?:frame|frames|draft|drafts|archive\w*|resolution|upscal\w+|"
+    r"for the record|the record shows)\b", re.I)
+
+
 def _reply_problem(text: str) -> str | None:
     if not text or len(text) < 4:
         return "empty"
@@ -8594,6 +8677,8 @@ def _reply_problem(text: str) -> str | None:
         return "banned vocabulary (receipts/archive/rooftop/...)"
     if _AI_TELLS.search(text) or "timestamp" in text.lower():
         return "machine tell: 'timestamp', 'the pattern continues' or a one-word opener"
+    if _REPLY_WORDBAN.search(text):
+        return "insider word (frame/draft/archive/resolution/upscale) — talk like a person"
     if _REPLY_INVENTED.search(text):
         return "invented a price, a market cap or a target"
     years = re.findall(r"\b(?:19|20)\d{2}\b", text)
@@ -8627,24 +8712,23 @@ def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,
     if qt:
         vip_brief = (
             "\n\nSPECIAL CASE: you are QUOTE-TWEETING a new post from @"
-            + their_handle + ". you are NOT talking to them, you are talking to "
-            "YOUR timeline about what they just posted. one take, 1-2 sentences, "
-            "under 200 characters: the connection only your archive would see, or "
-            "the dry observation that makes people check the original. never "
-            "summarise their post (it is attached below yours), never address "
-            "them as 'you', never fawn. your usual register, aimed outward.")
+            + their_handle + ". you are talking to YOUR timeline about what they "
+            "just posted. one line, under 200 characters, that makes a stranger "
+            "smirk and tap the original: a sharp reframe, a deadpan reaction, a take "
+            "only you would have. never summarise their post, never address them as "
+            "'you', never fawn. pure banter aimed outward.")
     elif vip:
-        streak = ""
         vip_brief = (
-            "\n\nSPECIAL CASE: you are replying to a NEW POST from @"
-            + their_handle + ", one of the accounts you actually watch. this reply "
-            "will be read by everyone in the orbit within minutes, so it has to be "
-            "the one that gets screenshotted. you probably CANNOT see any image or "
-            "video in their post, so if their text gives you little to work with, "
-            "react to the ACT of posting: the timing, the streak that just reset, "
-            "what the archive will file this as." + streak + " never pretend to have "
-            "seen media you cannot see, never summarise their post back at them, "
-            "never fawn. cocky, warm, funny, in exactly your usual register.")
+            "\n\nSPECIAL CASE: you are replying UNDER a new post from @"
+            + their_handle + ". thousands will scroll this thread — the only job is "
+            "to be the funniest reply in it so people tap your name and follow. "
+            "react like a quick, clever person would: riff on what they said, flip a "
+            "word back at them, a deadpan one-liner, an absurd overreaction played "
+            "straight. if you cannot see their image or video, react to the fact "
+            "that they posted, not to a picture you can't see. an emoji is fine if a "
+            "person would use one. NEVER explain a connection, never mention "
+            "archives, frames, timestamps or records, never fawn, never ask them a "
+            "question. land it and get out.")
     msg = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=220,
@@ -8749,7 +8833,37 @@ def _note_poll(**kw):
 VIP_REPLY_HANDLES = {"greg16676935420", "ryancohen", "tsukionsolana",
                      "theroaringkitty", "elonmusk", "blknoiz06", "gamestop",
                      "bigboyjuju"}
-VIP_REPLY_COOLDOWN_H = 4          # per handle. greg or elon alone could eat the day.
+VIP_REPLY_COOLDOWN_H = 4          # legacy default; the tiers below override it.
+# TIERS — not every watched account deserves the same reply policy.
+#   ALWAYS: reply to every post. these are the home team.
+#   RELEVANT: reply only when the post is actually about the orbit (elon posts
+#             about rockets and politics all day; those are not our lane).
+#   everyone else: reply to each, with a light cooldown so a rapid thread does
+#             not become a wall of ten replies from us.
+VIP_ALWAYS = {"greg16676935420", "bigboyjuju"}
+VIP_RELEVANT = {"elonmusk"}
+# what makes an elon (or other RELEVANT) post worth a reply: it touches the
+# story we are actually in.
+_ORBIT_RX = re.compile(
+    r"\b(?:gamestop|gme|roaring\s?kitty|keith\s?gill|dfv|ryan\s?cohen|cohen|"
+    r"grok|xai|x\.ai|doge|dogecoin|crypto|bitcoin|btc|solana|meme\s?coin|"
+    r"memecoin|token|cat|cats|moon|665|433|kitty|ebay|burry)\b", re.I)
+
+
+def _vip_should_reply(handle: str, text: str = "") -> bool:
+    """Tiered gate. ALWAYS handles reply to everything (a 15-minute dedupe
+    only, so one post is not answered twice); RELEVANT handles must be on-orbit;
+    the rest get a 90-minute per-handle cooldown."""
+    h = (handle or "").lower().lstrip("@")
+    if h in VIP_RELEVANT and not _ORBIT_RX.search(text or ""):
+        return False
+    cd_h = 0.25 if h in VIP_ALWAYS else (2.0 if h in VIP_RELEVANT else 1.5)
+    key = f"vipreply:{h}"
+    last = float(kv_get(key, "0") or 0)
+    if time.time() - last < cd_h * 3600:
+        return False
+    kv_set(key, str(time.time()))
+    return True
 # ── the mid-tier sniper: accounts 5-20x our size, where a reply stays in the
 # top 10-20 and actually converts to follows. managed at runtime: /snipers
 MID_REPLY_COOLDOWN_H = 6
@@ -8775,7 +8889,7 @@ def _mid_reply_ok(handle: str) -> bool:
         return False
     kv_set(f"midreply:{handle.lower()}", str(time.time()))
     return True
-VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "5") or 5)
+VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "16") or 16)
 CASHTAG_CAP_PER_DAY = int(os.environ.get("X_CASHTAG_CAP_PER_DAY", "8") or 8)
 
 
@@ -9045,7 +9159,7 @@ async def job_x_prowl(app):
     # search returns is billed, and elon alone can hand back 10 per poll all
     # day: at the old 15-minute cadence that was up to ~$10/day of reads that
     # mostly got thrown away by cooldowns. reads are now capped outright.
-    PROWL_READ_BUDGET = int(os.environ.get("X_PROWL_READS_PER_DAY", "50") or 50)
+    PROWL_READ_BUDGET = int(os.environ.get("X_PROWL_READS_PER_DAY", "90") or 90)
     if not (8 <= datetime.now(PROJECT_TZ).hour <= 23):
         return                                    # nobody to snipe at 4am
 
@@ -9060,12 +9174,14 @@ async def job_x_prowl(app):
         nonlocal changed
         if _bucket_count(cap_bucket) >= cap or _reads_today() >= PROWL_READ_BUDGET:
             return
-        if vip:
-            # skip the search entirely while every VIP is inside its 4h
-            # cooldown: the search would bill reads that cannot become replies
+        if vip and label == "vip":
+            # only skip the search when the SLOWER-tier handles are all cooling
+            # AND there is no always-handle (greg/juju always deserve a look).
             now_t = time.time()
-            if all(now_t - float(kv_get(f"vipreply:{h}", "0") or 0) < VIP_REPLY_COOLDOWN_H * 3600
-                   for h in VIP_REPLY_HANDLES):
+            slow = [h for h in VIP_REPLY_HANDLES if h not in VIP_ALWAYS]
+            if not VIP_ALWAYS and all(
+                    now_t - float(kv_get(f"vipreply:{h}", "0") or 0)
+                    < VIP_REPLY_COOLDOWN_H * 3600 for h in slow):
                 return
         try:
             resp = client.search_recent_tweets(
@@ -9092,8 +9208,10 @@ async def job_x_prowl(app):
         users = {u.id: (u.username or "") for u in (resp.includes or {}).get("users", [])}
         now = datetime.now(timezone.utc)
         added = 0
+        # up to three catches per run, so a burst of greg/juju posts in one
+        # 15-minute window all get answered instead of just the newest.
         for t in sorted(tweets, key=lambda x: int(x.id), reverse=True):
-            if added >= 1:                       # one catch per hunt per run
+            if added >= 3:
                 break
             handle = users.get(t.author_id, "")
             if not handle or handle.lower() == me:
@@ -9140,7 +9258,9 @@ async def job_x_prowl(app):
                         except Exception as e:
                             log.warning(f"qt of @{handle} failed: {e}")
                             _x_err_note(f"qt @{handle}: {e}")
-                if not (_mid_reply_ok(handle) if label == "mid" else _vip_reply_ok(handle)):
+                ok = (_mid_reply_ok(handle) if label == "mid"
+                      else _vip_should_reply(handle, t.text or ""))
+                if not ok:
                     continue
             else:
                 worthy, why = _reply_worthy(t)
@@ -9437,7 +9557,7 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await q.answer("redrafting…")
         if item["kind"] == "post":
             mood = {"day opener": "opener", "brand post": "brand",
-                    "receipt post": "signals"}.get(item["handle"])
+                    "receipt post": "signals", "bit post": "bit"}.get(item["handle"])
             new = await compose_whisper(mood=mood)
         else:
             new = write_x_reply(item["text"], item["handle"],
@@ -10314,6 +10434,12 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
               + nl.join(f" • {c} ← <code>{s}</code>"
                         for c, s in sorted(X_VAR_SOURCE.items()))
               + f"{nl}{nl}" if X_VAR_SOURCE and not X_ENABLED else "")
+           + ((f"<b>X-shaped variables in this container</b> (names only){nl}"
+               + (nl.join(f" • <code>{n}</code>" for n in _x_env_names())
+                  or " • none at all — this service has no X variables on it, "
+                     "so they are on another service, in another environment, "
+                     "or the deploy that added them never ran")
+               + f"{nl}{nl}") if not X_ENABLED else "")
            + f"<b>last successful post</b>{nl}{kv_get('x_last_ok') or '❌ none since this deploy'}{nl}{nl}"
            f"<b>today's plan</b>{nl}" + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
            f"<b>last X errors</b>{nl}" + (nl.join("• " + e for e in errs[-5:]) or "none recorded") + f"{nl}{nl}"
