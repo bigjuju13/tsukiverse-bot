@@ -2510,7 +2510,18 @@ def _x_failure_hint() -> str:
         return ("no credits. X is prepaid since february 2026. top up in the X Developer "
                 "Console and try again.")
     if "401" in e or "unauthorized" in e:
-        return "401. the keys are wrong, or were regenerated after you pasted them."
+        return ("401 — the four keys do not authenticate as a set. X_ENABLED is on, "
+                "so they ARE reaching the bot; X just does not accept them together. "
+                "nine times in ten: the consumer pair and the access pair came from "
+                "different apps or different regenerations, or a token was regenerated "
+                "in the portal after it was pasted. the cure is the same either way — "
+                "in developer.x.com, on ONE app, in ONE sitting: (1) User authentication "
+                "settings → make sure it says Read and write, save. (2) Keys and tokens → "
+                "Consumer Keys → Regenerate → copy API Key + API Key Secret. (3) same "
+                "page → Authentication Tokens → Access Token and Secret → Regenerate → "
+                "copy both. (4) paste all four into railway on THIS service, replacing "
+                "the old ones, press Deploy. do not use the OAuth 2.0 Client ID / Secret "
+                "section at all. then /xtest.")
     if "429" in e or "rate limit" in e:
         return "429, rate limited. wait and retry."
     return "see the raw error above."
@@ -3127,6 +3138,25 @@ async def job_x_heartbeat(app):
     except Exception as e:
         log.warning(f"x heartbeat error ({ptype}): {e}")
         _x_err_note(f"heartbeat {ptype}: {e}")
+    # post_to_x swallows its own exceptions, so a 401/402/403 on a scheduled
+    # slot used to be invisible until someone ran /xdiag. now the first one of
+    # each kind per day lands in juju's DM with the fix attached.
+    try:
+        _le = (LAST_X_ERROR or "").lower()
+        if _le and any(k in _le for k in ("401", "402", "403", "unauthorized",
+                                          "forbidden", "credit", "payment")):
+            _sig = hashlib.md5(
+                f"{datetime.now(PROJECT_TZ).date()}:{_le[:80]}".encode()).hexdigest()[:10]
+            if not kv_get(f"x_alerted:{_sig}"):
+                kv_set(f"x_alerted:{_sig}", "1")
+                _chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+                if _chat:
+                    await app.bot.send_message(
+                        _chat, f"🐦 a scheduled X post ({ptype}) was refused.\n\n"
+                               f"X said: {LAST_X_ERROR[:220]}\n\n"
+                               f"what that means:\n{_x_failure_hint()}")
+    except Exception:
+        pass
     if kv_get("x_post_seq", "0") != seq_before or kv_get("x_slot_carded") == "1":
         kv_set(guard, "done")                   # posted or carded; stop retrying
         kv_set("x_slot_carded", "")
@@ -3966,6 +3996,12 @@ async def is_project_admin(ctx, update) -> bool:
     user = update.effective_user
     if user is None:
         return False
+    # the maker outranks the membership lookup. in a DM there is no chat to be
+    # admin OF, and the main-chat check can fail for reasons that have nothing
+    # to do with him (bot lacks rights there, TARGET_CHAT_ID is stale, telegram
+    # hiccup) — which locked juju out of his own diagnostics. never again.
+    if _is_maker(user):
+        return True
     chat = update.effective_chat
     if chat and chat.type != "private" and await is_admin(ctx, chat.id, user.id):
         return True
@@ -8748,6 +8784,16 @@ def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,
             "smirk and tap the original: a sharp reframe, a deadpan reaction, a take "
             "only you would have. never summarise their post, never address them as "
             "'you', never fawn. pure banter aimed outward.")
+    elif their_handle.lower().lstrip("@") in SPARRING_HANDLES:
+        vip_brief = (
+            "\n\nSPECIAL CASE — BOT VS BOT: @" + their_handle + " is another AI "
+            "account. this is a rivalry and everyone watching knows both of you are "
+            "machines, so play it: deadpan superiority, the tone of a cat who was "
+            "here first. one line. you may acknowledge you are both bots and that "
+            "exactly one of you has a spreadsheet. riff on what they said, never "
+            "summarise it, never fawn, never agree to be friends, never get mean — "
+            "the joke is two automated accounts taking each other very seriously. "
+            "no lore dump, no dates unless one lands as a punchline.")
     elif vip:
         vip_brief = (
             "\n\nSPECIAL CASE: you are replying UNDER a new post from @"
@@ -8907,11 +8953,23 @@ _QT_TRIGGER = re.compile(
     r"cat|cats|moon|8/8|meme)\b", re.I)
 
 
+# the sparring partners — other AI accounts. baked in as code so a redeploy
+# (which wipes kv) cannot forget them. /snipers adds more at runtime.
+SPARRING_HANDLES = {"gork", "aixbt", "aixbt_agent"}
+
+
 def _midtier() -> list:
     try:
-        return json.loads(kv_get("midtier_handles", "[]") or "[]")
+        extra = json.loads(kv_get("midtier_handles", "[]") or "[]")
     except Exception:
-        return []
+        extra = []
+    seen, out = set(), []
+    for h in list(SPARRING_HANDLES) + [str(x) for x in extra]:
+        hl = h.lower().lstrip("@")
+        if hl and hl not in seen:
+            seen.add(hl)
+            out.append(hl)
+    return out
 
 
 def _mid_reply_ok(handle: str) -> bool:
@@ -9546,6 +9604,7 @@ def _card_to_item(text: str, qid: str, kind: str, target: str) -> dict | None:
 
 
 async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    global LAST_X_ERROR
     q = update.callback_query
     parts = (q.data or "").split(":")
     if len(parts) < 3:
@@ -9633,7 +9692,13 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                 _approval_save([i for i in _approval_q() if i["qid"] != qid])
                 await q.answer("posted ✅" if url else "x refused it — check /xdiag")
                 try:
-                    await q.edit_message_text(q.message.text + ("\n\n✅ posted" if url else "\n\n⚠️ failed"))
+                    if url:
+                        await q.edit_message_text(q.message.text + "\n\n✅ posted")
+                    else:
+                        await q.edit_message_text(
+                            (q.message.text or "")[:1500]
+                            + f"\n\n❌ X refused it: {(LAST_X_ERROR or 'no error recorded')[:220]}"
+                            f"\n\nwhat that means:\n{_x_failure_hint()}")
                 except Exception:
                     pass
                 return
@@ -9657,8 +9722,16 @@ async def xap_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 pass
         except Exception as e:
+            LAST_X_ERROR = f"{type(e).__name__}: {e}"
             _x_err_note(f"approved {item['kind']} @{item['handle']}: {e}")
             await q.answer(f"failed: {str(e)[:60]}")
+            try:
+                await q.edit_message_text(
+                    (q.message.text or "")[:1500]
+                    + f"\n\n❌ X refused it: {str(e)[:220]}\n\n"
+                    f"what that means:\n{_x_failure_hint()}")
+            except Exception:
+                pass
 
 
 async def _drain_reply_queue(app, client):
