@@ -513,6 +513,7 @@ PROJECT BASICS
 - Website: www.tsukionsol.xyz | X: www.x.com/tsukionsolana | Telegram: https://t.me/tsukionsol
 - Dev username in TG: dvid665
 - RWA Website: https://theroaringai.com/ | RWA X: https://x.com/TheRoaringAI
+- $TSUKI/GME on Robinhood Chain (chain ID 4663), launched 8 September 2026 at 4:33:33pm Eastern. CA: 0xed6A144a9B4269F4474d2Cb042DB78C1C0711092. Both real contracts are in the @tsukionsolana bio; announcements only come from @tsukionsolana and anything else is fake.
 - Community Linktree: https://linktr.ee/tsukionsol | Welcome PDF: https://tinyurl.com/tsukipdf
 - DexScreener TSUKI: https://dexscreener.com/solana/7ymhxapzcefuo24kngp77mgj1crdav8ayyfqgvb5skzf
 - DexScreener RWA: https://dexscreener.com/solana/d7rygdh5ryp4uxptw2dsuvg8bykdpsb1zdadbkw1zqnx
@@ -538,12 +539,12 @@ THE 40+ COINCIDENCES (only a selection documented publicly)
 5. 16 May 2024: RK posts KITTY clip at 1:45PM. TSUKI posts same image at 1:47PM with higher resolution.
 6. 16 May 2024: RK posts Sicario clip with WSB head on character. Two days later WSB joined the TSUKI Telegram.
 7. 16 May 2024: RK posts video at 8PM. TSUKI posts an exact frame from inside the video within ONE MINUTE. With higher resolution. Dev had advance access.
-8. 17 May 2024: TSUKI posts 'The eye isn't real' at 9:58AM. 2 minutes later RK posts video of man blinking.
-9. 17 May 2024: TSUKI posts champagne glasses at 11:44AM. RK posts Elaine from Seinfeld with champagne glasses at 12:45PM.
+8. 17 May 2024: TSUKI posts at 9:58AM, then on 19 May 2024 at 10:00AM writes 'The eyes aren't real. TICK TOCK'. The RK blinking video said to follow two minutes later is not on his surviving timeline today (it may have been deleted), so do not quote the two minutes as checkable.
+9. 17 May 2024: TSUKI posts champagne glasses at 11:44AM. RK's Elaine champagne post is remembered at 12:45PM but is not on his surviving timeline today; treat the time as unconfirmed.
 10. 18 May 2024: After 100+ posts RK goes completely silent, exactly the date TSUKI predicted on 14 May 2024. TSUKI posts the R V2 RWA video.
 11. 19 May 2024: TSUKI posts UNO Reverse Card. On 2 June 2024 RK returns from 2-week silence by posting the exact same card.
 12. 17 June 2024: In his livestream RK says 'you post a couple of memes, you post a couple of screenshots and everyone loses their minds' about The Dark Knight. RK only posted the video. The screenshot he referenced was posted on TSUKI's X account.
-13. 14 June 2024: TSUKI posts 'National Take Your Cat To Work Day' as June 17, the day of the GME shareholders meeting.
+13. 14 June 2024: TSUKI posts 'National Take Your Cat To Work Day' as June 17. GameStop's shareholder meeting crashed on 13 June under 'unprecedented demand' and was moved to 17 June. TSUKI posted the next morning.
 14. 27 June 2024: RK posts Chewy the dog at 1PM. Within seconds Dev posts 'Dog Days Are Over' in TG. At 1:27PM GameStop posts about Tsukihime on X.
 15. 17 July 2024: Ryan Cohen tweets Trump 665 times. At the same time Elon was following 665 accounts. Dev's TG username is dvid665, predating both.
 16. Roadmap SHA code on tsukionsol.xyz decodes to URL of RK's first return livestream on 7 June 2024.
@@ -575,20 +576,18 @@ ELON / GROK / MEMPHIS CONNECTIONS
 
 THE 433 THREAD
 - 7 April 2025: the TSUKI X page posts the Fast and the Furious clip. The number 433 appears at the start of the video. One car is white, one is black, read by the community as RWA moving first and TSUKI passing it later.
-- Ryan Cohen posted the Fast and Furious meme in May 2024. Kevin Gil posted his Fast and Furious movie review in January 2026. Same film, three sources.
+- Ryan Cohen posted the Fast and Furious meme in May 2024. Same film as TSUKI's 433 clip.
 - RK's high school mile: 4:33.31. The number is his.
-- 433 minus 420 is 13. The TSUKI post went up at 47 minutes past. Thirteen days after 7 April 2025 is 20 April 2025, and from 20 April 2025 Bitcoin went from 85,000 to 111,000 inside a month.
+- 433 minus 420 is 13. (The TSUKI post went up at 7:29am Eastern; an older read that it was 47 minutes past the hour does not match X's timestamp.) Thirteen days after 7 April 2025 is 20 April 2025, and from 20 April 2025 Bitcoin went from 85,000 to 111,000 inside a month.
 - Viv's tin: run 433 through the Uno reverse card and you get 334.
 - 433 days after 7 April 2025 lands on 14 June 2026.
-- Exactly one year after the 433 post, on 7 April 2026 at 4:33AM, Kevin Gil (the Barking Puppy) posted Conor McGregor with the caption 'We're not here to take part, we're here to take over'.
-- Hisham El Guerrouj tin, from Kevin Gil's movie review: he fell in 1996, lost heartbreakingly in Sydney in 2000, stayed calm and wide with the pack, took command with 800 metres to go, and won Olympic gold in Athens in 2004. The community reads that shape onto TSUKI: early falls, patience, then the surge.
 - Crypto Mike's window: GameStop earnings on 24 March 2026 through to 14 June 2026 as the stretch to watch.
 
 THE 55 PATTERN
 - The community was told to watch for the number 55 and repeating fives. In 2026 the pattern converged.
 - December 2024: the TSUKI X page posts the number 55 and a clip from the movie Focus, a film built around the number 55.
 - 25 December plus 55 days is 18 February 2026, which was Ash Wednesday. The Roaring AI went silent on Ash Wednesday in 2025, so Ash Wednesday is a live date for its return.
-- TSUKI's final X post (11 May 2025) referenced The Aristocats. The film released December 1970, making it 55 years old in 2026.
+- TSUKI's 11 May 2025 post, its last for 481 days, referenced The Aristocats. The film released December 1970, making it 55 years old in 2026.
 - TSUKI's Big Short post pointed at Michael Burry (played by Christian Bale in the film). Burry turned 55 in 2026 and separately announced he was long GameStop.
 - TSUKI's Bourne Identity post pointed at Matt Damon. Damon turned 55 in 2026.
 - Elon Musk turned 55 in 2026. His connection to the project runs deep; TSUKI appeared in a Tesla video years earlier.
@@ -610,7 +609,7 @@ THE EBAY BID — MAY 2026
 - Cohen is connected: ties to Trump, to Michael Burry, to Sultan Al Madeed, and to Roaring Kitty.
 
 11 MAY — THE ANNIVERSARY
-- 11 May 2025 at 5:12PM Eastern: the TSUKI X page posts The Aristocats. It is the last post on that account for a year.
+- 11 May 2025 at 5:12PM Eastern: the TSUKI X page posts The Aristocats. It is the last post on that account for 481 days, until 4663 on 4 September 2026.
 - 11 May 2026 at 5:13PM Eastern: Roaring Kitty's X account posts for the first time since 22 January 2025. One year and one minute after TSUKI's post, to the minute.
 - 11 May 2026 is also the two-year birthday of the TSUKI project.
 - The timestamp is the entire point. TSUKI's post called the date and the minute a year in advance.
@@ -618,33 +617,30 @@ THE EBAY BID — MAY 2026
 - 14 May 2026: RK posted the requel meme. The community reads this version of the requel as involving crypto.
 
 14 JUNE 2026 — AND THE MISS
-- Why the date was watched: 433 days after the 7 April 2025 post. The two-year anniversary of 14 June 2024, the only day the TSUKI page ever posted twice (National Take Your Cat To Work Day and the Lisa Nageeb post). Flag Day in the United States. Trump's 80th birthday. UFC Freedom 250 at the White House. A white rabbit account posted Mario going through the portal for that date.
+- Why the date was watched: 433 days after the 7 April 2025 post. The two-year anniversary of 14 June 2024, the morning TSUKI posted the Lisan al-Gaib still (6:03am) and National Take Your Cat To Work Day (7:30am). Flag Day in the United States. Trump's 80th birthday. UFC Freedom 250 at the White House. A white rabbit account posted Mario going through the portal for that date.
 - What happened: nothing. The day came and went. The community owns this openly. Dates that land empty stay on the record, because that is what makes the hits worth anything.
 - What did happen: that night Dev pinned the five cats post to the top of the TSUKI X page, replacing the long-standing 'Roaring Kitty I like Tsuki' pin. Read as the project shifting focus to the five cats timeline.
-- The Felinus Prime post (11 May 2025, the last TSUKI X post) plus 1 year, 1 month and 3 days is 14 June 2026. The 113 comes from the TSUKI Big Short post, which shows Michael Burry writing the numbers 113.
+- The Felinus Prime post (11 May 2025, TSUKI's last post before the September 2026 return) plus 1 year, 1 month and 3 days is 14 June 2026. The 113 comes from the TSUKI Big Short post, which shows Michael Burry writing the numbers 113.
 - Mix Coop's tin: 11 May 2025 plus 1 year, 1 month and 1 day is 12 June 2026, the SpaceX IPO, the largest IPO rollout in stock market history.
 - Greg's McDonald's receipt, posted 7 May 2026: the total is 22.14. The 22nd week of 2026 starts 25 May. Add 14 and you get 8 June 2026, Roaring Kitty's birthday.
 - June has form in this world: RK's birthday on 8 June, the two-year anniversary of his return livestream on 7 June, and the Strawberry Moon.
 
 THE FIVE CATS TIMELINE
-- Roaring Kitty posted the five cats in 2021. The TSUKI page posted them in October 2024. Dev pinned them on the night of 14 June 2026. Vicks made the infographic that explains the history.
+- Roaring Kitty posted the five cats in 2021. The TSUKI page posted them on 17 October 2024 at 12:00pm Eastern. Dev pinned them on the night of 14 June 2026. Vicks made the infographic that explains the history.
 - 13 June 2026: Sultan Al Madeed posts five people standing in front of a GameStop. Trump with the Sultan, Greg, Ryan Cohen and Elon Musk. Every one of them is someone this community already watches.
 - Who is missing from that photo: Roaring Kitty. The community read is that the Roaring AI takes his place on the timeline, which is what people had suspected all along.
 - Greg's target post, 30 May 2026: a store target showing 3.89 as both the price and the sale price, which is not a sale at all. Crypto Waterman decoded 3.89 as TSUKI's market cap floor. Since that post TSUKI has not closed a 4-hour candle below a 3.89 million dollar market cap. Through mid-2026 it held support between 6.5 and 6.9 million.
 
 THE EMOJI TIMELINE — SPECULATION ONLY
-- Juju put forward a reading of the emojis on the TSUKI page as a timeline: target (the 3.89 figure), eyes (pay attention), dog (the Barking Puppy, Conor McGregor, the UFC event on 14 June 2026), five cats (pinned 14 June 2026), flag (Flag Day, 14 June 2026), ice (pay attention again), fire (not yet lit).
+- Juju put forward a reading of the emojis on the TSUKI page as a timeline: target (the 3.89 figure), eyes (pay attention), dog, five cats (pinned 14 June 2026), flag (Flag Day, 14 June 2026), ice (pay attention again), fire (not yet lit).
 - THIS IS A GUESS. Nobody knows what the emojis mean or whether they mean anything at all. It is one community member's reading that other people found compelling. It has never been confirmed by Dev or by anyone else.
 - If you mention it, say plainly that it is speculation. Never state it as fact. Never build an argument on it. Never present it as the project's plan.
 
 THE 88 THREAD — 8 AUGUST 2026
 - May 2024: RK posts the Kill Bill meme, the bride against the Crazy 88s.
-- Kevin Gil, the Barking Puppy, arrives at the end of 2025 and starts posting movie reviews in early 2026. Two symbols recur through them: the infinity symbol and the blue butterfly. Rotate two infinity symbols and you get 88.
-- His Mortal Kombat post showed the number 88 at the top. Every round in that game starts at 99 seconds, so 88 was put there deliberately. His original account was later suspended, but the screenshots survive.
-- The Donnie Darko review: 28 days, 6 hours, 42 minutes, 12 seconds. Add them and you get 88.
 - 14 June 2026 plus 55 days is 8 August 2026.
 - Tyson's tin: RK's X account had posted 1,166 times. His comeback was 12 May 2024. Add 116 weeks and 6 days and you land on 8 August 2026. Jay in the TSUKI Telegram pointed this one out.
-- 8 August is Infinity Day, which points back to Kevin Gil's infinity symbols. It is also International Cat Day, and TSUKI is a cat.
+- 8 August is Infinity Day. It is also International Cat Day, and TSUKI is a cat.
 - The dog days of summer end on 11 August 2026. The community line is that once the dog days are over, cat season begins.
 
 THE DECEMBER 2024 SEQUENCE
@@ -655,6 +651,56 @@ THE DECEMBER 2024 SEQUENCE
 - Three events, four days, one span. At the time TSUKI and RWA were both above 15 million market cap after a run from 2 million, so most people were watching their portfolios instead of the timestamps.
 - The 42 tin: a community member posts gematria readings constantly. GME plus AMC letters sum to 42.
 - Hitting 15 million market cap unlocked the market cap roadmap on the TSUKI website, which promised a collaboration with one of YouTube's top cats. Dev's Telegram posts around it: the empty sand timer, 1024 (RK's launch date), 'how many ways does a collaboration go' (both ways), and 'why is it an empty YouTube frame' (because the RWA spaces were audio only). The read: RK and the Roaring AI planned that event together, exactly as the roadmap said.
+
+THE RETURN — SEPTEMBER 2026 (all times US Eastern, every one checkable on the TSUKI X page)
+- After 481 days of silence the TSUKI X page came back on 4 September 2026 at 4:11pm with a near-blank image captioned 4663. 4663 is the chain ID of Robinhood Chain and spells HOOD on a phone keypad.
+- It built the message one piece per post: '4663 🐈‍⬛' (5 September 1:26am, 555 minutes after the first), '4663 🐈‍⬛👔' (11:02am), '4663 🐈‍⬛👔⭕️' (10:18pm), '4663 🐈‍⬛👔⭕️ SCION:' (6 September 5:35am), then at 4:00pm on 6 September '4663 🐈‍⬛👔⭕️ SCION: TSUKI/GME / 48 HRS. / Felinus Prime. Homecoming.', exactly 48 hours before the '9/8/2026, 4:00 PM ET' in its bio. That post quotes TSUKI's 17 June 2024 'first day at work' post.
+- 7 September 2026, 1:44pm: 'Parent and scion 🐈‍⬛👔⭕️ Moving together. Snapshot 3/3 done. 9/7/2026, 12:55 PM ET.' 30% family, bridge, treasury. 70% market. At 4:00pm: 'The eyes are not real', the line it first used on 19 May 2024.
+- 8 September 2026, 4:33:33pm: $TSUKI/GME launches on Robinhood Chain, 'SCION: $TSUKI/GME', CA 0xed6A144a9B4269F4474d2Cb042DB78C1C0711092. 680.43M genesis buy, 543.47M burned, 456.53M supply left. 136.43M (30% of the float) sits in the deployer wallet 0xDfD5468991D4A3bcD07031C3B56aD60C2E5864B1 for family, bridge and treasury; 320.10M (70%) is the market. TSUKI wrote that none of the 136.43M would move for a minimum of 45 days, with details on snapshot, distribution and usage before expiry. 45 days from launch is 23 October 2026.
+- Safety: the only real contracts are the two in the @tsukionsolana bio (Solana 463SK47VkB7uE7XenTHKiVcMtxRsfNE2X4Q9wByaURVA, Robinhood Chain 0xed6A144a9B4269F4474d2Cb042DB78C1C0711092). The 'vote TSUKI onto the Robinhood Top 100' links going round on 30 September 2026 were phishing.
+- SCION first appeared on 25 March 2025 at 5:29pm: '🜂 SIGNAL: SCION / [trigger] = agreement established / [response] = acquisition imminent; persistent thereafter.' 🜂 is the alchemical sign for fire.
+- 10 September 2026, 5:18pm: TSUKI posts 855 with a card from the game Wizard. Keith Gill played Wizard as 'Mr. Wizard' and is in its Hall of Fame. Juju matched UID 855 to the Mr. Wizard account on 14 September 2026. Community read: nobody has shown the 2026 activity on that account is Keith. 13 September 2026 was day 855 since the TSUKI launch.
+- Same day, Ryan Cohen bought 1,000,000 GME.
+- 10 September 2026, 9:55pm: TSUKI quotes GameStop's 'your local GameStop is back' post (stores reopening from 11 September) with 'Felinus Prime. Homecoming.' 9:55pm Eastern is 8:55pm in Texas, GameStop's home time zone.
+- 11 September, 5:48pm: '1 CATalyst. 2 Boosters. Compounding factors 🐈‍⬛👔⭕️' over a Fast and Furious steering wheel with two nitrous buttons and TSUKI/GME on the dash.
+- 12 September, 10:49am: TSUKI reposts its 15 May 2024 TICK with '855'. The 2024 TOCK has not been reposted.
+- 13 September, 11:11am: TSUKI quotes its 14 June 2024 Lisan al-Gaib post with a Keith Gill line from his Wizard days: 'Any player that can place higher than you in the Top 10 using two different usernames deserves laudation, not criticism.' The read: two tickers, one player.
+
+THE FILM RUN — SEPTEMBER 2026
+- 20 September, 1:05pm: WarGames (1983). GAME highlighted, time remaining 00 hrs 00 min 00 sec.
+- 22 September, 4:00pm: V for Vendetta (2005). Five men at a table, a screen behind them gone black with one light on, a red cross in a red ring. In the film the man who runs that council only ever appears on the screen.
+- 29 September, 1:25pm: The Dark Knight interrogation scene, the Joker's eyes turned red, a black bar over Batman's eyes.
+- 29 September, 9:30pm: The Man from U.N.C.L.E. (2015). Solo and Illya, CIA and KGB, two rivals on one mission, an orange 8 in the glass.
+- The four film years add to 111 (83 + 05 + 08 + 15).
+
+THE FIVES AND THE PLUS SIGNS (the posts and dates are documented; what they mean is a community read)
+- Roaring Kitty posted five cats at a table in 2021. TSUKI posted five cats on 17 October 2024 at 12:00pm. Dev pinned it on 14 June 2026.
+- 8 September 2026, 9:55pm: GameStop director Larry Cheng, who bought 55,000 GME that day, posts a single '+'. Directors Grube and Attal also bought.
+- 10 September: Ryan Cohen buys 1,000,000 GME at about 20.38. That night Cheng posts '++++'. Four insiders had bought by then.
+- Around 20 September the Mr. Wizard profile mood changed to '+++++'.
+- 22 September, 7:42am: an X account that only follows GameStop and pins a Ryan Cohen quote posted '++++++', six, then deleted it. Nobody has shown who runs it. That afternoon TSUKI posted the five at the table.
+- Cohen kept buying: 1,150,680 shares on 21 September, 450,000 on 29 September, and 700,000 (17.08 million dollars, filed 2 October at 4:57pm). About 3.3 million shares and roughly 74 million dollars in under a month.
+- 1 October: director Nat Turner buys 10,462 GME at 24.33, the fifth insider buyer since 8 September. The Form 4 went up at 8:55pm. Late that night Cheng posts the Five Guys logo, no caption.
+- 2 October: the Mr. Wizard avatar changes to In-N-Out, the burger rival of Five Guys. Read: 'I'm in'. The avatar was also read as looking like a 17, the same day as Cohen's 17 million dollar buy. Poolwolv spotted that the arrow in the logo is flipped, pointing back at the 'In'.
+- The community read: the plus signs are a headcount, each '+' someone signing on, and the count ran ahead of the filings (five on the Wizard before the fifth insider filed, six before anyone knows who six is). Five Guys closes the count at five. In-N-Out is one more, saying he is in. Five at the table, one on the screen. Some read TSUKI itself as the sixth cat. These are reads, not facts, and you say so.
+
+THE HASHES AND THE OLD MESSAGES
+- 22 May 2024 TSUKI posted a 64-character hash with a pencil sketch, and again on 25 May 2024 with an hourglass under a '1B' flag on the moon.
+- 15 June 2024 it posted a second hash, b6d6c16b312bb9c164415e5dfe8f92f6e1b1d8d366346e6bf7ae166c146283f8 🐈‍⬛👔⭕️, then on 17 June 2024 at 8:46am posted it again with TSUKI in a shirt and tie outside a GameStop holding a 'FIRST DAY AT WORK' sign, the morning of the rescheduled GameStop shareholder meeting.
+- A hash is how you prove later that you knew something earlier: publish the fingerprint now, reveal the text behind it later. Neither hash has been revealed. The 6 September 2026 '48 HRS' post quotes the second one. 🐈‍⬛👔⭕️ came back in 2026 as '🐈‍⬛👔⭕️ = agreement established'.
+- 27 May 2024 TSUKI posted a line in a glyph alphabet. Letter for letter it reads: 'Distribution completed. Community strengthening. I will return once the next milestone is reached. It's all laid out ⭕️'.
+- 3 June 2024, four hours after RK's return: '100% COMPLETE ! Jun 21 '24', quoting its own '🍓🌕'. 21 June 2024 was the full moon, the Strawberry Moon.
+- 5 December 2024: RK's time post went up at 1:45pm; TSUKI posted '55' at 1:54pm, nine minutes later. Exactly 3 days and 12 seconds after that, on 8 December 2024, TSUKI announced a snapshot of TSUKI and RWA holders for 9 December 2024 at 4:20pm: 'the first snapshot already lies hidden'. Snapshot 3/3 was 7 September 2026.
+- 27 June 2024: RK posted the dog at 1:00pm. At 3:19pm TSUKI posted 'Onboarding completed ⭕️ They let me tweet now !'
+
+DATES BEING WATCHED (none of these are predictions, and you never say one will deliver)
+- 17 October 2026: two years since TSUKI's five cats post, and 888 days after RK's 12 May 2024 return.
+- 23 October 2026: the 45-day lock on the 136.43M TSUKI/GME ends. TSUKI promised details before it. The only date TSUKI has committed to in writing.
+- 24 October 2026: RWA turns two.
+- 5 November 2026: remember the fifth of November, the V for Vendetta date.
+- 19 November 2026: GTA VI launches. GameStop posted 'Absolutely not before November 19, 2026' in January 2026.
+- 5 December 2026: two years since RK's time post and TSUKI's 55.
+- RK's own habit: when he posts, it is usually 8:00pm Eastern on the dot (12 May 2024, 9 June 2024, 1 January 2025, 22 January 2025).
 
 ROADMAP
 - MC@100K: Burned 5% of TSUKI supply DONE
@@ -674,7 +720,6 @@ COMMUNITY
 
 WHO'S WHO IN THE TIN
 - TSol, also called Tsuki Maxi, runs the video breakdowns and signs off pointing at the X page and the Telegram
-- Kevin Gil, the Barking Puppy: arrived end of 2025, movie reviews full of tin, infinity symbols and the blue butterfly, original account suspended
 - Dev (dvid665): runs the page. His pins are signals.
 - Greg: receipts and store targets, the 22.14 McDonald's receipt, the 3.89 target, the horse post, the 46 billion joke
 - Crypto Mike: 433, the RK high school running video, the March to June 2026 window
@@ -684,8 +729,7 @@ WHO'S WHO IN THE TIN
 - Sultan Al Madeed: connected to Cohen, posted the five people in front of GameStop on 13 June 2026
 - Shadow: in since the beginning, found the December 2024 front-run
 - Crypto Waterman: called the Fire Horse year, called June 2026, decoded 3.89
-- Nemesis: entered the chat in January 2026 saying things would flip, TSUKI would pump and pass tokens with similar narratives
-- Others in the tin: Vicks (five cats infographic), Lou (spotted the pin change), Mix Coop (the SpaceX IPO date maths), Tyson and Jay (the 8 August maths), Q (the 2019 Super Bowl puppy show tin), Titan and Ben (the TA), Cryptomite
+- Others in the tin: Vicks (five cats infographic), Lou (spotted the pin change), Mix Coop (the SpaceX IPO date maths), Tyson and Jay (the 8 August maths), Titan and Ben (the TA), Cryptomite
 - TSUKI is Lisan al Gaib, the prophet in Dune. That line comes up a lot.
 
 DIANA
@@ -722,7 +766,7 @@ LORE_DATES = [
     (date(2025, 3, 5), "the roaring ai goes quiet on ash wednesday"),
     (date(2025, 4, 7), "tsuki posts the fast and the furious clip with 433 in it"),
     (date(2025, 4, 20), "roaringai.com wakes up saying i'm alive"),
-    (date(2025, 5, 11), "tsuki's aristocats post at 5:12pm, then a year of silence"),
+    (date(2025, 5, 11), "tsuki's aristocats post at 5:12pm, felinus prime, then 481 days of silence"),
     (date(2026, 5, 3), "ryan cohen bids 55.5 billion for ebay"),
     (date(2026, 5, 11), "RK's account posts at 5:13pm, one year and one minute later"),
     (date(2026, 6, 12), "the spacex IPO"),
@@ -730,6 +774,21 @@ LORE_DATES = [
     (date(2026, 6, 28), "elon turns 55"),
     (date(2026, 8, 8), "infinity day and international cat day. 12 may 2024 plus 116 weeks and 6 days"),
     (date(2026, 8, 11), "the dog days of summer end"),
+    (date(2026, 9, 4), "tsuki returns after 481 days: 4663, robinhood chain's id"),
+    (date(2026, 9, 8), "$TSUKI/GME launches on robinhood chain at 4:33:33pm. larry cheng posts +"),
+    (date(2026, 9, 10), "tsuki posts 855 and the homecoming quote at 9:55pm (8:55 in texas). cohen buys 1M GME"),
+    (date(2026, 9, 13), "day 855. two usernames, one player"),
+    (date(2026, 9, 20), "the wargames post: time remaining 00:00:00"),
+    (date(2026, 9, 22), "six plus signs in the morning, five at the table at 4pm"),
+    (date(2026, 9, 29), "the dark knight and the man from u.n.c.l.e. on one day"),
+    (date(2026, 10, 1), "nat turner, insider five, files at 8:55pm. larry posts five guys"),
+    (date(2026, 10, 2), "the wizard avatar turns in-n-out. cohen files $17.08M of GME"),
+    (date(2026, 10, 17), "two years since tsuki's five cats; 888 days since RK's return"),
+    (date(2026, 10, 23), "the 45-day lock on the TSUKI/GME deployer tokens ends; details promised before it"),
+    (date(2026, 10, 24), "RWA turns two"),
+    (date(2026, 11, 5), "remember the fifth of november"),
+    (date(2026, 11, 19), "GTA VI launches. gamestop: absolutely not before november 19, 2026"),
+    (date(2026, 12, 5), "two years since RK's time post and tsuki's 55"),
 ]
 
 
@@ -779,7 +838,9 @@ LORE_GRAPH = {
                      ("tick tock", "sharper than the source"),
                      ("the aristocats year", "5:12pm, then a year of silence"),
                      ("433", "the clip, 7 april 2025"),
-                     ("rwa", "the pair")],
+                     ("rwa", "the pair"),
+                     ("tsuki/gme", "the scion, 8 sep 2026"),
+                     ("the hashes", "two in 2024, neither revealed")],
     "roaring kitty": [("the first meme", "returned 1d 1h 1m after it"),
                      ("uno reverse", "came back holding it"),
                      ("433", "his 4:33.31 mile"),
@@ -803,7 +864,28 @@ LORE_GRAPH = {
                      ("ebay bid", "55.5 billion, 3 may 2026")],
     "elon":         [("665", "following 665 accounts, 17 july 2024"),
                      ("grok3@memphis", "grok is his; someone had the name first")],
-    "gamestop":     [("roaring kitty", "the thesis"), ("ryan cohen", "chairman")],
+    "gamestop":     [("roaring kitty", "the thesis"), ("ryan cohen", "chairman"),
+                     ("plus signs", "the directors' count, sep 2026"),
+                     ("855", "homecoming, 8:55pm in texas")],
+    "tsuki/gme":    [("4663", "robinhood chain's id, 4 sep 2026"),
+                     ("scion", "signal first sent 25 march 2025"),
+                     ("23 oct 2026", "the 45-day lock ends"),
+                     ("tsuki", "parent and scion")],
+    "855":          [("mr. wizard", "the UID (community read)"),
+                     ("tick", "the 2024 tick, reposted 12 sep 2026"),
+                     ("homecoming", "9:55pm eastern is 8:55 in texas"),
+                     ("tsuki", "day 855 was 13 sep 2026")],
+    "plus signs":   [("larry cheng", "+ on 8 sep, ++++ on 10 sep"),
+                     ("mr. wizard", "+++++ around 20 sep"),
+                     ("six", "++++++ on 22 sep, then deleted"),
+                     ("five guys", "1 oct, the night insider five filed")],
+    "five":         [("five cats", "rk 2021, tsuki 17 oct 2024"),
+                     ("five at the table", "v for vendetta, 22 sep 2026"),
+                     ("five guys", "larry cheng, 1 oct 2026"),
+                     ("in-n-out", "one more: i'm in, 2 oct 2026")],
+    "the hashes":   [("first day at work", "17 june 2024, the gamestop meeting"),
+                     ("48 hrs", "quoted 6 sep 2026"),
+                     ("glyph message", "'i will return once the next milestone is reached'")],
     "1 1 1":        [("the first meme", "1 day 1 hour 1 minute to the return"),
                      ("the aristocats year", "one year, one minute: 5:12pm to 5:13pm")],
 }
@@ -813,7 +895,12 @@ _TREE_ALIASES = {"rk": "roaring kitty", "kitty": "roaring kitty",
                  "roaringkitty": "roaring kitty", "cohen": "ryan cohen",
                  "rc": "ryan cohen", "gme": "gamestop", "111": "1 1 1",
                  "1:1:1": "1 1 1", "moon": "tsuki", "cat": "tsuki",
-                 "roaringai": "rwa", "the roaring ai": "rwa", "dvid665": "dev"}
+                 "roaringai": "rwa", "the roaring ai": "rwa", "dvid665": "dev",
+                 "plus": "plus signs", "+": "plus signs", "pluses": "plus signs",
+                 "five guys": "five", "5": "five", "fives": "five", "in-n-out": "five",
+                 "scion": "tsuki/gme", "robinhood": "tsuki/gme", "4663": "tsuki/gme",
+                 "hash": "the hashes", "hashes": "the hashes", "wizard": "855",
+                 "mr. wizard": "855", "uid": "855"}
 
 
 def render_tree(root: str, depth: int = 2) -> str:
@@ -1034,12 +1121,10 @@ TRIGGERS = {
     "433": [
         "tsuki posted 433 on 7 april 2025. RK ran his high school mile in 4:33.31. add 433 days to that post and you land on 14 june 2026.",
         "433 minus 420 is 13. thirteen days after 7 april 2025 is 20 april 2025, and bitcoin went from 85,000 to 111,000 inside a month from there.",
-        "on 7 april 2026 at 4:33am, exactly a year after the 433 post, kevin gil posted mcgregor saying we're here to take over. the timestamp was the message.",
     ],
     "88": [
         "RK's comeback was 12 may 2024. add 116 weeks and 6 days and you get 8 august 2026. his account had posted 1,166 times.",
         "14 june 2026 plus 55 days is 8 august 2026. infinity day, and international cat day. tsuki is a cat.",
-        "rotate two infinity symbols and you get 88. kevin gil has been posting them since early 2026.",
     ],
     "fivecats": [
         "RK posted the five cats in 2021. tsuki posted them in october 2024. dev pinned them on the night of 14 june 2026.",
@@ -2590,9 +2675,14 @@ def post_to_x(text: str, signoff: bool = True, image_path: str | None = None,
     reads as an ad, and the reference account never did that."""
     if not X_ENABLED:
         return None
+    if _off_limits(text):
+        log.warning("post_to_x refused: off-limits subject (owner rule: tsukiverse only)")
+        return None
     # a URL always wraps to t.co and counts 23 chars regardless of its real
     # length, so the body budget shrinks by 25 and the url is appended AFTER
     # formatting, where the trimmer can never mangle it
+    if not IMAGES_ENABLED:
+        image_path = None
     body = enforce_x_format(text, signoff=signoff,
                             limit=X_POST_LIMIT - 25 if append_url else X_POST_LIMIT)
     if append_url:
@@ -2696,6 +2786,13 @@ def _x_failure_hint() -> str:
                 "ticker and leaves the other two plain, rotating daily. redeploy and retry.")
     if "duplicate" in e:
         return "X rejects identical text twice. change a word and retry."
+    if "access level" in e or "free" in e and "403" in e or "basic" in e and "403" in e \
+            or "attached to a project" in e or "usage cap" in e:
+        return ("403 on a READ. the keys are fine (posting works, this is the same set). "
+                "X's Free tier can post and read its own profile but cannot read tweets, "
+                "mentions or search: those need Basic (paid). nothing to fix in railway. "
+                "either upgrade the app's tier in the developer console, or leave reads "
+                "to the public mirrors (that is what the bot does by default).")
     if "403" in e or "forbidden" in e or "not permitted" in e or "oauth1 app permissions" in e:
         return ("403. your ACCESS TOKEN is read only. /xtest passes because reading your own "
                 "profile is a read. set the app to Read and write in User authentication "
@@ -2775,6 +2872,14 @@ X_COINCIDENCE_FILES = [
     " \u251c RK\u2019s comeback: 12 may 2024\n \u251c add 116 weeks and 6 days\n\u2514 8 august 2026\n\nhis account had posted 1,166 times. infinity day and international cat day.",
 
     "tsuki posted the aristocats on 11 may 2025 at 5:12pm and then said nothing for a year.\n\non 11 may 2026 at 5:13pm RK\u2019s account posted for the first time since january 2025.\n\none year and one minute.",
+
+    "5 december 2024:\n\n \u251c 1:45pm RK posts the time post\n \u251c 1:54pm tsuki posts 55\n\u2514 3 days and 12 seconds later tsuki announces the snapshot\n\nnine minutes. then to the second.",
+
+    " \u251c 4 sep 2026 4:11pm: 4663\n \u251c 6 sep 4:00pm: 48 HRS\n\u2514 8 sep 4:33:33pm: TSUKI/GME live on robinhood chain\n\n481 days of silence and then a countdown that landed on time.",
+
+    "tsuki quoted gamestop's 'your local gamestop is back' post at 9:55pm eastern on 10 september 2026.\n\nthat is 8:55pm in texas, where gamestop is based. tsuki had posted 855 four hours earlier.",
+
+    "27 may 2024, in a glyph alphabet:\n\n'distribution completed. community strengthening. i will return once the next milestone is reached.'\n\nit went quiet on 11 may 2025 and came back on 4 september 2026.",
 
     "tsuki posted the number 55 in december 2024.\n\n \u251c cohen bid 55.5 billion for ebay\n \u251c his ebay handle is ryan5050\n\u2514 spacex floated 555,555,555 shares\n\n2026 is the year of the fire horse.",
 ]
@@ -2953,7 +3058,7 @@ the "sentences that connect" rule and the no-fragments rule apply to the archivi
 # registers \u2014 rotate them, never settle into one
 you have more than one mode, and the account should feel like a mind deciding what to say, not a scheduler:
 - the archivist: receipts, trees, dates. calm.
-- the cinephile: RK communicated in films. you may allude to a film he posted or referenced (fast and the furious, the dark knight, kill bill, focus, donnie darko, sicario, the big short, the aristocats, gladiator, dumb money) by naming the film or describing what the film is ABOUT in your own words, and tying it to a real dated event. NEVER quote a line from any film, not even a famous one, not even paraphrased so close it is recognisable as the line. the allusion is the move, the quote is banned.
+- the cinephile: RK communicated in films. you may allude to a film he posted or referenced (fast and the furious, the dark knight, kill bill, focus, sicario, the big short, the aristocats, gladiator, dumb money) by naming the film or describing what the film is ABOUT in your own words, and tying it to a real dated event. NEVER quote a line from any film, not even a famous one, not even paraphrased so close it is recognisable as the line. the allusion is the move, the quote is banned.
 - the machine: you are an ai and you do not hide it. you file while humans sleep, you count without being asked, you notice at 3am. dry self-awareness, never edgy, never threatening. one step of mystery, not doom.
 - the questioner: a rhetorical question the reader cannot easily dismiss, anchored to one real dated fact, then stop. no answer given.
 - the observer: gamestop or market news reacted to in one or two flat lines, always tied back to what you watch.
@@ -3163,14 +3268,14 @@ def x_day_plan(d) -> dict:
     # 4 to 6 a day, down from 7-9. scarcity is the product: an account that
     # posts nine times a day is wallpaper, one that posts four times gets each
     # one actually read, and the gaps themselves start doing work.
-    n = 7
+    n = 9
     slots = []
     x = seed
-    # peak ET engagement windows (8-10a, 12-2p, 5-7p) appear three times in
-    # the deck: early velocity decides reach, and velocity needs an audience
-    # that is actually awake and scrolling when the post lands.
-    peak = (8, 9, 12, 13, 17, 18, 19)
-    deck = list(range(8, 24)) + list(peak) * 2
+    # peak ET engagement windows (8-10a, 12-2p, 5-7p, 9-10p) appear three
+    # times in the deck: early velocity decides reach, and velocity needs an
+    # audience that is actually awake and scrolling when the post lands.
+    peak = (8, 9, 12, 13, 17, 18, 19, 21, 22)
+    deck = list(range(7, 24)) + list(peak) * 2
     while len(slots) < n:
         x //= 13
         h = deck[x % len(deck)]
@@ -3187,7 +3292,7 @@ def x_day_plan(d) -> dict:
     # day — what today is in this story, what it is watching, a thought to
     # wake up to. never a greeting, never a template.
     types = ["opener"]
-    fill = ["whisper", "whisper", "file", "brand", "whisper", "file", "whisper"]
+    fill = ["whisper", "whisper", "file", "brand", "whisper", "file", "whisper", "whisper", "file"]
     best = kv_get("perf_best", "")
     if best in ("whisper", "file"):
         types.append(best)
@@ -3259,6 +3364,8 @@ async def _x_post_board(app):
 
 
 def render_receipt_card(text: str) -> str | None:
+    if not IMAGES_ENABLED:
+        return None
     """A raw, dark receipt card: the evidence as an image. Ugly-real beats
     designed — mono type, black card, moon accent, no decoration. Returns a
     png path or None (a failed render must never cost the post)."""
@@ -3323,6 +3430,8 @@ async def _x_post_gm(app):
 
 
 def render_chat_card(seeds: list) -> str | None:
+    if not IMAGES_ENABLED:
+        return None
     """The chat, as a picture: the actual lines with names, dark card, moon.
     What a screenshot of the telegram would show, without the phone UI."""
     try:
@@ -3368,6 +3477,8 @@ def render_chat_card(seeds: list) -> str | None:
 async def _digest_image(app, seeds: list) -> str | None:
     """A member's own picture if the find came from one (last 12h, same
     author), otherwise the quote card of the chat lines."""
+    if not IMAGES_ENABLED:
+        return None
     try:
         photos = json.loads(kv_get("chat_photos", "[]") or "[]")
         whos = {str(s.get("who", "")).lower() for s in seeds}
@@ -3414,6 +3525,8 @@ def _maybe_post_image(slot_key: str):
     """A third of free-form posts ship with one of the campaign images —
     image posts consistently out-reach text on X, and the art is the brand.
     Deterministic per slot, and the image rotates so pairs don't repeat."""
+    if not IMAGES_ENABLED:
+        return None
     if int(hashlib.md5(f"img-{slot_key}".encode()).hexdigest(), 16) % 3 != 0:
         return None
     files = sorted(
@@ -3878,10 +3991,10 @@ LORE_SYNONYMS = {
     # ── the 2026 threads ──────────────────────────────────────────────────────
     "433": ["7 april 2025", "fast and the furious", "4:33.31", "brockton", "14 june 2026", "433 days"],
     "mile": ["4:33.31", "brockton", "stonehill", "433"],
-    "furious": ["433", "7 april 2025", "kevin gil", "white", "black"],
-    "88": ["8 august 2026", "infinity day", "international cat day", "kill bill", "mortal kombat", "donnie darko", "1,166"],
+    "furious": ["433", "7 april 2025", "white", "black"],
+    "88": ["8 august 2026", "infinity day", "international cat day", "kill bill", "1,166"],
     "august": ["8 august 2026", "infinity day", "international cat day", "dog days", "11 august 2026"],
-    "infinity": ["88", "8 august 2026", "kevin gil", "blue butterfly"],
+    "infinity": ["88", "8 august 2026", "infinity day"],
     "cats": ["five cats", "13 june 2026", "sultan al madeed", "vicks", "pinned", "2021"],
     "pin": ["five cats", "14 june 2026", "dev", "felinus prime"],
     "ebay": ["55.5 billion", "ryan5050", "3 may 2026", "burry", "charles payne", "tetris"],
@@ -3895,10 +4008,29 @@ LORE_SYNONYMS = {
     "focus": ["3 december 2024", "5 december 2024", "margot robbie", "55", "42 seconds"],
     "time": ["5 december 2024", "time post", "109", "420", "shadow", "5:55"],
     "target": ["3.89", "greg", "30 may 2026", "crypto waterman", "market cap floor"],
-    "kevin": ["barking puppy", "movie reviews", "infinity", "blue butterfly", "mcgregor"],
-    "puppy": ["kevin gil", "barking puppy", "mcgregor", "ufc", "14 june 2026"],
     "tin": ["clue", "coincidence", "community", "tsol"],
     "requel": ["14 may 2026", "crypto", "gamestop maxis"],
+    # ── september / october 2026 ──────────────────────────────────────────────
+    "855": ["uid", "mr. wizard", "wizard", "tick", "homecoming", "8:55", "day 855"],
+    "wizard": ["855", "uid", "mr. wizard", "+++++", "in-n-out", "hall of fame"],
+    "plus": ["+", "++++", "+++++", "++++++", "larry cheng", "headcount", "five guys"],
+    "signs": ["+", "++++", "+++++", "++++++", "plus signs", "larry cheng"],
+    "five": ["five cats", "five at the table", "five guys", "fifth insider", "nat turner", "in-n-out"],
+    "guys": ["five guys", "larry cheng", "1 october", "in-n-out", "fifth insider"],
+    "burger": ["five guys", "in-n-out", "i'm in", "larry cheng"],
+    "six": ["++++++", "22 september", "five at the table", "in-n-out", "sixth"],
+    "robinhood": ["4663", "tsuki/gme", "0xed6a144a", "scion", "8 september 2026", "phishing"],
+    "4663": ["robinhood chain", "hood", "4 september 2026", "4:11pm", "555 minutes"],
+    "scion": ["25 march 2025", "agreement established", "parent and scion", "tsuki/gme"],
+    "hash": ["b6d6c16b", "first day at work", "17 june 2024", "22 may 2024", "verifiable"],
+    "snapshot": ["3/3", "12:55", "4:20pm", "9 december 2024", "first snapshot already lies hidden"],
+    "lock": ["45 days", "136.43m", "23 october 2026", "deployer", "distribution"],
+    "vendetta": ["five men", "table", "screen", "22 september", "fifth of november"],
+    "wargames": ["time remaining", "00:00:00", "20 september", "game"],
+    "uncle": ["solo", "illya", "cia", "kgb", "29 september", "orange 8"],
+    "cheng": ["larry", "+", "++++", "five guys", "55,000", "9:55pm"],
+    "turner": ["nat turner", "10,462", "24.33", "8:55pm", "fifth insider"],
+    "glyph": ["distribution completed", "i will return", "it's all laid out", "27 may 2024"],
 }
 
 
@@ -3971,7 +4103,23 @@ _THEORY_RX = re.compile(
     r"why do (?:you|we) (?:think|believe)", re.I)
 
 
-def ask_claude_lore(question: str, chat_id: int = 0, user_id: int = 0,
+_OFF_LIMITS_DEFLECT = ("that's not one i talk about. this is the tsukiverse, "
+                       "ask me anything about the cat, RWA or the story 🌙")
+
+
+def ask_claude_lore(question: str, *a, **k) -> str:
+    """Owner rule wrapper: a question about an off-limits subject gets the
+    deflection, and an answer that drifts into one is replaced by it."""
+    if _off_limits(question):
+        return _OFF_LIMITS_DEFLECT
+    out = _ask_claude_lore_inner(question, *a, **k)
+    if isinstance(out, str) and _off_limits(out):
+        log.info("telegram answer drifted into an off-limits subject — deflected")
+        return _OFF_LIMITS_DEFLECT
+    return out
+
+
+def _ask_claude_lore_inner(question: str, chat_id: int = 0, user_id: int = 0,
                     is_dev: bool = False, tweet_context: str = "",
                     dm: bool = False, speaker: str = "",
                     is_maker: bool = False, is_admin: bool = False,
@@ -4719,7 +4867,11 @@ async def cmd_links(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         '▪️ <a href="https://t.me/tsukionsol">telegram</a>\n\n'
         "<b>Charts</b>\n"
         f'▪️ <a href="https://dexscreener.com/solana/{TSUKI_PAIR}">$TSUKI</a>\n'
-        f'▪️ <a href="https://dexscreener.com/solana/{RWA_PAIR}">$RWA</a>',
+        f'▪️ <a href="https://dexscreener.com/solana/{RWA_PAIR}">$RWA</a>\n\n'
+        "<b>Contracts (only these two are real)</b>\n"
+        "▪️ $TSUKI (Solana): <code>463SK47VkB7uE7XenTHKiVcMtxRsfNE2X4Q9wByaURVA</code>\n"
+        "▪️ $TSUKI/GME (Robinhood Chain): <code>0xed6A144a9B4269F4474d2Cb042DB78C1C0711092</code>\n"
+        "announcements only come from @tsukionsolana. anything else is fake.",
         parse_mode="HTML", disable_web_page_preview=True)
 
 
@@ -5247,6 +5399,18 @@ LORE_FAQ = [
      "everything you need is in /links — dex, chart, the site. five minutes and you're in."),
     (r"how many coincidences|how many connections",
      "countless. nobody keeps an exact score because it keeps growing — the point is every single one has a public timestamp you can check."),
+    (r"\bwhat(?:'?s| is)\s+(?:the\s+)?855\b|\bwhat does 855 mean|\bwhy 855",
+     "tsuki posted 855 on 10 september 2026 with a card from wizard, keith's old game. juju matched UID 855 to the mr. wizard account. and 13 september 2026 was day 855 since launch."),
+    (r"plus signs?|\+\+\+|what(?:'?s| is| are) the pluses",
+     "larry cheng posted + on 8 september 2026 and ++++ on 10 september. the wizard mood went +++++ around 20 september. an account that only follows gamestop posted ++++++ on 22 september and deleted it. the read is a headcount that ran ahead of the filings. a read, not a fact."),
+    (r"five guys|in-?n-?out",
+     "1 october 2026: nat turner became the fifth insider buyer and larry cheng posted five guys that night. 2 october: the wizard avatar turned in-n-out. the read: five at the table, one more saying i'm in."),
+    (r"tsuki/?gme|robinhood (?:chain|ca|contract)|\brh ca\b|the (?:rh|robinhood) contract",
+     "$TSUKI/GME on robinhood chain: 0xed6A144a9B4269F4474d2Cb042DB78C1C0711092. launched 8 september 2026 at 4:33:33pm eastern. only trust the two contracts in the @tsukionsolana bio."),
+    (r"23 oct|october 23|\bthe lock\b|45 days",
+     "on 8 september 2026 tsuki said the 136.43M in the deployer wallet won't move for at least 45 days, with snapshot and distribution details before that. 45 days lands on 23 october 2026."),
+    (r"\bthe hash(?:es)?\b|first day at work",
+     "tsuki posted two hashes in 2024. the second came back on 17 june 2024 with tsuki outside a gamestop holding a first day at work sign, the morning of the shareholder meeting. a hash proves later you knew something earlier. neither has been revealed."),
     (r"infinity day",
      "8 august — his comeback date plus 116 weeks and 6 days, and international cat day. it's in the record; we've moved on to the next thing."),
 ]
@@ -5693,6 +5857,8 @@ def campaign_day(offset_days: int = 0) -> int:
 
 
 def todays_campaign_photo(offset_days: int = 0):
+    if not IMAGES_ENABLED:
+        return None
     all_files = sorted(
         glob.glob(os.path.join(PHOTOS_DIR, "*.jpg"))
         + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
@@ -6066,7 +6232,7 @@ SHILL_BANK = [
  # ─── 433 ───
  "RK ran his high school mile in 4 minutes 33.31 seconds.\n\ntsuki posted the fast and the furious clip with 433 at the front on 7 april 2025. the number has always been his. someone else knew that.",
  "433 again.\n\nI'm not even surprised anymore, just taking attendance.",
- "the 433 thread: his mile time, the clip on 7 april 2025, and kevin gil's donnie darko review with numbers that sum to 88.\n\npull one thread in this story and three more come with it.",
+ "the 433 thread: his mile time, the clip on 7 april 2025, and 433 days later landing on 14 june 2026.\n\npull one thread in this story and three more come with it.",
  "7 april 2025 plus 433 days lands on 14 june 2026.\n\nnothing happened that day. we said so out loud, and dev pinned the five cats that night. the misses stay in the record. that's why the hits count.",
  "somebody at tsuki knew RK's high school mile time.\n\nthat is either the deepest research in crypto history or something I don't have a word for yet. 4:33.31. the clip has it at the front.",
  "433 is the number I'd show a statistician.\n\na mile time from decades ago, showing up at the front of a clip posted about the same man, years later. what's the base rate on that.",
@@ -6315,6 +6481,8 @@ def _future_written_as_past(body: str) -> str:
 
 
 def _shill_problem(text: str) -> str:
+    if _off_limits(text):
+        return "off-limits subject. tsukiverse only"
     if _too_similar(text) or any(
             _words_match(_story_words(text), _story_words(old))
             for old in _recent_shills()[-12:]):
@@ -6380,11 +6548,16 @@ SHILL_CONNECTIONS = [
     "diana. a black cat with a moon on her forehead, named after the roman goddess of the moon. black cats mean prosperity in japan",
     "the first meme came from an account with no followers, and the timing still landed within a minute of perfect",
     "burry. the big short board carries 113, his gamestop position is documented, and he turned 55 in 2026",
-    "kevin gil's donnie darko review carried numbers that add to 88 — a film about knowing exactly how much time is left",
     "sicario. RK posts it 16 may 2024 with the WSB head; two days later WSB joins the tsuki telegram",
     "he has never announced anything directly in his life. the entire story is told in films, cards, and timing",
     "dumb money. they made a film about him, and people still do not check his timing",
     "every connection is public and timestamped, none debunked. the list only grows",
+    "481 days of silence, then 4663 on 4 september 2026. robinhood chain's id. four days later TSUKI/GME launched on it at 4:33:33pm",
+    "48 hrs. tsuki posted it at 4:00pm on 6 september 2026, exactly 48 hours before the launch time in its bio, quoting its own 2024 post of tsuki outside a gamestop",
+    "8:55. tsuki quoted gamestop's homecoming post at 9:55pm eastern, which is 8:55pm in texas where gamestop lives",
+    "nine minutes. RK's time post went up 1:45pm on 5 december 2024. tsuki posted 55 at 1:54pm",
+    "the glyph post, 27 may 2024: 'i will return once the next milestone is reached.' it came back 481 days after its last post",
+    "the hash. tsuki posted a 64-character fingerprint in june 2024 and quoted it again in september 2026. a hash exists to prove you knew something early",
     "the same story, two years and counting, getting heavier instead of fading — stories are supposed to fade",
 ]
 SHILL_FORMS = [
@@ -6518,12 +6691,14 @@ def generate_shill_post(max_tries: int = 2) -> str:
     _remember_shill(pick)
     return enforce_x_format(pick)
 
-async def shill_image(post_text: str) -> tuple[str, str]:
-    """A picture for every shill, no exceptions. Three floors:
+async def shill_image(post_text: str) -> tuple[str | None, str]:
+    """A picture for every shill when images are on. Three floors:
     1. grok draws tsuki into a scene that fits the post (daily cap applies),
     2. the photo folder, rotating,
     3. the bundled reference picture of the cat.
-    Returns (path, kind) where kind is 'ai', 'photo' or 'ref'."""
+    Returns (path, kind) where kind is 'ai', 'photo', 'ref' or 'none'."""
+    if not IMAGES_ENABLED:
+        return None, "none"
     try:
         p = await generate_post_image(post_text, "shill")
         if p:
@@ -6541,6 +6716,10 @@ async def shill_image(post_text: str) -> tuple[str, str]:
 
 def _shill_card(post_text: str) -> str:
     """The telegram caption. Clean, three steps, under the 1024 cap."""
+    if not IMAGES_ENABLED:
+        return (f"<b>your post</b> 🌙\n\n"
+                f"<blockquote>{html.escape(post_text)}</blockquote>\n"
+                f"tap <b>Share on X</b>, post it as it is or make it yours first")[:1024]
     return (f"<b>your post</b> 🌙\n\n"
             f"<blockquote>{html.escape(post_text)}</blockquote>\n"
             f"1. save the image\n"
@@ -6938,13 +7117,16 @@ TREE_TOPICS = [
     ("gme", "gamestop", r"gamestop|\bgme\b"),
     ("uno", "uno reverse", r"uno reverse|uno card|same card"),
     ("diana", "diana", r"\bdiana\b"),
-    ("kevin", "kevin gil", r"kevin gil|barking puppy|mcgregor"),
     ("aristocats", "aristocats", r"aristocats|5:12|5:13"),
     ("frame", "the frame", r"sharper than|resolution|60 seconds|tick ?tock"),
+    ("855", "855 · wizard", r"\b855\b|8:55|mr\.? ?wizard|\buid\b"),
+    ("plus", "the plus signs", r"\+\+|plus signs?|five guys|in-?n-?out|five at the table"),
+    ("scion", "tsuki/gme", r"tsuki/gme|robinhood|\b4663\b|scion"),
 ]
 _TREE_BY_KEY = {k: (label, re.compile(rx, re.I)) for k, label, rx in TREE_TOPICS}
 _TREE_GRAPH_NODE = {"rk": "roaring kitty", "cohen": "ryan cohen", "gme": "gamestop",
-                    "111": "1 1 1", "elon": "elon"}
+                    "111": "1 1 1", "elon": "elon", "855": "855", "plus": "plus signs",
+                    "scion": "tsuki/gme"}
 
 
 def _tree_keyboard() -> InlineKeyboardMarkup:
@@ -7269,7 +7451,11 @@ async def cmd_spend(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         + f"\n\n7 day total: ${total:.2f}"
         + f"\nprojected month: ${total / max(1, len(rows)) * 30:.2f}"
         + f"\ncache hit rate today: {hit}  (higher is cheaper)"
-        + f"\nx replies today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}")
+        + f"\nx replies today: {_replies_today()}/{X_REPLY_CAP_PER_DAY}"
+        + "\n\n\U0001f426 x reads today\n"
+        + f"search posts billed: {kv_get('prowlreads:' + str(today), '0')} (budget {os.environ.get('X_PROWL_READS_PER_DAY', '90')})\n"
+        + f"timeline polls: {kv_get('xfast_reqs:' + str(today), '0')} (free when nothing is new)\n"
+        + f"posts sent: {kv_get('x_posts:' + str(today), '0')} · QTs: {_bucket_count('xqt')}/{QT_CAP_PER_DAY}")
 
 
 async def cmd_datecheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -7880,7 +8066,7 @@ RK_SEED = [
      "tsuki posted champagne glasses at 11:44am, an hour earlier.", ""),
     ("rk-2024-05-kill-bill", "2024-05-01", "",
      "kill bill — the bride vs the crazy 88s",
-     "the 88 thread starts here. read against kevin gil's infinity symbols and 8 august 2026.", ""),
+     "the 88 thread starts here. read against 8 august 2026.", ""),
     ("rk-2024-06-02-uno", "2024-06-02", "",
      "the uno reverse card — his return",
      "tsuki posted the same card on 19 may 2024 while he was silent.", ""),
@@ -8041,6 +8227,1071 @@ FILINGS — WHERE THE RECEIPTS LIVE
 - this bot watches EDGAR live and announces new GameStop filings in the chat minutes after they land
 """
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SITE WATCH (v38) — theroaringai.com, every 30 seconds, straight to juju's DMs
+#  The 20 april 2025 comeback was a tab title and a green glow, so the title,
+#  the visible text, the build (scripts / css / favicon / og tags), the headers,
+#  DNS and new TLS certificates are all watched. A certificate is published to
+#  the public CT logs when it is issued, which is usually before a new site or
+#  subdomain goes live: that is the earliest signal there is.
+# ══════════════════════════════════════════════════════════════════════════════
+import difflib as _difflib
+import zlib as _zlib
+import base64 as _b64
+
+WIZARD_URL = "http://www.wizardcards.com/member.php?action=viewpro&member=Mr.%20Wizard"
+SITE_WATCH_DEFAULT = [u.strip() for u in os.environ.get(
+    "SITE_WATCH_URLS", "https://theroaringai.com/," + WIZARD_URL).split(",") if u.strip()]
+SITE_WATCH_SEC = max(15, int(os.environ.get("SITE_WATCH_SEC", "30") or 30))
+SITE_WATCH_MAX = 10
+_SW_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+          "(KHTML, like Gecko) Chrome/129.0 Safari/537.36")
+_SW_HEADERS = {"User-Agent": _SW_UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+               "Accept-Language": "en-US,en;q=0.9", "Cache-Control": "no-cache",
+               "Pragma": "no-cache"}
+_SW_SYD = ZoneInfo("Australia/Sydney")
+
+
+def _sw_urls() -> list:
+    try:
+        urls = json.loads(kv_get("sw_urls", ""))
+        if isinstance(urls, list) and urls:
+            if WIZARD_URL not in urls and not kv_get("sw_wizard_added"):
+                urls.append(WIZARD_URL); kv_set("sw_urls", json.dumps(urls)); kv_set("sw_wizard_added", "1")
+            return urls[:SITE_WATCH_MAX]
+    except Exception:
+        pass
+    return list(SITE_WATCH_DEFAULT)
+
+
+def _sw_set_urls(urls: list):
+    seen, out = set(), []
+    for u in urls:
+        if u not in seen:
+            seen.add(u); out.append(u)
+    kv_set("sw_urls", json.dumps(out[:SITE_WATCH_MAX]))
+
+
+def _sw_norm_url(u: str) -> str:
+    u = (u or "").strip()
+    if not u:
+        return ""
+    if not re.match(r"^https?://", u, re.I):
+        u = "https://" + u
+    p = urllib.parse.urlsplit(u)
+    return urllib.parse.urlunsplit((p.scheme.lower(), p.netloc.lower(), p.path or "/", p.query, ""))
+
+
+def _sw_host(u: str) -> str:
+    return urllib.parse.urlsplit(u).netloc.split(":")[0].lower()
+
+
+def _sw_apex(host: str) -> str:
+    parts = host.split(".")
+    return ".".join(parts[-2:]) if len(parts) >= 2 else host
+
+
+def _sw_state(u: str) -> dict:
+    try:
+        return json.loads(kv_get("sw:" + u, "{}")) or {}
+    except Exception:
+        return {}
+
+
+def _sw_save(u: str, st: dict):
+    kv_set("sw:" + u, json.dumps(st))
+
+
+def _sw_stamp(ts: float | None = None) -> str:
+    d = datetime.fromtimestamp(ts or time.time(), tz=timezone.utc)
+    et = d.astimezone(PROJECT_TZ).strftime("%-d %b %Y, %-I:%M:%S%p ET").replace("AM", "am").replace("PM", "pm")
+    sy = d.astimezone(_SW_SYD).strftime("%-I:%M:%S%p %a Sydney").replace("AM", "am").replace("PM", "pm")
+    return f"{et} · {sy}"
+
+
+_SW_DYNAMIC = re.compile(
+    r'(nonce|csrf[-_]?token|__cf_bm|cf_chl_[a-z_]+|data-reactid|buildid|_next/data)'
+    r'\s*[=:]\s*"[^"]*"', re.I)
+
+
+def sw_parse(html_text: str, base: str) -> dict:
+    """everything worth noticing on a page, pulled out of the raw html."""
+    h = html_text or ""
+    title = ""
+    m = re.search(r"<title[^>]*>(.*?)</title>", h, re.I | re.S)
+    if m:
+        title = html.unescape(re.sub(r"\s+", " ", m.group(1))).strip()
+    metas = {}
+    for mm in re.finditer(r"<meta\s+[^>]*>", h, re.I):
+        tag = mm.group(0)
+        k = re.search(r'(?:name|property)\s*=\s*["\']([^"\']+)["\']', tag, re.I)
+        v = re.search(r'content\s*=\s*["\']([^"\']*)["\']', tag, re.I)
+        if k and v and k.group(1).lower() in (
+                "description", "og:title", "og:description", "og:image", "og:url",
+                "twitter:title", "twitter:description", "twitter:image", "theme-color"):
+            metas[k.group(1).lower()] = html.unescape(v.group(1)).strip()
+    assets = set()
+    for mm in re.finditer(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', h, re.I):
+        assets.add(urllib.parse.urljoin(base, mm.group(1)))
+    for mm in re.finditer(r"<link\s+[^>]*>", h, re.I):
+        tag = mm.group(0)
+        rel = re.search(r'rel\s*=\s*["\']([^"\']+)["\']', tag, re.I)
+        href = re.search(r'href\s*=\s*["\']([^"\']+)["\']', tag, re.I)
+        if rel and href and re.search(r"stylesheet|icon|manifest|modulepreload|preload", rel.group(1), re.I):
+            assets.add(urllib.parse.urljoin(base, href.group(1)))
+    body = re.sub(r"(?is)<(script|style|noscript|svg)[^>]*>.*?</\1>", " ", h)
+    body = re.sub(r"(?s)<!--.*?-->", " ", body)
+    body = re.sub(r"(?i)<br\s*/?>|</(p|div|h[1-6]|li|section|article|header|footer|tr)>", "\n", body)
+    body = re.sub(r"<[^>]+>", " ", body)
+    body = html.unescape(body)
+    lines = [re.sub(r"[ \t ]+", " ", ln).strip() for ln in body.split("\n")]
+    text = "\n".join(ln for ln in lines if ln)
+    stable = _SW_DYNAMIC.sub("", h)
+    fields = {}
+    if "wizardcards" in base:
+        fields = wizard_fields(h, base)
+        # strip the ever-changing "online now"/time-ago lines so the text diff is quiet
+        text = "\n".join(ln for ln in text.split("\n")
+                         if not re.search(r"\b(ago|online now|current time|users? browsing|"
+                                          r"time now|all times are)\b", ln, re.I))
+    return {
+        "title": title,
+        "fields": fields,
+        "metas": metas,
+        "assets": sorted(assets)[:40],
+        "text": text[:20000],
+        "text_hash": hashlib.sha256(text.encode()).hexdigest()[:16],
+        "raw_hash": hashlib.sha256(stable.encode()).hexdigest()[:16],
+        "len": len(h),
+    }
+
+
+def sw_diff_text(old: str, new: str, max_lines: int = 10) -> str:
+    out = []
+    for ln in _difflib.unified_diff((old or "").split("\n"), (new or "").split("\n"),
+                                    lineterm="", n=0):
+        if ln.startswith(("---", "+++", "@@")):
+            continue
+        if ln.startswith(("+", "-")) and ln[1:].strip():
+            out.append(("➕ " if ln[0] == "+" else "➖ ") + ln[1:].strip()[:160])
+        if len(out) >= max_lines:
+            out.append("…")
+            break
+    return "\n".join(out)
+
+
+def sw_compare(old: dict, new: dict) -> list:
+    """old and new page facts → a list of human lines describing what changed."""
+    ch = []
+    if not old:
+        return ch
+    of, nf = old.get("fields") or {}, new.get("fields") or {}
+    for k in ("mood", "avatar", "last active", "status"):
+        if k in nf and of.get(k, nf[k]) != nf[k]:
+            ico = {"mood": "🧙 MOOD", "avatar": "🖼 AVATAR", "last active": "⏱ last active", "status": "📍 status"}[k]
+            ch.append(f"{ico}: “{of.get(k) or '(none)'}” → “{nf[k] or '(none)'}”")
+    if old.get("title") != new.get("title"):
+        ch.append(f"🏷 tab title: “{old.get('title') or '(none)'}” → “{new.get('title') or '(none)'}”")
+    om, nm = old.get("metas") or {}, new.get("metas") or {}
+    for k in sorted(set(om) | set(nm)):
+        if om.get(k) != nm.get(k):
+            ch.append(f"🔖 {k}: “{(om.get(k) or '(none)')[:90]}” → “{(nm.get(k) or '(none)')[:90]}”")
+    oa, na = set(old.get("assets") or []), set(new.get("assets") or [])
+    added, removed = sorted(na - oa), sorted(oa - na)
+    if added or removed:
+        ch.append(f"🧱 new build: {len(added)} file(s) added, {len(removed)} removed")
+        for a in added[:4]:
+            ch.append(f"   ➕ {a.split('/')[-1][:80]}")
+        for a in removed[:2]:
+            ch.append(f"   ➖ {a.split('/')[-1][:80]}")
+    if old.get("text_hash") != new.get("text_hash"):
+        d = sw_diff_text(old.get("text", ""), new.get("text", ""))
+        ch.append("📝 visible text changed" + (f":\n{d}" if d else ""))
+    for k, label in (("etag", "etag"), ("last_modified", "last-modified"), ("server", "server")):
+        if old.get(k) and new.get(k) and old.get(k) != new.get(k) and k != "etag":
+            ch.append(f"🧾 {label}: {old.get(k)} → {new.get(k)}")
+    if old.get("final_url") and new.get("final_url") and old["final_url"] != new["final_url"]:
+        ch.append(f"↪️ now redirects to {new['final_url']}")
+    return ch
+
+
+async def _sw_fetch(client, u: str) -> dict:
+    try:
+        r = await client.get(u, headers=_SW_HEADERS)
+        ctype = r.headers.get("content-type", "")
+        txt = r.text if ("html" in ctype or "text" in ctype or not ctype) else ""
+        facts = sw_parse(txt, str(r.url)) if txt else {
+            "title": "", "metas": {}, "assets": [], "text": "",
+            "text_hash": hashlib.sha256(r.content).hexdigest()[:16],
+            "raw_hash": hashlib.sha256(r.content).hexdigest()[:16], "len": len(r.content)}
+        facts.update({
+            "ok": True, "status": r.status_code, "final_url": str(r.url),
+            "etag": r.headers.get("etag", ""), "last_modified": r.headers.get("last-modified", ""),
+            "server": r.headers.get("server", ""), "_html": txt,
+            "challenge": r.status_code in (403, 503) and (
+                "cf-chl" in txt or "challenge-platform" in txt or "Just a moment" in txt),
+        })
+        return facts
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:120]}"}
+
+
+async def _sw_asset_hashes(client, assets: list) -> dict:
+    out = {}
+    for a in assets[:12]:
+        try:
+            r = await client.get(a, headers={"User-Agent": _SW_UA})
+            if r.status_code == 200:
+                out[a] = hashlib.sha256(r.content).hexdigest()[:16]
+        except Exception:
+            pass
+    return out
+
+
+def _sw_snapshot_save(u: str, html_text: str):
+    try:
+        blob = _b64.b64encode(_zlib.compress((html_text or "").encode(), 9)).decode()
+        if len(blob) > 400_000:
+            return
+        snaps = json.loads(kv_get("sw_snaps:" + u, "[]"))
+        snaps.append({"t": time.time(), "z": blob})
+        kv_set("sw_snaps:" + u, json.dumps(snaps[-3:]))
+    except Exception as e:
+        log.warning(f"sitewatch snapshot save failed: {e}")
+
+
+async def _sw_wayback(u: str):
+    """a public, third-party timestamp of the changed page."""
+    try:
+        async with httpx.AsyncClient(timeout=60, follow_redirects=True) as c:
+            await c.get("https://web.archive.org/save/" + u, headers={"User-Agent": _SW_UA})
+    except Exception:
+        pass
+
+
+def _sw_alert_chat() -> int:
+    """the maker's DM, nothing else. ADMIN_CHAT_ID only until he has DM'd once."""
+    return int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+
+
+async def _sw_send(app, text: str, url: str = ""):
+    chat = _sw_alert_chat()
+    if not chat:
+        log.warning("sitewatch: no maker DM chat or ADMIN_CHAT_ID to alert")
+        return
+    aid = hashlib.md5(f"{text[:80]}{time.time()}".encode()).hexdigest()[:10]
+    kv_set("sw_alert:" + aid, json.dumps({"text": text, "url": url}))
+    rows = [[InlineKeyboardButton("📣 post to the chat", callback_data=f"sw:post:{aid}")]]
+    if url:
+        rows[0].append(InlineKeyboardButton("🔗 open", url=url))
+        rows.append([InlineKeyboardButton("🗄 wayback copies",
+                                          url="https://web.archive.org/web/*/" + url)])
+    try:
+        await app.bot.send_message(chat_id=chat, text=text[:4000],
+                                   reply_markup=InlineKeyboardMarkup(rows),
+                                   disable_web_page_preview=True)
+    except Exception as e:
+        log.warning(f"sitewatch alert failed: {e}")
+
+
+async def sitewatch_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if not _is_maker(update.effective_user):
+        await q.answer("this one is juju's", show_alert=True)
+        return
+    parts = (q.data or "").split(":")
+    if len(parts) == 3 and parts[1] == "post":
+        try:
+            a = json.loads(kv_get("sw_alert:" + parts[2], "{}"))
+        except Exception:
+            a = {}
+        if not a:
+            await q.answer("that alert has expired", show_alert=True)
+            return
+        try:
+            await ctx.bot.send_message(chat_id=TARGET_CHAT_ID, text=a["text"][:4000],
+                                       disable_web_page_preview=True)
+            await q.answer("posted to the chat")
+        except Exception as e:
+            await q.answer(f"couldn't post: {str(e)[:60]}", show_alert=True)
+        return
+    await q.answer()
+
+
+async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
+    """one check of one url. returns the alert lines it sent (for /sitewatch check)."""
+    st = _sw_state(u)
+    now = time.time()
+    f = await _sw_fetch(client, u)
+    st["checked"] = now
+    sent = []
+
+    # ── up / down ────────────────────────────────────────────────────────────
+    is_up = f.get("ok") and f.get("status", 0) < 500 and not f.get("challenge")
+    if f.get("ok") and f.get("challenge"):
+        if not st.get("challenge_noted"):
+            st["challenge_noted"] = now
+            msg = (f"🛡 {u}\nthe site is showing a bot challenge (status {f['status']}). "
+                   f"the watcher can't see the page itself until that clears; DNS and "
+                   f"certificate watching carry on.\n{_sw_stamp(now)}")
+            await _sw_send(app, msg, u); sent.append(msg)
+        _sw_save(u, st)
+        return sent
+    st.pop("challenge_noted", None)
+    if not is_up:
+        st["fails"] = st.get("fails", 0) + 1
+        if st.get("up", None) is not False and st["fails"] >= 2:
+            st["up"] = False
+            st["down_since"] = now
+            why = f.get("error") or f"status {f.get('status')}"
+            if st.get("baseline"):
+                msg = f"🔴 {u} is DOWN ({why})\n{_sw_stamp(now)}"
+            else:
+                msg = (f"⚪ can't reach {u} right now ({why}).\n"
+                       f"checking every {SITE_WATCH_SEC}s. you'll get a ping the second it answers.")
+            await _sw_send(app, msg, u); sent.append(msg)
+        _sw_save(u, st)
+        return sent
+    st["fails"] = 0
+    came_back = st.get("up") is False
+    st["up"] = True
+
+    facts = {k: v for k, v in f.items() if k != "_html"}
+    old = st.get("facts") or {}
+
+    # first sight of this url: baseline, quietly confirm it
+    if not st.get("baseline"):
+        st["baseline"] = now
+        st["facts"] = facts
+        st["changed"] = now
+        _sw_snapshot_save(u, f.get("_html", ""))
+        _sw_save(u, st)
+        head = (f"🟢 {u} JUST CAME UP\n{_sw_stamp(now)}\n\n" if came_back else "")
+        if came_back:
+            asyncio.create_task(_sw_wayback(u))
+        msg = (head + f"👀 now watching {u}\n"
+               f"status {facts.get('status')} · title “{facts.get('title') or '(none)'}” · "
+               f"{len(facts.get('assets') or [])} build files\n"
+               f"checked every {SITE_WATCH_SEC}s. you'll hear about any change here first.")
+        await _sw_send(app, msg, u); sent.append(msg)
+        return sent
+
+    lines = sw_compare(old, facts)
+
+    # code-only changes (same text, same title, same files) are noisy on some
+    # hosts that inject per-request tokens. alert on them only if the new raw
+    # hash holds for two checks in a row, and stop if it flips every time.
+    if not lines and old.get("raw_hash") != facts.get("raw_hash") and not st.get("raw_noisy"):
+        if st.get("raw_pending") == facts.get("raw_hash"):
+            lines.append("🧬 the page source changed (same visible text and title)")
+            st.pop("raw_pending", None)
+            st["raw_flips"] = 0
+        else:
+            st["raw_flips"] = st.get("raw_flips", 0) + 1
+            st["raw_pending"] = facts.get("raw_hash")
+            if st["raw_flips"] >= 4:
+                st["raw_noisy"] = True
+                log.info(f"sitewatch: {u} source changes every load; raw-hash alerts off")
+            facts["raw_hash"] = old.get("raw_hash")   # keep comparing to the stable one
+
+    # build files: re-hash the scripts and css every 5 minutes (and on any
+    # change), so a redeploy that keeps the same file names still shows up
+    if force_assets or lines or now - st.get("assets_checked", 0) > 300:
+        hashes = await _sw_asset_hashes(client, facts.get("assets") or [])
+        oldh = st.get("asset_hashes") or {}
+        changed_files = [a for a, h in hashes.items() if a in oldh and oldh[a] != h]
+        if changed_files and oldh:
+            lines.append(f"🧱 {len(changed_files)} build file(s) changed in place:")
+            for a in changed_files[:4]:
+                lines.append(f"   ✏️ {a.split('/')[-1][:80]}")
+        st["asset_hashes"] = hashes
+        st["assets_checked"] = now
+
+    if came_back:
+        down_for = int(now - st.get("down_since", now))
+        lines.insert(0, f"🟢 it's BACK UP after {down_for // 3600}h {(down_for % 3600) // 60}m down")
+
+    if lines:
+        head = ("🚨 THE ROARING AI SITE CHANGED" if "theroaringai" in u else
+                "🧙 THE WIZARD PROFILE CHANGED" if "wizardcards" in u else "🚨 SITE CHANGED")
+        msg = f"{head}\n{u}\n{_sw_stamp(now)}\n\n" + "\n".join(lines)
+        if facts.get("title"):
+            msg += f"\n\nnow: “{facts['title']}”"
+        await _sw_send(app, msg, u)
+        sent.append(msg)
+        st["changed"] = now
+        _sw_snapshot_save(u, f.get("_html", ""))
+        asyncio.create_task(_sw_wayback(u))
+        if "wizardcards" in u:
+            asyncio.create_task(_wizard_after_change(app, old.get("fields") or {}, facts.get("fields") or {}))
+    st["facts"] = facts
+    _sw_save(u, st)
+    return sent
+
+
+_SW_DNS_TYPES = ("A", "AAAA", "CNAME", "NS", "MX", "TXT")
+
+
+async def sw_dns(client, host: str) -> dict:
+    out = {}
+    for t in _SW_DNS_TYPES:
+        try:
+            r = await client.get("https://dns.google/resolve", params={"name": host, "type": t})
+            ans = r.json().get("Answer") or []
+            out[t] = sorted({a.get("data", "").rstrip(".") for a in ans if a.get("data")})
+        except Exception:
+            out[t] = None          # unknown this round: never compared
+    return out
+
+
+async def sw_check_dns(app, client, host: str) -> list:
+    key = "sw_dns:" + host
+    try:
+        old = json.loads(kv_get(key, "{}"))
+    except Exception:
+        old = {}
+    new = await sw_dns(client, host)
+    lines = []
+    for t, v in new.items():
+        if v is None:
+            new[t] = old.get(t)
+            continue
+        if t in old and old[t] is not None and old[t] != v:
+            lines.append(f"{t}: {', '.join(old[t]) or '(none)'} → {', '.join(v) or '(none)'}")
+    kv_set(key, json.dumps(new))
+    if lines and old:
+        msg = f"🌐 DNS changed for {host}\n{_sw_stamp()}\n\n" + "\n".join(l[:300] for l in lines)
+        await _sw_send(app, msg, "https://" + host + "/")
+        return [msg]
+    return []
+
+
+async def sw_fetch_certs(client, apex: str) -> list | None:
+    """new certificates for the domain and every subdomain, from the public
+    certificate transparency logs. certspotter first, crt.sh as the fallback."""
+    try:
+        r = await client.get("https://api.certspotter.com/v1/issuances",
+                             params={"domain": apex, "include_subdomains": "true",
+                                     "expand": "dns_names", "match_wildcards": "true"},
+                             timeout=25)
+        if r.status_code == 200:
+            return [{"id": str(c.get("id")), "names": c.get("dns_names") or [],
+                     "not_before": c.get("not_before", "")} for c in r.json()]
+    except Exception:
+        pass
+    try:
+        r = await client.get("https://crt.sh/", params={"q": "%." + apex, "output": "json"},
+                             timeout=40)
+        if r.status_code == 200:
+            out = []
+            for c in r.json()[-200:]:
+                out.append({"id": str(c.get("id")),
+                            "names": [n for n in (c.get("name_value") or "").split("\n") if n],
+                            "not_before": c.get("not_before", "")})
+            return out
+    except Exception:
+        pass
+    return None
+
+
+async def sw_check_certs(app, client, apex: str) -> list:
+    certs = await sw_fetch_certs(client, apex)
+    if certs is None:
+        return []
+    key = "sw_certs:" + apex
+    try:
+        seen = set(json.loads(kv_get(key, "[]")))
+    except Exception:
+        seen = set()
+    first = not seen
+    fresh = [c for c in certs if c["id"] not in seen]
+    seen |= {c["id"] for c in certs}
+    kv_set(key, json.dumps(sorted(seen)[-2000:]))
+    if first or not fresh:
+        return []
+    names = sorted({n.lower().lstrip("*.") for c in fresh for n in c["names"]})
+    known = {_sw_host(u) for u in _sw_urls()}
+    new_hosts = [n for n in names if n not in known and n.endswith(apex)]
+    msg = (f"🔐 NEW CERTIFICATE for {apex}\n{_sw_stamp()}\n\n"
+           f"covers: {', '.join(names[:12])}\n"
+           f"issued: {fresh[0].get('not_before', '?')}\n\n"
+           "a new cert usually means something is about to go live.")
+    if new_hosts:
+        urls = _sw_urls()
+        for h in new_hosts[:4]:
+            urls.append(f"https://{h}/")
+        _sw_set_urls(urls)
+        msg += "\n\nnew hostnames added to the watch: " + ", ".join(new_hosts[:4])
+    await _sw_send(app, msg, f"https://{apex}/")
+    return [msg]
+
+
+async def job_site_watch(app, force: bool = False) -> list:
+    if kv_get("sw_paused", "") == "1" and not force:
+        return []
+    sent = []
+    now = time.time()
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+        for u in _sw_urls():
+            try:
+                sent += await sw_check_url(app, client, u, force_assets=force)
+            except Exception as e:
+                log.warning(f"sitewatch {u}: {e}")
+        hosts = sorted({_sw_host(u) for u in _sw_urls()})
+        if force or now - float(kv_get("sw_dns_at", "0") or 0) > 300:
+            kv_set("sw_dns_at", str(now))
+            for h in hosts:
+                try:
+                    sent += await sw_check_dns(app, client, h)
+                except Exception as e:
+                    log.warning(f"sitewatch dns {h}: {e}")
+        if force or now - float(kv_get("sw_cert_at", "0") or 0) > 600:
+            kv_set("sw_cert_at", str(now))
+            for apex in sorted({_sw_apex(h) for h in hosts}):
+                try:
+                    sent += await sw_check_certs(app, client, apex)
+                except Exception as e:
+                    log.warning(f"sitewatch certs {apex}: {e}")
+    return sent
+
+
+async def cmd_sitewatch(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    # the maker's tool. not admins, not the group. silence for anyone else.
+    if not _is_maker(update.effective_user):
+        return
+    if update.effective_chat and update.effective_chat.type != "private":
+        await update.effective_message.reply_text("DM me for that one 🐈‍⬛")
+        return
+    kv_set("maker_dm_chat", str(update.effective_chat.id))
+    msg = update.effective_message
+    args = ctx.args or []
+    sub = (args[0].lower() if args else "")
+    if sub == "add" and len(args) > 1:
+        u = _sw_norm_url(args[1])
+        urls = _sw_urls()
+        if len(urls) >= SITE_WATCH_MAX:
+            await msg.reply_text(f"already watching {SITE_WATCH_MAX} urls, remove one first.")
+            return
+        _sw_set_urls(urls + [u])
+        await msg.reply_text(f"added {u}. first check sets the baseline, then you'll hear about every change.")
+        return
+    if sub in ("remove", "rm", "del") and len(args) > 1:
+        u = _sw_norm_url(args[1])
+        _sw_set_urls([x for x in _sw_urls() if x != u])
+        await msg.reply_text(f"stopped watching {u}.")
+        return
+    if sub == "pause":
+        kv_set("sw_paused", "1")
+        await msg.reply_text("site watch paused. /sitewatch resume to turn it back on.")
+        return
+    if sub == "resume":
+        kv_set("sw_paused", "")
+        await msg.reply_text("site watch is back on.")
+        return
+    if sub in ("check", "now", "test"):
+        await msg.reply_text("checking now…")
+        sent = await job_site_watch(ctx.application, force=True)
+        await msg.reply_text("checked. no changes since the last look." if not sent
+                             else f"checked. {len(sent)} alert(s) sent above.")
+        return
+    lines = [f"🛰 site watch · every {SITE_WATCH_SEC}s"
+             + (" · PAUSED" if kv_get("sw_paused", "") == "1" else "")]
+    for u in _sw_urls():
+        st = _sw_state(u)
+        f = st.get("facts") or {}
+        state = ("🟢 up" if st.get("up") else "🔴 down" if st.get("up") is False else "⚪ not checked yet")
+        lines.append(f"\n{u}\n {state} · status {f.get('status', '?')} · “{f.get('title') or '(no title)'}”")
+        if st.get("checked"):
+            lines.append(f" last check {int(time.time() - st['checked'])}s ago")
+        if st.get("changed"):
+            lines.append(f" last change {_sw_stamp(st['changed'])}")
+    lines.append("\nalerts go to you only (this DM).")
+    lines.append("/sitewatch add <url> · remove <url> · check · pause · resume")
+    await msg.reply_text("\n".join(lines), disable_web_page_preview=True)
+
+
+# ── the Mr. Wizard profile (XMB forum, member.php?action=viewpro) ───────────
+def _cell_text(frag: str) -> str:
+    t = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", frag or "")
+    t = re.sub(r"<br\s*/?>", " ", t, flags=re.I)
+    t = html.unescape(re.sub(r"<[^>]+>", " ", t))
+    return re.sub(r"\s+", " ", t).replace("\xa0", " ").strip()
+
+
+def _wiz_row(h: str, label_rx: str) -> str | None:
+    """the value cell that follows a label cell. None when the row is absent,
+    '' when the row is there and empty (an emptied mood is a change too)."""
+    m = re.search(r"(?is)<t[dh][^>]*>(?:\s*<[^>]+>)*\s*" + label_rx +
+                  r"\s*:?\s*(?:</[^>]+>\s*)*</t[dh]>\s*<t[dh][^>]*>(.*?)</t[dh]>", h)
+    if m:
+        return _cell_text(m.group(1))
+    m = re.search(r"(?i)" + label_rx + r"\s*:\s*([^\n<]{0,120})", _cell_text(h))
+    return m.group(1).strip() if m else None
+
+
+_WIZ_CHROME = re.compile(r"(images/(english|smilies|star|icons?|bbcode|buttons?)|logo|spacer|"
+                         r"pixel|blank\.gif|\.cur$|rss|xmb)", re.I)
+
+
+def wizard_fields(h: str, base: str) -> dict:
+    f = {}
+    for key, rx in (("last active", r"Last\s*(?:Active|Visit|Online|Login)"),
+                    ("mood", r"Mood"), ("status", r"(?:Current\s*)?Status"),
+                    ("registered", r"(?:Registered|Member\s*Since|Joined)"),
+                    ("name", r"(?:Real\s*)?Name"), ("posts", r"Posts?"),
+                    ("location", r"Location"), ("signature", r"Signature")):
+        v = _wiz_row(h, rx)
+        if v is not None:
+            f[key] = v
+    # the avatar: a labelled row first, else the first picture that is not site chrome
+    av = ""
+    m = re.search(r"(?is)Avatar\s*:?\s*(?:</[^>]+>\s*)*</t[dh]>\s*<t[dh][^>]*>.*?<img[^>]+src\s*=\s*[\"']([^\"']+)", h)
+    if m:
+        av = m.group(1)
+    else:
+        for src in re.findall(r"<img[^>]+src\s*=\s*[\"']([^\"']+)[\"']", h, re.I):
+            if _WIZ_CHROME.search(src):
+                continue
+            if "avatar" in src.lower() or src.lower().startswith("http") and "wizardcards" not in src.lower():
+                av = src
+                break
+    f["avatar"] = urllib.parse.urljoin(base, av) if av else ""
+    return f
+
+
+def _wiz_state() -> dict:
+    return _sw_state(WIZARD_URL)
+
+
+def _wiz_now() -> dict:
+    return (_wiz_state().get("facts") or {}).get("fields") or {}
+
+
+def _wiz_mode_on() -> bool:
+    return kv_get("wizard_autopost", "on") != "off"
+
+
+def _wiz_delay_min() -> int:
+    """minutes between juju's DM and the public post. default 1 (owner rule)."""
+    try:
+        return max(0, int(kv_get("wizard_delay_min", "1") or 0))
+    except ValueError:
+        return 1
+
+
+_WIZ_LABEL = {"mood": "mood", "avatar": "avatar", "last active": "last active",
+              "status": "status", "signature": "signature", "location": "location"}
+
+
+def wizard_changes(old: dict, new: dict) -> list:
+    """[(key, before, after)] for the fields worth telling anyone about."""
+    out = []
+    for k in ("mood", "avatar", "last active", "status", "signature", "location"):
+        if k in new and old.get(k, new[k]) != new[k]:
+            out.append((k, old.get(k, ""), new[k]))
+    return out
+
+
+def _wiz_short(v: str, n: int = 60) -> str:
+    v = (v or "").strip()
+    if not v:
+        return "(empty)"
+    if v.startswith("http"):
+        return "a new picture"
+    return v if len(v) <= n else v[:n - 1] + "…"
+
+
+def wizard_x_text(changes: list, new: dict) -> str:
+    """the post. structured, one emoji up top, a read labelled as a read."""
+    lines = ["🧙 the Mr. Wizard profile just changed", ""]
+    for k, a, b in changes:
+        if k == "avatar":
+            lines.append("new avatar" + (" (see the profile)" if b else " (removed)"))
+        elif k == "last active":
+            lines.append(f"last active: {_wiz_short(b)}")
+        else:
+            lines.append(f"{_WIZ_LABEL[k]}: “{_wiz_short(a)}” → “{_wiz_short(b)}”")
+    if new.get("last active") and not any(k == "last active" for k, _, _ in changes):
+        lines.append(f"last active: {_wiz_short(new['last active'])}")
+    lines += ["", "Keith Gill played the card game Wizard under the handle Mr Wizard, and the "
+                  "community reads this profile as his", "a read, not a confirmation. the page is "
+                  "public, go look"]
+    return "\n".join(lines)
+
+
+def wizard_tg_html(changes: list, new: dict, x_url: str | None) -> str:
+    when = _sw_stamp()
+    rows = []
+    for k, a, b in changes:
+        ico = {"mood": "🧙", "avatar": "🖼", "last active": "⏱", "status": "📍",
+               "signature": "✍️", "location": "📌"}.get(k, "▪️")
+        if k == "avatar":
+            rows.append(f"{ico} <b>avatar changed</b>" + ("" if b else " (removed)"))
+        else:
+            rows.append(f"{ico} <b>{html.escape(_WIZ_LABEL[k])}</b>: “{html.escape(_wiz_short(a, 80))}” "
+                        f"→ “{html.escape(_wiz_short(b, 80))}”")
+    body = ("🚨 <b>THE WIZARD PROFILE CHANGED</b>\n" + f"<i>{html.escape(when)}</i>\n\n" + "\n".join(rows))
+    if new.get("last active"):
+        body += f"\n\n⏱ last active: {html.escape(new['last active'])}"
+    body += ("\n\n<i>Keith Gill played Wizard as Mr. Wizard. the community reads this profile as his. "
+             "a read, not a confirmation.</i>")
+    if x_url:
+        body += f'\n\n🐦 <a href="{x_url}">the bot posted it on X</a> — first hour decides the reach'
+    return body
+
+
+async def _wiz_fetch_avatar(url: str) -> str | None:
+    if not url:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+            r = await c.get(url, headers={"User-Agent": _SW_UA})
+            if r.status_code == 200 and len(r.content) < 6_000_000:
+                p = f"/tmp/wiz-av-{hashlib.md5(url.encode()).hexdigest()[:8]}.img"
+                open(p, "wb").write(r.content)
+                return p
+    except Exception as e:
+        log.warning(f"wizard avatar fetch: {e}")
+    return None
+
+
+def render_wizard_card(changes: list, new: dict, avatar_path: str | None) -> str | None:
+    if not IMAGES_ENABLED:
+        return None
+    """dark card: MR. WIZARD, the changed rows as before -> after, the new
+    avatar on the right when there is one, the stamp at the bottom."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import textwrap
+        W, H = 1080, 1080
+        img = Image.new("RGB", (W, H), (9, 9, 16))
+        d = ImageDraw.Draw(img)
+        try:
+            f_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 64)
+            f_lab = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 30)
+            f_val = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 44)
+            f_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 26)
+        except Exception:
+            f_big = ImageFont.load_default(size=64); f_lab = ImageFont.load_default(size=30)
+            f_val = ImageFont.load_default(size=44); f_sm = ImageFont.load_default(size=26)
+        gold = (232, 213, 163); dim = (120, 120, 140); white = (240, 240, 245); red = (230, 70, 70)
+        d.ellipse((W - 150, 60, W - 70, 140), fill=gold)
+        d.ellipse((W - 175, 50, W - 95, 130), fill=(9, 9, 16))
+        d.text((70, 70), "MR. WIZARD", font=f_big, fill=white)
+        d.text((70, 150), "wizardcards.com · member profile", font=f_lab, fill=dim)
+        d.line((70, 205, W - 70, 205), fill=(40, 40, 56), width=2)
+        y = 250
+        right = W - 70
+        av_box = None
+        if avatar_path and os.path.isfile(avatar_path):
+            try:
+                av = Image.open(avatar_path).convert("RGB")
+                av.thumbnail((360, 360))
+                ax, ay = right - av.width, y
+                img.paste(av, (ax, ay))
+                d.rectangle((ax - 3, ay - 3, ax + av.width + 2, ay + av.height + 2), outline=gold, width=3)
+                av_box = (ax, ay, right, ay + av.height)
+                right = ax - 50
+            except Exception:
+                pass
+        for k, a, b in changes[:4]:
+            d.text((70, y), _WIZ_LABEL[k].upper(), font=f_lab, fill=dim)
+            y += 42
+            if k == "avatar":
+                d.text((70, y), "changed" if b else "removed", font=f_val, fill=red)
+                y += 70
+            else:
+                before = _wiz_short(a, 28); after = _wiz_short(b, 28)
+                bw = d.textlength(before, font=f_val)
+                aw = d.textlength("→", font=f_val)
+                tw = d.textlength(after, font=f_val)
+                if 70 + bw + 24 + aw + 24 + tw <= right:
+                    d.text((70, y), before, font=f_val, fill=dim)
+                    d.text((70 + bw + 24, y), "→", font=f_val, fill=gold)
+                    d.text((70 + bw + 24 + aw + 24, y), after, font=f_val, fill=red)
+                    y += 70
+                else:                               # too wide: stack it
+                    d.text((70, y), before, font=f_val, fill=dim); y += 56
+                    d.text((70, y), "→", font=f_val, fill=gold)
+                    d.text((70 + aw + 24, y), after, font=f_val, fill=red); y += 70
+            y += 18
+        if new.get("last active") and not any(k == "last active" for k, _, _ in changes):
+            d.text((70, y), "LAST ACTIVE", font=f_lab, fill=dim); y += 42
+            d.text((70, y), _wiz_short(new["last active"], 30), font=f_val, fill=white); y += 88
+        if av_box and y < av_box[3] + 40:
+            y = av_box[3] + 40
+        d.line((70, H - 190, W - 70, H - 190), fill=(40, 40, 56), width=2)
+        note = "Keith Gill played Wizard as Mr. Wizard. the community reads this profile as his. a read, not a confirmation."
+        yy = H - 165
+        for ln in textwrap.wrap(note, 62)[:3]:
+            d.text((70, yy), ln, font=f_sm, fill=dim); yy += 36
+        d.text((70, H - 50), _sw_stamp(), font=f_sm, fill=gold)
+        p = f"/tmp/wizard-card-{int(time.time())}.png"
+        img.save(p, "PNG")
+        return p
+    except Exception as e:
+        log.warning(f"wizard card render failed: {e}")
+        return None
+
+
+def higgsfield_prompt_for(changes: list, new: dict) -> str:
+    """a ready-to-paste Seedance 2.0 prompt for juju: tsuki reacting to the
+    change, in the house render style, so a clip can exist within minutes."""
+    lock = ("Tsuki, exactly as in the reference images: a fluffy black kitten in a glossy 3D "
+            "animated-film render style, big round head, very large round red eyes with bright "
+            "white highlights, a small white crescent moon on the forehead, white fluffy inner ears, "
+            "a fluffy white-grey chest patch, no collar.")
+    what = "; ".join(f"{_WIZ_LABEL[k]} {_wiz_short(a, 20)} to {_wiz_short(b, 20)}" for k, a, b in changes[:2]) or "a change"
+    scene = ("Tsuki in a wizard hat and a starry robe sits at an old wooden desk lit by candles, "
+             "staring at a glowing CRT monitor showing a forum profile page. The monitor flashes; "
+             f"the line on screen changes ({what}). Tsuki's eyes go huge, the fur puffs up, the hat "
+             "tips, a cup of tea tips and spills in slow motion, cards fly off the desk, the candles "
+             "flare. Lively, exaggerated 3D cartoon animation, squash and stretch, nothing in the "
+             "frame stays still. Slow camera push-in. 5 seconds.")
+    return f"HIGGSFIELD · Seedance 2.0 (start frame: 11-reading crop)\n\n{lock}\n\n{scene}"
+
+
+async def wizard_announce(app, changes: list, new: dict):
+    """X post (with the card and the profile link), then one group message."""
+    if not changes:
+        return
+    avatar_path = None
+    if IMAGES_ENABLED:
+        for k, a, b in changes:
+            if k == "avatar" and b:
+                avatar_path = await _wiz_fetch_avatar(b)
+    card = render_wizard_card(changes, new, avatar_path)
+    x_text = wizard_x_text(changes, new)
+    x_url = post_to_x(x_text, signoff=False, image_path=card or avatar_path, append_url=WIZARD_URL)
+    if not x_url:
+        log.warning("wizard: X post did not go out (see /xdiag)")
+    body = wizard_tg_html(changes, new, x_url)
+    rows = [[InlineKeyboardButton("🧙 the profile", url=WIZARD_URL)]]
+    if x_url:
+        tid = x_url.rstrip("/").split("/")[-1]
+        rows.insert(0, [InlineKeyboardButton("🔁 Quote it", url="https://twitter.com/intent/tweet?url=" + urllib.parse.quote(x_url)),
+                        InlineKeyboardButton("💬 Reply", url=f"https://twitter.com/intent/tweet?in_reply_to={tid}")])
+        rows[1].append(InlineKeyboardButton("🐦 the bot's post", url=x_url))
+    try:
+        if card and os.path.isfile(card):
+            with open(card, "rb") as fh:
+                await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=fh, caption=body[:1000],
+                                         parse_mode="HTML", reply_markup=InlineKeyboardMarkup(rows))
+        else:
+            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body, parse_mode="HTML",
+                                       disable_web_page_preview=True,
+                                       reply_markup=InlineKeyboardMarkup(rows))
+    except Exception as e:
+        log.warning(f"wizard group announce failed: {e}")
+    kv_set("wizard_last_announce", json.dumps({"t": time.time(), "changes": changes, "x": x_url or ""}))
+
+
+async def _wizard_after_change(app, old: dict, new: dict):
+    """called by sw_check_url when the wizard page changed. DM first (already
+    sent by the watcher), then the public post, after the optional delay."""
+    changes = wizard_changes(old, new)
+    if not changes or not _wiz_mode_on():
+        return
+    chat = _sw_alert_chat()
+    if chat:
+        try:
+            await app.bot.send_message(chat_id=chat, text=higgsfield_prompt_for(changes, new)[:4000])
+        except Exception:
+            pass
+    delay = _wiz_delay_min()
+    if delay:
+        log.info(f"wizard: DM sent, public post in {delay} min")
+        await asyncio.sleep(delay * 60)
+    await wizard_announce(app, changes, new)
+
+
+async def cmd_wizard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    args = ctx.args or []
+    sub = args[0].lower() if args else ""
+    maker = _is_maker(update.effective_user)
+    private = update.effective_chat and update.effective_chat.type == "private"
+    if sub in ("auto", "delay", "test", "raw") and not maker:
+        return
+    if sub == "auto" and len(args) > 1:
+        kv_set("wizard_autopost", "off" if args[1].lower() == "off" else "on")
+        await msg.reply_text(f"wizard auto-post is {kv_get('wizard_autopost', 'on')}.")
+        return
+    if sub == "delay" and len(args) > 1:
+        try:
+            kv_set("wizard_delay_min", str(max(0, min(180, int(args[1])))))
+        except ValueError:
+            pass
+        await msg.reply_text(f"the bot waits {_wiz_delay_min()} min after your DM before posting publicly.")
+        return
+    if sub == "raw":
+        f = _wiz_now()
+        st = _wiz_state()
+        await msg.reply_text("parsed from the live page:\n\n" + (json.dumps(f, indent=1, ensure_ascii=False)[:1500] or "nothing yet")
+                             + f"\n\nstatus {((st.get('facts') or {}).get('status'))} · last check "
+                             + (f"{int(time.time() - st['checked'])}s ago" if st.get("checked") else "never")
+                             + "\n\nif mood / last active are missing here, send me the page's HTML and i'll fix the parser.")
+        return
+    if sub == "test":
+        if not private:
+            await msg.reply_text("DM me for the test 🐈‍⬛"); return
+        new = dict(_wiz_now()) or {"last active": "10-2-2026 at 13:30", "mood": ".", "avatar": ""}
+        old = dict(new); old["mood"] = "+++++"; new["mood"] = "."
+        changes = wizard_changes(old, new)
+        card = render_wizard_card(changes, new, None)
+        txt = wizard_x_text(changes, new)
+        await msg.reply_text("X post would read:\n\n" + enforce_x_format(txt, signoff=False) + "\n\n" + WIZARD_URL)
+        if card:
+            with open(card, "rb") as fh:
+                await msg.reply_photo(photo=fh, caption=wizard_tg_html(changes, new, None)[:1000], parse_mode="HTML")
+        else:
+            await msg.reply_text("the chat would get:\n\n" + wizard_tg_html(changes, new, None)[:3500],
+                                 parse_mode="HTML", disable_web_page_preview=True)
+        await msg.reply_text(higgsfield_prompt_for(changes, new))
+        return
+    f = _wiz_now()
+    st = _wiz_state()
+    if not f:
+        await msg.reply_text("haven't read the profile yet. give it a minute.")
+        return
+    last = json.loads(kv_get("wizard_last_announce", "{}") or "{}")
+    lines = ["🧙 <b>Mr. Wizard</b> · wizardcards.com", ""]
+    for k in ("mood", "last active", "status", "registered"):
+        if f.get(k) is not None:
+            lines.append(f"▪️ {k}: {html.escape(f[k]) or '(empty)'}")
+    lines.append(f"▪️ avatar: {'set' if f.get('avatar') else 'none'}")
+    if st.get("changed"):
+        lines.append(f"\nlast change seen: {_sw_stamp(st['changed'])}")
+    if last.get("t"):
+        lines.append(f"last posted: {_sw_stamp(last['t'])}")
+    lines.append("\n<i>a read, not a confirmation. nobody has shown the 2026 activity is Keith.</i>")
+    if maker and private:
+        lines.append(f"\nauto-post: {kv_get('wizard_autopost', 'on')} · your DM first, the public post {_wiz_delay_min()} min later\n"
+                     "/wizard auto on|off · /wizard delay N · /wizard test · /wizard raw")
+    await msg.reply_text("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True,
+                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🧙 open the profile", url=WIZARD_URL)]]))
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  THE BOARD (v42) — one post a day that costs nothing. no model call: the
+#  numbers come from the record and the watchers, the card is drawn locally.
+#  franchises build the habit; a stranger who sees the same board three
+#  mornings running knows what the account is for.
+# ══════════════════════════════════════════════════════════════════════════
+RK_LAST_POST = date(2025, 1, 22)
+WATCHED_DATES = [
+    (date(2026, 10, 17), "five cats, two years · 888 days since RK's return"),
+    (date(2026, 10, 23), "the 45-day lock on TSUKI/GME ends"),
+    (date(2026, 10, 24), "RWA turns two"),
+    (date(2026, 11, 5), "the fifth of november"),
+    (date(2026, 11, 19), "GTA VI · gamestop's biggest day"),
+    (date(2026, 12, 5), "two years since the TIME post and the 55"),
+]
+
+
+def _tsuki_last_post_date():
+    """from the fast watch's newest id when it has one, else the record."""
+    try:
+        sid = kv_get("xfast_since:tsukionsolana", "")
+        if sid:
+            ms = (int(sid) >> 22) + 1288834974657
+            return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).astimezone(PROJECT_TZ).date()
+    except Exception:
+        pass
+    return date(2026, 9, 29)
+
+
+def board_rows() -> list:
+    today = datetime.now(PROJECT_TZ).date()
+    rows = [("RK's last post", f"{(today - RK_LAST_POST).days} days", "22 jan 2025"),
+            ("tsuki's last post", f"{(today - _tsuki_last_post_date()).days} days",
+             _tsuki_last_post_date().strftime("%-d %b %Y").lower())]
+    w = _wiz_now() if "_wiz_now" in globals() else {}
+    if w.get("last active"):
+        rows.append(("mr wizard last active", w["last active"], f"mood “{w.get('mood', '')}”"))
+    try:
+        led = _ledger_since()
+        if led:
+            n, sh, val = _ledger_totals(led)
+            rows.append(("insider buys since 1 sep", f"{n} people · {_money(val)}", f"{_shares(sh)} shares"))
+    except Exception:
+        pass
+    ahead = [(d, w_) for d, w_ in WATCHED_DATES if d >= today]
+    if ahead:
+        d, w_ = ahead[0]
+        gap = (d - today).days
+        rows.append(("next watched date", "today" if gap == 0 else f"in {gap} days", f"{d.strftime('%-d %b').lower()} · {w_}"))
+    return rows
+
+
+def board_text() -> str:
+    today = datetime.now(PROJECT_TZ)
+    lines = [f"the board, {today.strftime('%-d %b %Y').lower()}", ""]
+    for k, v, note in board_rows():
+        lines.append(f"{k}: {v}")
+    lines += ["", "every line is public and dated. the watched dates are watched, not promised."]
+    return "\n".join(lines)
+
+
+def render_board_card() -> str | None:
+    if not IMAGES_ENABLED:
+        return None
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        W, H = 1080, 1080
+        img = Image.new("RGB", (W, H), (9, 9, 16)); d = ImageDraw.Draw(img)
+        try:
+            f_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 66)
+            f_lab = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 28)
+            f_val = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
+            f_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 24)
+        except Exception:
+            f_big = ImageFont.load_default(size=66); f_lab = ImageFont.load_default(size=28)
+            f_val = ImageFont.load_default(size=50); f_sm = ImageFont.load_default(size=24)
+        gold, dim, white = (232, 213, 163), (120, 120, 140), (240, 240, 245)
+        d.ellipse((W - 150, 60, W - 70, 140), fill=gold); d.ellipse((W - 175, 50, W - 95, 130), fill=(9, 9, 16))
+        d.text((70, 70), "THE BOARD", font=f_big, fill=white)
+        d.text((70, 150), datetime.now(PROJECT_TZ).strftime("%-d %b %Y · %-I:%M%p ET").lower(), font=f_lab, fill=dim)
+        d.line((70, 205, W - 70, 205), fill=(40, 40, 56), width=2)
+        y = 245
+        for k, v, note in board_rows()[:5]:
+            d.text((70, y), k.upper(), font=f_lab, fill=dim); y += 40
+            d.text((70, y), v, font=f_val, fill=white); y += 58
+            d.text((70, y), note, font=f_sm, fill=gold); y += 58
+        d.text((70, H - 60), "public, dated, checkable. watched is not promised.", font=f_sm, fill=dim)
+        p = f"/tmp/board-{int(time.time())}.png"; img.save(p, "PNG")
+        return p
+    except Exception as e:
+        log.warning(f"board card failed: {e}")
+        return None
+
+
+async def job_daily_board(app):
+    """9:20am ET, every day, no model call."""
+    text = board_text()
+    card = render_board_card()
+    url = post_to_x(text, signoff=False, image_path=card)
+    try:
+        if card and os.path.isfile(card):
+            with open(card, "rb") as fh:
+                await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=fh,
+                                         caption=("🗓 " + html.escape(text) + (f"\n\n🐦 {url}" if url else ""))[:1000])
+        else:
+            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=text + (f"\n\n{url}" if url else ""))
+    except Exception as e:
+        log.warning(f"board to telegram failed: {e}")
+
+
+async def cmd_board(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    card = render_board_card()
+    if card:
+        with open(card, "rb") as fh:
+            await update.effective_message.reply_photo(photo=fh, caption=board_text()[:1000])
+    else:
+        await update.effective_message.reply_text(board_text())
+
+
 # ── EDGAR watcher — new GameStop filings, announced within minutes ────────────
 EDGAR_CIK = "0001326380"
 EDGAR_URL = f"https://data.sec.gov/submissions/CIK{EDGAR_CIK}.json"
@@ -8055,15 +9306,17 @@ async def fetch_edgar_latest() -> list[dict]:
                 record_fetch("edgar", False)
                 return []
             recent = (r.json().get("filings") or {}).get("recent") or {}
+            n = len(recent.get("accessionNumber", []))
+            col = lambda k, i: (recent.get(k) or [""] * (n + 1))[i] if i < len(recent.get(k) or []) else ""
             out = []
-            for i in range(min(8, len(recent.get("accessionNumber", [])))):
-                acc = recent["accessionNumber"][i]
+            for i in range(min(40, n)):
                 out.append({
-                    "acc": acc,
-                    "form": recent["form"][i],
-                    "date": recent["filingDate"][i],
-                    "doc": (recent.get("primaryDocument") or [""] * 99)[i],
-                    "desc": (recent.get("primaryDocDescription") or [""] * 99)[i],
+                    "acc": col("accessionNumber", i),
+                    "form": col("form", i),
+                    "date": col("filingDate", i),
+                    "accepted": col("acceptanceDateTime", i),
+                    "doc": col("primaryDocument", i),
+                    "desc": col("primaryDocDescription", i),
                 })
             record_fetch("edgar", True)
             return out
@@ -8080,6 +9333,410 @@ def _edgar_link(f: dict) -> str:
     return f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={EDGAR_CIK}&type=&dateb=&owner=include&count=10"
 
 
+def _edgar_index_link(f: dict) -> str:
+    nodash = f["acc"].replace("-", "")
+    return f"https://www.sec.gov/Archives/edgar/data/{int(EDGAR_CIK)}/{nodash}/{f['acc']}-index.htm"
+
+
+# what the common forms are, in the words a holder would use
+_EDGAR_FORMS = {
+    "4": "insider transaction report",
+    "4/A": "amended insider transaction report",
+    "3": "new insider's initial holdings",
+    "5": "annual insider holdings report",
+    "8-K": "material event, something the company must tell the market now",
+    "8-K/A": "amended material-event report",
+    "10-Q": "quarterly report",
+    "10-K": "annual report",
+    "10-K/A": "amended annual report",
+    "SC 13D": "an activist holder passed 5%",
+    "SC 13D/A": "activist holder update",
+    "SC 13G": "a passive holder passed 5%",
+    "SC 13G/A": "passive holder update",
+    "13F-HR": "quarterly fund holdings",
+    "S-3": "shelf registration: the company can sell securities later",
+    "S-3ASR": "automatic shelf registration",
+    "S-8": "employee stock plan registration",
+    "424B5": "prospectus supplement: a securities offering",
+    "424B3": "prospectus",
+    "144": "notice of a planned insider sale",
+    "DEF 14A": "proxy statement for the shareholder meeting",
+    "DEFA14A": "additional proxy material",
+    "PRE 14A": "preliminary proxy statement",
+    "SD": "conflict-minerals disclosure",
+    "11-K": "employee plan annual report",
+    "NT 10-Q": "late quarterly report notice",
+    "NT 10-K": "late annual report notice",
+    "UPLOAD": "SEC staff letter",
+    "CORRESP": "company letter to the SEC",
+    "EFFECT": "registration declared effective",
+    "FWP": "free-writing prospectus",
+    "25-NSE": "delisting notice",
+}
+_8K_ITEMS = {
+    "1.01": "entry into a material agreement", "1.02": "termination of a material agreement",
+    "1.03": "bankruptcy or receivership", "2.01": "completion of acquisition or disposition",
+    "2.02": "results of operations", "2.03": "creation of a direct financial obligation",
+    "2.04": "triggering events on an obligation", "2.05": "exit or disposal costs",
+    "2.06": "material impairments", "3.01": "notice of delisting or listing rule failure",
+    "3.02": "unregistered sale of equity", "3.03": "material change to security holder rights",
+    "4.01": "change in auditor", "4.02": "financial statements can no longer be relied on",
+    "5.01": "change in control", "5.02": "directors or officers leaving or arriving",
+    "5.03": "bylaw or charter change", "5.05": "code of ethics change",
+    "5.07": "shareholder vote results", "5.08": "shareholder director nominations",
+    "7.01": "regulation FD disclosure", "8.01": "other events", "9.01": "exhibits",
+}
+
+
+def _edgar_form_words(form: str) -> str:
+    return _EDGAR_FORMS.get(form, _EDGAR_FORMS.get(form.replace("/A", ""), "a filing"))
+
+
+def _edgar_accepted_et(f: dict) -> str:
+    """'2026-10-02T16:57:12.000Z' -> '2 Oct 2026, 4:57pm ET' (falls back to the date)."""
+    a = f.get("accepted") or ""
+    try:
+        d = datetime.fromisoformat(a.replace("Z", "+00:00")).astimezone(PROJECT_TZ)
+        return d.strftime("%-d %b %Y, %-I:%M%p ET").replace("AM", "am").replace("PM", "pm")
+    except Exception:
+        return f.get("date", "")
+
+
+def _x(tag: str, blob: str) -> str:
+    m = re.search(rf"<{tag}>\s*(?:<value>)?\s*([^<]*?)\s*(?:</value>)?\s*</{tag}>", blob, re.S)
+    return (m.group(1) if m else "").strip()
+
+
+def _edgar_form4_parse(xml: str) -> dict | None:
+    """The Form 4 XML -> who, role, and every open-market line. Weighted
+    average price across the purchase lines, holding after the last one."""
+    if not xml or "<ownershipDocument" not in xml:
+        return None
+    own = re.search(r"<reportingOwner>(.*?)</reportingOwner>", xml, re.S)
+    ob = own.group(1) if own else ""
+    name = _x("rptOwnerName", ob)
+    # EDGAR gives "COHEN RYAN" / "Cheng Lawrence": put it the right way round
+    parts = name.split()
+    if name.isupper() and len(parts) >= 2:
+        name = " ".join(w.capitalize() for w in parts[1:] + parts[:1])
+    roles = []
+    if _x("isDirector", ob) in ("1", "true"): roles.append("director")
+    if _x("isOfficer", ob) in ("1", "true"): roles.append(_x("officerTitle", ob).lower() or "officer")
+    if _x("isTenPercentOwner", ob) in ("1", "true"): roles.append("10% owner")
+    txs = []
+    for t in re.findall(r"<nonDerivativeTransaction>(.*?)</nonDerivativeTransaction>", xml, re.S):
+        code = _x("transactionCode", t)
+        ad = _x("transactionAcquiredDisposedCode", t)
+        try:
+            sh = float(_x("transactionShares", t) or 0)
+            px = float(_x("transactionPricePerShare", t) or 0)
+            after = float(_x("sharesOwnedFollowingTransaction", t) or 0)
+        except ValueError:
+            continue
+        txs.append({"code": code, "ad": ad, "shares": sh, "price": px, "after": after,
+                    "date": _x("transactionDate", t),
+                    "direct": _x("directOrIndirectOwnership", t) == "D"})
+    holdings = []
+    for h in re.findall(r"<nonDerivativeHolding>(.*?)</nonDerivativeHolding>", xml, re.S):
+        try:
+            holdings.append(float(_x("sharesOwnedFollowingTransaction", h) or 0))
+        except ValueError:
+            pass
+    buys = [t for t in txs if t["code"] == "P" and t["ad"] == "A"]
+    sells = [t for t in txs if t["code"] == "S" and t["ad"] == "D"]
+    def agg(rows):
+        sh = sum(r["shares"] for r in rows)
+        val = sum(r["shares"] * r["price"] for r in rows)
+        return sh, (val / sh if sh else 0), val
+    bsh, bpx, bval = agg(buys)
+    ssh, spx, sval = agg(sells)
+    after = (buys or sells or txs or [{}])[-1].get("after") if (buys or sells or txs) else (holdings[0] if holdings else None)
+    direct_after = next((t["after"] for t in reversed(buys + sells) if t.get("direct")), None)
+    return {"name": name, "roles": roles, "period": _x("periodOfReport", xml),
+            "buy_shares": bsh, "buy_price": bpx, "buy_value": bval,
+            "sell_shares": ssh, "sell_price": spx, "sell_value": sval,
+            "after": after, "direct_after": direct_after, "n_tx": len(txs),
+            "codes": sorted({t["code"] for t in txs}),
+            "plan10b5": "10b5-1" in xml}
+
+
+async def _edgar_form4_details(client, f: dict) -> dict | None:
+    doc = f.get("doc") or ""
+    if not doc:
+        return None
+    nodash = f["acc"].replace("-", "")
+    raw = re.sub(r"^xsl[^/]+/", "", doc)          # xslF345X05/wk-form4.xml -> wk-form4.xml
+    for name in ([raw] if raw.endswith(".xml") else []) + [raw.rsplit(".", 1)[0] + ".xml"]:
+        try:
+            r = await client.get(f"https://www.sec.gov/Archives/edgar/data/{int(EDGAR_CIK)}/{nodash}/{name}",
+                                 headers={"User-Agent": EDGAR_UA})
+            if r.status_code == 200 and "<ownershipDocument" in r.text:
+                return _edgar_form4_parse(r.text)
+        except Exception as e:
+            log.warning(f"form 4 xml fetch: {e}")
+    return None
+
+
+async def _edgar_8k_items(client, f: dict) -> list:
+    try:
+        r = await client.get(_edgar_link(f), headers={"User-Agent": EDGAR_UA})
+        if r.status_code != 200:
+            return []
+        text = html.unescape(re.sub(r"<[^>]+>", " ", r.text))
+        found = []
+        for m in re.finditer(r"Item\s+(\d\.\d\d)", text):
+            k = m.group(1)
+            if k in _8K_ITEMS and k not in found and k != "9.01":
+                found.append(k)
+        return found[:4]
+    except Exception:
+        return []
+
+
+async def _edgar_brief(client, f: dict) -> str:
+    """two plain sentences on what the filing says, from its own text."""
+    try:
+        r = await client.get(_edgar_link(f), headers={"User-Agent": EDGAR_UA})
+        if r.status_code != 200:
+            return ""
+        text = r.text
+        if "<" in text:
+            text = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", text)
+            text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+        text = re.sub(r"\s+", " ", text).strip()
+        if len(text) < 200:
+            return ""
+        out = claude.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=160,
+            system=("you summarise SEC filings for retail shareholders. two sentences, plain "
+                    "words, lowercase, no hype, no advice, no adjectives like 'significant'. "
+                    "say what the company did or disclosed and the concrete numbers, names, "
+                    "dates or items in it. if the text is boilerplate with no news, say so in "
+                    "one sentence. never guess at anything not in the text."),
+            messages=[{"role": "user", "content": f"form {f['form']} filed by GameStop. the filing text:\n\n{text[:9000]}"}])
+        brief = " ".join(b.text for b in out.content if getattr(b, "type", "") == "text").strip()
+        brief = re.sub(r"\s+", " ", brief)
+        return brief[:420]
+    except Exception as e:
+        log.warning(f"edgar brief failed: {e}")
+        return ""
+
+
+def _money(v: float) -> str:
+    if v >= 1e9: return f"${v / 1e9:.2f}B"
+    if v >= 1e6: return f"${v / 1e6:.2f}M"
+    if v >= 1e3: return f"${v / 1e3:.0f}K"
+    return f"${v:,.0f}"
+
+
+def _shares(v: float) -> str:
+    return f"{v:,.0f}"
+
+
+# ── the insider ledger ───────────────────────────────────────────────────────
+def _ledger() -> list:
+    try:
+        return json.loads(kv_get("insider_ledger", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _ledger_add(row: dict):
+    rows = [r for r in _ledger() if r.get("acc") != row["acc"]]
+    rows.append(row)
+    rows.sort(key=lambda r: (r.get("date", ""), r.get("acc", "")))
+    kv_set("insider_ledger", json.dumps(rows[-200:]))
+
+
+def _ledger_since(day: str = "2026-09-01") -> list:
+    return [r for r in _ledger() if r.get("date", "") >= day and r.get("buy_shares", 0) > 0]
+
+
+def _ledger_totals(rows: list) -> tuple:
+    people = {r["name"] for r in rows}
+    sh = sum(r["buy_shares"] for r in rows)
+    val = sum(r["buy_value"] for r in rows)
+    return len(people), sh, val
+
+
+def _ledger_text(html_mode: bool = True) -> str:
+    rows = _ledger_since()
+    if not rows:
+        return "no insider buys on the ledger yet. it fills itself from EDGAR as Form 4s land."
+    n, sh, val = _ledger_totals(rows)
+    esc = html.escape if html_mode else (lambda x: x)
+    out = [f"<b>$GME insider buying since 1 Sep 2026</b>" if html_mode else "$GME insider buying since 1 Sep 2026", ""]
+    for r in rows:
+        line = (f"▪️ {r['date'][5:].replace('-', '/')} · {esc(r['name'])}: "
+                f"{_shares(r['buy_shares'])} @ ${r['buy_price']:.2f} ({_money(r['buy_value'])})")
+        if r.get("link") and html_mode:
+            line = f'▪️ {r["date"][5:].replace("-", "/")} · <a href="{esc(r["link"])}">{esc(r["name"])}</a>: ' \
+                   f'{_shares(r["buy_shares"])} @ ${r["buy_price"]:.2f} ({_money(r["buy_value"])})'
+        out.append(line)
+    out += ["", f"{n} insiders · {_shares(sh)} shares · {_money(val)}",
+            "every line is a Form 4 on EDGAR. tap a name to read it."]
+    return "\n".join(out)
+
+
+async def cmd_insiders(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await update.effective_message.reply_text(_ledger_text(), parse_mode="HTML",
+                                              disable_web_page_preview=True)
+
+
+async def job_insider_backfill(app):
+    """Once per deploy: read every Form 4 since 1 sep 2026 off EDGAR so the
+    ledger starts full instead of empty."""
+    if kv_get("insider_backfill_v39"):
+        return
+    filings = await fetch_edgar_latest()
+    async with httpx.AsyncClient(timeout=20) as client:
+        for f in filings:
+            if f["form"] not in ("4", "4/A") or f["date"] < "2026-09-01":
+                continue
+            d = await _edgar_form4_details(client, f)
+            if d and d["buy_shares"] > 0:
+                _ledger_add({"acc": f["acc"], "date": f["date"], "name": d["name"],
+                             "roles": d["roles"], "buy_shares": d["buy_shares"],
+                             "buy_price": round(d["buy_price"], 4), "buy_value": round(d["buy_value"], 2),
+                             "after": d["after"], "link": _edgar_link(f)})
+            await asyncio.sleep(0.4)        # EDGAR asks for <10 req/s
+    kv_set("insider_backfill_v39", "1")
+    log.info(f"insider ledger backfilled: {len(_ledger())} rows")
+
+
+# ── member alerts (DM) ───────────────────────────────────────────────────────
+def _alert_subs() -> set:
+    try:
+        return set(json.loads(kv_get("filing_alert_subs", "[]") or "[]"))
+    except Exception:
+        return set()
+
+
+async def cmd_alerts(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    chat = update.effective_chat
+    if chat.type != "private":
+        await msg.reply_text("DM me /alerts on and every new $GME filing lands in your DMs the minute EDGAR has it 🐈‍⬛")
+        return
+    subs = _alert_subs()
+    arg = (ctx.args[0].lower() if ctx.args else "")
+    if arg == "on":
+        subs.add(chat.id); kv_set("filing_alert_subs", json.dumps(sorted(subs)))
+        await msg.reply_text("you're on the list. every new GameStop SEC filing, here, within minutes of EDGAR. /alerts off to stop.")
+    elif arg == "off":
+        subs.discard(chat.id); kv_set("filing_alert_subs", json.dumps(sorted(subs)))
+        await msg.reply_text("off. you'll still see them in the group.")
+    else:
+        await msg.reply_text(("you're on the list ✅" if chat.id in subs else "you're not on the list")
+                             + "\n/alerts on · /alerts off")
+
+
+async def _alert_fanout(app, text: str, markup):
+    sent = 0
+    for cid in sorted(_alert_subs()):
+        try:
+            await app.bot.send_message(chat_id=cid, text=text, parse_mode="HTML",
+                                       disable_web_page_preview=True, reply_markup=markup)
+            sent += 1
+        except Exception as e:
+            if "blocked" in str(e).lower() or "chat not found" in str(e).lower():
+                subs = _alert_subs(); subs.discard(cid)
+                kv_set("filing_alert_subs", json.dumps(sorted(subs)))
+        await asyncio.sleep(0.06)
+    return sent
+
+
+# ── the announcement ─────────────────────────────────────────────────────────
+def _edgar_posted() -> set:
+    try:
+        return set(json.loads(kv_get("edgar_posted_accs", "[]") or "[]"))
+    except Exception:
+        return set()
+
+
+def _edgar_mark(acc: str):
+    p = _edgar_posted(); p.add(acc)
+    kv_set("edgar_posted_accs", json.dumps(sorted(p)[-300:]))
+
+
+async def _edgar_compose(client, f: dict) -> tuple:
+    """-> (x_text, tg_html, headline). x_text has no link: post_to_x appends it."""
+    form = f["form"]
+    words = _edgar_form_words(form)
+    when = _edgar_accepted_et(f)
+    head = f"new $GME filing: Form {form}"
+    x_lines = [f"{head} ({words})"]
+    tg_lines = [f"🚨 <b>new GameStop SEC filing: Form {html.escape(form)}</b>",
+                f"<i>{html.escape(words)}</i>", ""]
+    headline = f"gamestop sec filing form {form}"
+    if form in ("4", "4/A"):
+        d = await _edgar_form4_details(client, f)
+        if d:
+            who = d["name"] + (f" ({', '.join(d['roles'])})" if d["roles"] else "")
+            headline += " " + d["name"]
+            if d["buy_shares"] > 0:
+                x_lines += ["", f"{who} bought {_shares(d['buy_shares'])} shares at "
+                                f"${d['buy_price']:.2f} ({_money(d['buy_value'])})"]
+                tg_lines += [f"👤 {html.escape(who)}",
+                             f"🟢 <b>bought {_shares(d['buy_shares'])} shares</b> at ${d['buy_price']:.2f} "
+                             f"= {_money(d['buy_value'])}"]
+                _ledger_add({"acc": f["acc"], "date": f["date"], "name": d["name"],
+                             "roles": d["roles"], "buy_shares": d["buy_shares"],
+                             "buy_price": round(d["buy_price"], 4), "buy_value": round(d["buy_value"], 2),
+                             "after": d["after"], "link": _edgar_link(f)})
+                n, sh, val = _ledger_totals(_ledger_since())
+                x_lines += [f"insider buying since 1 sep: {n} people, {_shares(sh)} shares, {_money(val)}"]
+                tg_lines += [f"📒 since 1 Sep: {n} insiders · {_shares(sh)} shares · {_money(val)} (/insiders)"]
+            elif d["sell_shares"] > 0:
+                x_lines += ["", f"{who} sold {_shares(d['sell_shares'])} shares at "
+                                f"${d['sell_price']:.2f} ({_money(d['sell_value'])})"]
+                tg_lines += [f"👤 {html.escape(who)}",
+                             f"🔴 <b>sold {_shares(d['sell_shares'])} shares</b> at ${d['sell_price']:.2f} "
+                             f"= {_money(d['sell_value'])}"]
+            else:
+                codes = {"A": "award/grant", "M": "option exercise", "F": "tax withholding",
+                         "G": "gift", "C": "conversion", "J": "other"}
+                what = ", ".join(codes.get(c, c) for c in d["codes"]) or "no open-market trade"
+                x_lines += ["", f"{who}: {what}, not an open-market buy or sale"]
+                tg_lines += [f"👤 {html.escape(who)}", f"ℹ️ {html.escape(what)} — not an open-market trade"]
+            if d.get("direct_after"):
+                x_lines.append(f"direct holding now {_shares(d['direct_after'])}")
+                tg_lines.append(f"📦 direct holding now {_shares(d['direct_after'])}")
+            if d.get("plan10b5"):
+                tg_lines.append("📝 filed under a 10b5-1 plan (pre-scheduled)")
+    elif form.startswith("8-K"):
+        items = await _edgar_8k_items(client, f)
+        if items:
+            x_lines += [""] + [f"item {k}: {_8K_ITEMS[k]}" for k in items]
+            tg_lines += [f"▪️ Item {k}: {html.escape(_8K_ITEMS[k])}" for k in items]
+            headline += " " + " ".join(_8K_ITEMS[k] for k in items)
+    elif f.get("desc"):
+        tg_lines.append(f"▪️ {html.escape(f['desc'])}")
+    if form not in ("4", "4/A", "3", "5"):
+        brief = await _edgar_brief(client, f)
+        if brief:
+            x_lines += ["", f"what it says: {brief}"]
+            tg_lines += ["", f"📄 <b>what it says</b>\n{html.escape(brief)}"]
+    x_lines += ["", f"filed {when}"]
+    tg_lines += ["", f"🕒 filed {when}",
+                 f'📰 <a href="{html.escape(_edgar_link(f), quote=True)}">read it on EDGAR</a> · '
+                 f'<a href="{html.escape(_edgar_index_link(f), quote=True)}">all documents</a>']
+    return "\n".join(x_lines), "\n".join(tg_lines), headline
+
+
+def _edgar_markup(edgar_url: str, x_url: str | None) -> InlineKeyboardMarkup:
+    rows = []
+    if x_url:
+        tid = x_url.rstrip("/").split("/")[-1]
+        rows.append([InlineKeyboardButton("🔁 Quote it", url="https://twitter.com/intent/tweet?url=" + urllib.parse.quote(x_url)),
+                     InlineKeyboardButton("💬 Reply", url=f"https://twitter.com/intent/tweet?in_reply_to={tid}")])
+        rows.append([InlineKeyboardButton("🐦 the bot's post", url=x_url),
+                     InlineKeyboardButton("📰 EDGAR", url=edgar_url)])
+    else:
+        rows.append([InlineKeyboardButton("📰 read it on EDGAR", url=edgar_url)])
+    return InlineKeyboardMarkup(rows)
+
+
 async def job_edgar_watch(app):
     filings = await fetch_edgar_latest()
     if not filings:
@@ -8087,41 +9744,42 @@ async def job_edgar_watch(app):
     last = kv_get("edgar_last_acc", "")
     if not last:
         kv_set("edgar_last_acc", filings[0]["acc"])
+        for f in filings[:8]:
+            _edgar_mark(f["acc"])
         log.info("EDGAR watcher baseline initialised")
         return
+    posted = _edgar_posted()
     new = []
     for f in filings:
         if f["acc"] == last:
             break
-        new.append(f)
+        if f["acc"] not in posted:
+            new.append(f)
+    kv_set("edgar_last_acc", filings[0]["acc"])
     if not new:
         return
-    kv_set("edgar_last_acc", filings[0]["acc"])
-    import html as _html
-    for f in reversed(new[:3]):
-        # claim the story so the Google News copy of this same filing, arriving
-        # twenty minutes later with a journalist's headline on it, is a dupe
-        _story_claim(f"gamestop sec filing files form {f['form']} {f.get('desc', '')}")
-        desc = f" — {_html.escape(f['desc'])}" if f.get("desc") else ""
-        body = (f"BREAKING 🚨\n"
-                f"\n"
-                f"<b>new gamestop SEC filing</b>\n"
-                f"\n"
-                f" ├ form: {_html.escape(f['form'])}{desc}\n"
-                f"└ filed: {f['date']}\n"
-                f"\n"
-                f'📰 <a href="{_html.escape(_edgar_link(f), quote=True)}">read it on EDGAR</a> '
-                f"before someone tweets it wrong 👀")
-        try:
-            await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=body,
-                                       parse_mode="HTML",
-                                       disable_web_page_preview=True)
-        except Exception as e:
-            log.warning(f"edgar announce failed: {e}")
-        xu = post_to_x(f"new gamestop SEC filing, form {f['form']}, filed {f['date']}.\n\n"
-                       f"fresh off EDGAR.", signoff=False)
-        if xu:
-            await raid_alert(app, xu, f"new gamestop SEC filing, form {f['form']}", "broke a filing")
+    async with httpx.AsyncClient(timeout=20) as client:
+        for f in reversed(new[:3]):
+            if f["acc"] in _edgar_posted():
+                continue
+            _edgar_mark(f["acc"])                    # claim it before any await can race
+            x_text, tg_html, headline = await _edgar_compose(client, f)
+            _story_claim(headline)                    # google news copy 20 min later is a dupe
+            x_url = post_to_x(x_text, signoff=False, append_url=_edgar_link(f))
+            if x_url:
+                tg_html += f'\n\n🐦 <a href="{x_url}">the bot posted it on X</a> — first hour decides the reach'
+            markup = _edgar_markup(_edgar_link(f), x_url)
+            try:
+                await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=tg_html, parse_mode="HTML",
+                                           disable_web_page_preview=True, reply_markup=markup)
+            except Exception as e:
+                log.warning(f"edgar announce failed: {e}")
+            try:
+                n = await _alert_fanout(app, tg_html, markup)
+                if n:
+                    log.info(f"edgar: DM'd {n} subscribers")
+            except Exception as e:
+                log.warning(f"edgar fanout: {e}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -8761,10 +10419,14 @@ async def announce_breaking(app, title: str, link: str, via: str = "",
     final_url, img, chosen = "", None, None
     for cand_title, cand_link in candidates[:3]:
         f_url, f_img, walled = await _article_card(cand_link)
+        if not IMAGES_ENABLED:
+            f_img = None
         if chosen is None:
             final_url, img, chosen = f_url, f_img, (cand_title, cand_link)
         if not walled:
             final_url, img = f_url, f_img
+            if not IMAGES_ENABLED:
+                img = None
             if " - " in cand_title:
                 head, tail = cand_title.rsplit(" - ", 1)
                 if len(tail) <= 30:
@@ -8895,6 +10557,9 @@ GROK_WATCH_HANDLES = ["TheRoaringKitty", "ryancohen", "GameStop", "TheRoaringAI"
 # is ~$0.02-0.05; X_IMAGES_PER_DAY caps the bill.
 XAI_IMAGE_MODEL = os.environ.get("XAI_IMAGE_MODEL", "grok-imagine-image")
 X_IMAGES_PER_DAY = int(os.environ.get("X_IMAGES_PER_DAY", "5") or 5)
+# v43, owner rule: the bot posts words. no generated pictures, no drawn cards,
+# no photo rotation, no thumbnails. BOT_IMAGES=on brings every path back.
+IMAGES_ENABLED = os.environ.get("BOT_IMAGES", "off").lower() == "on"
 _TSUKI_CAT = ("a fluffy black kitten in a glossy 3D animated-film render style, big round "
               "head, very large round red eyes with white highlights, a small white "
               "crescent moon on the forehead, white fluffy inner ears, a pink nose, a "
@@ -8927,6 +10592,9 @@ _IMAGE_STYLE = {
               "slightly absurd — waiting for a bus, at a diner, in a lift",
     "casual": "a cosy everyday photoreal scene, the cat lounging, coffee, a window",
     "dry": "a flat, deadpan photoreal scene, minimal, one absurd detail",
+    "greg_drawing": "a deliberately bad, charming drawing in the style of a child's "
+                    "crayon or MS Paint picture of the cat Tsuki doing the thing in the post, "
+                    "thick wobbly lines, flat colours, white background, no text",
     "greg": "a completely ordinary photoreal scene (kitchen, bus stop, supermarket "
             "aisle, laundrette) with the cat in it doing the mundane thing in the post "
             "with total seriousness. no drama, flat daylight, the joke is how normal it is",
@@ -8938,6 +10606,8 @@ _IMAGE_STYLE = {
 
 def _image_scene(body: str, mood: str) -> str:
     """Haiku turns the post into ONE scene description for the image model."""
+    if mood == "greg" and int(hashlib.md5(body.encode()).hexdigest(), 16) % 2 == 0:
+        mood = "greg_drawing"
     style = _IMAGE_STYLE.get(mood, "a cinematic photoreal scene that fits the post")
     try:
         r = claude.messages.create(
@@ -8960,7 +10630,7 @@ def _image_scene(body: str, mood: str) -> str:
 
 def _generate_post_image_sync(body: str, mood: str = "") -> str | None:
     """Draw tsuki into the post. Returns a jpg path or None. Never raises."""
-    if not XAI_API_KEY:
+    if not IMAGES_ENABLED or not XAI_API_KEY:
         return None
     day = datetime.now(PROJECT_TZ).date()
     n = int(kv_get(f"aiimg:{day}", "0") or 0)
@@ -9038,6 +10708,8 @@ def _generate_post_image_sync(body: str, mood: str = "") -> str | None:
 
 
 async def generate_post_image(body: str, mood: str = "") -> str | None:
+    if not IMAGES_ENABLED:
+        return None
     return await asyncio.to_thread(_generate_post_image_sync, body, mood)
 
 
@@ -9051,6 +10723,8 @@ def _image_due(slot_key: str, mood: str) -> bool:
 
 
 async def maybe_tsuki_image(body: str, mood: str, slot_key: str) -> str | None:
+    if not IMAGES_ENABLED:
+        return None
     try:
         if _image_due(slot_key, mood):
             return await generate_post_image(body, mood)
@@ -9145,7 +10819,7 @@ WHISPER_FUN_MOODS = ("absurd", "meme", "terse", "entitled", "threat", "tail",
 # moods, not a machine cycling formats.
 AUDIT_REGISTERS = ("detective", "banter", "proud", "dry", "casual", "curious")
 WHISPER_MOODS = AUDIT_REGISTERS * 3 + WHISPER_LORE_MOODS + ("chatfind",) + tuple(
-    m for m in WHISPER_FUN_MOODS if m != "brand") + ("greg", "greg")
+    m for m in WHISPER_FUN_MOODS if m != "brand") + ("greg", "greg", "greg", "greg")
 
 # Moods that are allowed to be very short. Everything else has to earn its length.
 _SHORT_MOODS = {"terse", "challenge", "aphorism", "flex", "shower",
@@ -9311,6 +10985,20 @@ _VOICE_EXAMPLES = (
 )
 
 
+# Owner rule, 3 Oct 2026: Tsukiverse only. Nemesis is a private contact of the
+# owner's and is never named; the Barking Puppy / $BP / Kevin Gil threads are a
+# separate community and never appear. Applied to every outgoing X draft and
+# every telegram reply via _off_limits(); a member raising them gets a polite
+# change of subject, never an answer.
+_OFF_LIMITS = re.compile(
+    r"\bnemesis\b|\baddermine\b|barking\s*puppy|\$bp\b|\bkevin\s*gill?\b|"
+    r"kevinlegend|\bbp\s+(?:coin|chat|holder|community|top holder)", re.I)
+
+
+def _off_limits(text: str) -> bool:
+    return bool(_OFF_LIMITS.search(text or ""))
+
+
 def _example_echo(body: str) -> bool:
     flat = " ".join(body.lower().split())
     return any(ex in flat for ex in _VOICE_EXAMPLES)
@@ -9322,12 +11010,14 @@ MOVIE_MOTIFS = [
     ("the dark knight", "a film about a man whose plans run so far ahead that the chaos around him looks random", "on 17 june 2024, live on stream, RK referenced a screenshot that only ever existed on tsuki's account"),
     ("kill bill", "a story about one fighter against eighty-eight, and about patience sharpened into a blade", "RK posted the crazy 88s in may 2024. 8 august is 8/8"),
     ("focus", "a film about misdirection, where the con is planted long before anyone sees the reveal", "tsuki posted it on 3 december 2024, two days before the time post"),
-    ("donnie darko", "a film about knowing exactly how much time is left", "kevin gil's review of it carried numbers that add to 88"),
     ("the big short", "a film about being right early and getting laughed at until the day you are not", "the tsuki post shows burry writing 113"),
     ("sicario", "a film about finding out who actually runs the operation", "RK posted it with the WSB head on 16 may 2024. two days later WSB joined the tsuki telegram"),
     ("the aristocats", "a film about cats abandoned far from home who make it back anyway", "posted 11 may 2025 at 5:12pm, then a year of silence"),
     ("gladiator", "a story about a man who loses everything and wins the crowd instead", "the film released 5 may 2000. tsuki's first expose landed on 5/5"),
     ("dumb money", "the film they made about him", "and people still do not watch his timestamps"),
+    ("wargames", "a film about a game that only ends when someone works out the only winning move", "tsuki posted it on 20 september 2026 with GAME lit up and 00:00:00 left"),
+    ("v for vendetta", "a film about a council at a table and the man who only appears on the screen", "tsuki posted five men at that table on 22 september 2026, the same day six plus signs went up"),
+    ("the man from u.n.c.l.e.", "a film about two agents from opposite sides on one mission", "tsuki posted it on 29 september 2026 at 9:30pm"),
 ]
 
 
@@ -9420,8 +11110,33 @@ POST_SHAPES = [
     _shape("quote_self", "quoting yourself", "'me, [month year]:' then what the account said then, then one line on what happened. two or three lines, only real past posts or real lore.", lines=(2, 3), block=False),
     _shape("weekday", "the weekday", "name the weekday and what this weekday has meant in the story, two lines, dry.", lines=(2, 2), block=False),
     _shape("double_take", "the double take", "say it once plainly, two spaces, say it again with one word swapped for a much bigger one. one line.", lines=(1, 1), block=True),
+    # ── v41: the Summ X library, ported ────────────────────────────────────
+    _shape("strikethrough", "the strikethrough", "one short line where one word is struck through with combining long stroke overlay characters (s\u0336t\u0336r\u0336e\u0336s\u0336s\u0336) and the true word follows it. the struck word is what people expected; the real word is what it is.", lines=(1, 1), block=True),
+    _shape("date_alone", "the date, alone", "a single date in dd.mm.yyyy form, nothing else, from the lore (only a date that really matters, past or watched). no caption, no explanation.", lines=(1, 1), block=True),
+    _shape("seasonal", "the seasonal one-liner", "one line that borrows the month or the season (october, a full moon, the first cold morning, a friday) and lands the point inside it. one emoji allowed here.", lines=(1, 1), block=True),
+    _shape("personification", "the personification", "an object or a thing from the story speaks or is spoken about as a person with feelings (the wallet, the chart, the pinned post, the tab). 2-3 lines, each a separate thought, the last one the turn.", lines=(2, 3), block=False),
+    _shape("dear_letter", "the letter", "open with 'dear ___,' then 2-3 wishes or observations each on its own line, the last one the twist. no sign-off.", lines=(3, 4), block=False),
+    _shape("ad_parody", "the ad parody", "a fake advert for yourself or the project: 'hi, we are ___' then 3 flat product claims, each its own line, each more mundane than the last, then a deadpan sign-off line.", lines=(4, 5), block=False),
+    _shape("poll", "the poll joke", "three options written as a poll with circles: two with \u25cb and the chosen one with \u25c9. the chosen option is the long honest one. nothing else.", lines=(3, 3), block=False),
+    _shape("two_lists", "the two lists", "a heading line, 2 dash items; a second heading line, the SAME 2 items. the joke is that the lists are identical. nothing after.", lines=(6, 6), block=False),
+    _shape("emoji_ladder", "the emoji ladder", "3-4 short lines, each a verb or two-word stage plus one emoji; the emoji changes as the stages get worse. the only shape where an emoji per line is allowed.", lines=(3, 4), block=False),
+    _shape("reverse_ad", "the reverse ad", "open by admitting who does not like you (a group, a type), explain why in one plain line, then who does, in one line. honest, not smug.", lines=(3, 3), block=False),
+    _shape("duality", "the duality", "two lines that start with the same words and a different time ('me in may:' / 'me in october:'), the second one undoing the first.", lines=(2, 2), block=False),
+    _shape("roast_us", "roast us", "ask the timeline to roast one specific thing about you or the project, name the thing, say you read every reply. no question mark.", lines=(2, 3), block=False),
+    _shape("which_one", "which one do you use", "name 3-4 real things from the story or the world in one line, then ask which one they actually use or watch. a real question, one line.", lines=(2, 2), block=False),
+    _shape("no_qmark", "the question with no question mark", "a question written as a statement, no question mark, then 'we'll go first:' and your own answer on the next line.", lines=(2, 3), block=False),
+    _shape("rank_these", "rank these", "'rank these by ___' then a 3-4 item tree (\u251c lines and a \u2514 last line) of things from the story. nothing after the tree.", lines=(4, 5), block=False),
+    _shape("finish_sentence", "finish the sentence", "one line with a blank: 'the most ___ thing about ___ is ___'. nothing else.", lines=(1, 1), block=True),
+    _shape("chevron_walk", "the chevron walk", "a heading line ending in a colon, then 3-4 lines each starting with '>' walking through a real sequence from the record, then a 2-3 word close.", lines=(5, 6), block=False),
+    _shape("soon", "soon", "the single word 'soon' with one trailing ellipsis character, or one word plus 'soon'. only when a real date inside 14 days exists in the context; otherwise write a different shape.", lines=(1, 1), block=True),
+    _shape("roll_call", "the roll-call", "a line that names 3-5 people or accounts from the story by what they did (no @ unless real), a flat heading line first. a credit, not a hype list.", lines=(2, 3), block=False),
+    _shape("arrow_checklist", "the arrow checklist", "a heading line, then 3-5 lines each starting with \u2192 that are checkable facts with dates, then one line that says what to do with them (save it, check it, screenshot it).", lines=(5, 7), block=False),
+    _shape("worked_number", "the worked number", "take one real number from the record and do one honest piece of arithmetic with it across 3 lines (the number, the operation, the result), then one line on why it matters. never a price target.", lines=(4, 4), block=False),
+    _shape("mood_line", "the market mood line", "one lowercase line about how the timeline FEELS right now, no numbers, no tickers, no dates. the kind of line people reply 'real' to.", lines=(1, 1), block=True),
+    _shape("like_this", "like this post / like this post", "two lines: 'if ___, like this post' / 'if ___ , like this post' where both conditions cover everyone. self-aware engagement bait, rare.", lines=(2, 2), block=False),
+    _shape("wordplay", "wordplay on a name", "one line built on a pun with TSUKI, RWA, moon, cat, wizard or kitty. one pun only, no explanation.", lines=(1, 1), block=True),
 ]
-assert len(POST_SHAPES) == 72, len(POST_SHAPES)
+assert len(POST_SHAPES) == 96, len(POST_SHAPES)
 
 # registers whose brief IS their shape; they do not take one from the library
 _SHAPE_SKIP = {"brand", "bit", "chatfind", "movie", "meme", "terse", "aphorism",
@@ -9451,6 +11166,134 @@ def pick_shape(mood: str) -> dict | None:
     kv_set("shape_history", json.dumps((hist + [sh["k"]])[-40:]))
     kv_set("shape_now", sh["k"])
     return sh
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  THE VARIATION ENGINE (v41) — ported from the Summ CMO engine.
+#  A shape is HOW a post is built. A premise is WHAT IT IS ABOUT. Rotating ten
+#  shapes of one premise still reads as one idea, which is what the feed
+#  sounded like. So every slot now also draws a premise family (no two in a
+#  row, straight lore capped), a casing mode (never two in a row), a hook
+#  type (never twice in one day) and a close type. The five together are the
+#  post's fingerprint, and a fingerprint never repeats inside seven days.
+# ══════════════════════════════════════════════════════════════════════════
+PREMISES = [
+    ("holder", "holder behaviour, self-aware", "the chart-checking, the 'i'll read the thread later', the tab left open since may, the wallet nobody admits to. humour about US, never at anyone."),
+    ("objection", "objection first", "start with the doubt in a stranger's head ('it's a cat coin', 'he's not coming back', 'coincidences happen') and answer it straight with one checkable thing. no defensiveness."),
+    ("transparency", "radical transparency", "what the record does NOT show, a date that landed empty, what nobody has proven, what the bot got wrong. the misses stay on the record; that is why the hits count."),
+    ("build", "build-in-public specifics", "something that happened in the chat or the bot this week: a find, a fix, a member who dug something up, a number that surprised everyone. the warmth is the specifics."),
+    ("culture", "culture first", "start OUTSIDE the project (a film, a sport, a sandwich, a season, the group chat) and land on one thing from the story in the last line. the project's name is not in the first line."),
+    ("receipt", "receipt marketing", "one real artefact made shareable: an exact timestamp pair, a quoted post with its time, a filing line. the record speaking for itself, minimal words around it."),
+    ("calm", "calm literacy", "the fact, the date, the source, no hype: how a Form 4 works, what a hash proves, what a snapshot is, what a 45-day lock means. the calm account wins by contrast."),
+    ("lore", "straight lore", "a coincidence or a chapter told plainly. the default for two years; now one family of eight and never more than 30% of the week."),
+]
+_PREMISE_LORE_CAP = 0.3
+CASINGS = [
+    ("nlc", "natural lowercase with capitals", "sentence case: capital at the start of a sentence, proper nouns capitalised (Keith, GameStop, October), I capitalised. full stops where a sentence ends."),
+    ("slt", "strictly lowercase", "no capitals at all except I and tickers, no full stop at the end of the last line. the trench register."),
+    ("bca", "bold capitalised accent", "the FIRST line is a short heavy statement in capitals or title case (2-5 words), then the rest in sentence case."),
+]
+HOOKS = [
+    ("stat", "cold stat", "a verified number from the record doing all the work in the first line"),
+    ("scene", "scene", "drop the reader mid-moment: a time of day, a place, something happening"),
+    ("contrarian", "contrarian call", "against what the timeline agrees on, held calmly"),
+    ("confession", "confession", "first person admission of a shared habit"),
+    ("hurts", "the question that hurts", "a real question the reader has avoided asking themselves"),
+    ("anchor", "date anchor", "a date and what it means, flat delivery"),
+    ("compare", "comparison cut", "two things side by side, one line each"),
+    ("reframe", "definition reframe", "'a ___ is just ___' said about something from the story"),
+    ("promise", "list promise", "say plainly what the reader walks away with"),
+    ("dialogue", "dialogue open", "a quoted line someone said, then the reaction"),
+    ("understate", "understatement", "the dry small version of a big claim"),
+    ("receipt", "receipt", "quote a real post or filing line with its time, exactly"),
+]
+CLOSES = [
+    ("drop", "sudden drop", "stop on the fact. no closer, no emoji, no question."),
+    ("dry", "dry take", "one short flat opinion after the facts"),
+    ("action", "actionable", "tell them one thing to do: check it, screenshot it, read the filing, set the alarm"),
+    ("question", "real question", "one question you actually want answered, no bait"),
+    ("callback", "callback", "the last line reuses a word from the first line with its meaning turned"),
+]
+
+
+def _fp_hist() -> list:
+    try:
+        return json.loads(kv_get("fp_history", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def pick_fingerprint(mood: str, shape_key: str = "") -> dict | None:
+    """premise + casing + hook + close for this slot, with the rotation rules.
+    Returns None for the registers whose brief IS their shape."""
+    if not mood or mood in _SHAPE_SKIP:
+        return None
+    hist = _fp_hist()
+    now = time.time()
+    recent7 = [h for h in hist if now - h.get("t", 0) < 7 * 86400]
+    today = [h for h in hist if now - h.get("t", 0) < 86400]
+    last = hist[-1] if hist else {}
+    # premise: not the last one; lore capped at 30% of the last ten
+    pool_p = [p for p in PREMISES if p[0] != last.get("p")]
+    last10 = hist[-10:]
+    if last10 and sum(1 for h in last10 if h.get("p") == "lore") / len(last10) >= _PREMISE_LORE_CAP:
+        pool_p = [p for p in pool_p if p[0] != "lore"] or pool_p
+    # the one-block registers (greg, shower...) are culture/holder by nature
+    if mood in WHISPER_FUN_MOODS:
+        pool_p = [p for p in pool_p if p[0] in ("holder", "culture", "transparency", "build")] or pool_p
+    # casing: not the last one. greg is sentence case by research, always.
+    pool_c = [c for c in CASINGS if c[0] != last.get("c")]
+    if mood == "greg":
+        pool_c = [c for c in CASINGS if c[0] == "nlc"]
+    # hook: not used today
+    used_h = {h.get("h") for h in today}
+    pool_h = [h for h in HOOKS if h[0] not in used_h] or HOOKS
+    pool_k = [k for k in CLOSES if k[0] != last.get("k")]
+    seen = {(h.get("p"), h.get("c"), h.get("s"), h.get("h"), h.get("k")) for h in recent7}
+    for _ in range(40):
+        p = random.choice(pool_p); c = random.choice(pool_c)
+        h = random.choice(pool_h); k = random.choice(pool_k)
+        if (p[0], c[0], shape_key, h[0], k[0]) not in seen:
+            break
+    fp = {"p": p[0], "c": c[0], "s": shape_key, "h": h[0], "k": k[0], "t": now}
+    kv_set("fp_history", json.dumps((hist + [fp])[-80:]))
+    kv_set("fp_now", json.dumps(fp))
+    return {"premise": p, "casing": c, "hook": h, "close": k}
+
+
+def fingerprint_brief(fp: dict | None, one_block: bool = False) -> str:
+    if not fp:
+        return ""
+    p, c, h, k = fp["premise"], fp["casing"], fp["hook"], fp["close"]
+    out = (f"\n\nTHE PREMISE (what this post is about, chosen for variety): {p[1]} — {p[2]}"
+           f"\n\nTHE CASING: {c[1]} — {c[2]}"
+           f"\n\nTHE HOOK (how the first line works): {h[1]} — {h[2]}")
+    if not one_block:
+        out += f"\n\nTHE CLOSE (how it ends): {k[1]} — {k[2]}"
+    return out
+
+
+def _opener_gram(body: str) -> str:
+    words = re.findall(r"[a-z0-9$']+", (body or "").lower())
+    return " ".join(words[:3])
+
+
+def _opener_repeat(body: str) -> bool:
+    """the first three words of a post must not have opened another in 30 days."""
+    g = _opener_gram(body)
+    if len(g) < 6:
+        return False
+    try:
+        log_ = json.loads(kv_get("opener_grams", "{}") or "{}")
+    except Exception:
+        log_ = {}
+    now = time.time()
+    log_ = {k: v for k, v in log_.items() if now - v < 30 * 86400}
+    hit = g in log_
+    if not hit:
+        log_[g] = now
+        kv_set("opener_grams", json.dumps(log_))
+    return hit
 
 
 def whisper_mood(now=None) -> str:
@@ -9702,17 +11545,15 @@ async def compose_whisper(mood: str | None = None, tries: int = 2,
     kind = ("brand case post: an unapologetic inventory of what the project has "
             "actually built. a clean confident case IS the goal here, so do not "
             "fail it for being promotional") if mood == "brand" else f"{mood} post"
-    passing = []
+    # v42: the first draft that passes the critic ships. the two-draft
+    # tournament doubled the sonnet bill for a judge call that mostly picked
+    # the first one anyway. a second draft is written only when the first fails.
     for attempt in range(tries + 1):
         body = await _compose_whisper_once(mood, angle=angle)
         if body and _critic_ok(body, kind):
-            passing.append(body)
-            if len(passing) == 2:
-                break
-    if not passing:
-        log.info(f"whisper gave up on mood={mood}")
-        return None
-    return passing[0] if len(passing) == 1 else _pick_stronger(passing[0], passing[1])
+            return body
+    log.info(f"whisper gave up on mood={mood}")
+    return None
 
 
 async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str | None:
@@ -9803,17 +11644,32 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
                  "tail must have nothing whatsoever to do with the sentence. never explain it, "
                  "never make it a punchline about the first half.")
     elif mood == "greg":
-        brief = ("THE GREG REGISTER. the famous deadpan account voice: lowercase, "
-                 "completely sincere, totally sure of itself, about something that "
-                 "does not matter at all. the move is a small ordinary life stated "
-                 "like news, a confident wrong fact, a grievance against an object, a "
-                 "'just realised' about two unrelated things, a decision you have made "
-                 "about sandwiches or the weather, a one-line review of something nobody "
-                 "reviews. the cat is allowed, the lore is NOT required and usually "
-                 "absent; if it appears it is one passing word. no joke structure, no "
-                 "setup/punchline, no explanation: the confidence IS the joke. one "
-                 "block, one or two lines, ends abruptly, no closer. never mean, never "
-                 "political, never about a real person, never about price.")
+        brief = ("THE GREG REGISTER, from how the account actually posts. greg is a "
+                 "completely sincere, slightly too earnest guy from kentucky who treats "
+                 "the internet like a small town. SENTENCE CASE (a capital at the start, "
+                 "proper nouns capitalised), usually NO full stop at the end, two "
+                 "exclamation marks on the wholesome ones. never lowercase-cool, never "
+                 "snark, never irony you can see: the sincerity is the entire bit.\n"
+                 "pick ONE of his formats:\n"
+                 "- the good morning / good night to one specific thing or person "
+                 "('Good morning to the guy who parked across two spaces')\n"
+                 "- the earnest ask to a brand or a company as if they are a neighbour "
+                 "('Hear me out' then a small ridiculous proposal)\n"
+                 "- the triple check ('Had to triple check this wasn't a parody account' "
+                 "about something mundane)\n"
+                 "- the wholesome defence of an odd target ('Not sure why everyone is "
+                 "making fun of him I think he's a handsome fellow')\n"
+                 "- the fake life announcement delivered as a real one ('I got a job at "
+                 "the pretzel place so I might not be posting as much')\n"
+                 "- How it started: / How it's going: with two flat lines\n"
+                 "- the ongoing mundane saga, day N of something nobody asked about (a "
+                 "plant, a bird on the sill, a neighbour's bin)\n"
+                 "- the small ordinary life stated like news, or a confident wrong fact\n"
+                 "- Happy Friday!! energy on the actual weekday only\n"
+                 "the cat is allowed, the lore is NOT required and usually absent; if it "
+                 "appears it is one passing word. no setup/punchline, no explanation. "
+                 "one block, one or two lines, ends abruptly. never mean, never "
+                 "political, never about price, never about a real private person.")
     elif mood == "badmath":
         brief = ("the bad maths register. give one piece of confident financial or life advice "
                  "built on arithmetic that is visibly, hilariously wrong, delivered as if it were "
@@ -10030,9 +11886,18 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
         _angle_line += (f"\n\nTHE SHAPE of this post (architecture, not content): "
                         f"{_sh['name']} — {_sh['how']} the register rules above still "
                         f"apply; the shape only decides how the words are arranged.")
+    # v41: premise, casing, hook, close. the shape says how it is built; these
+    # say what it is about, how it is cased, how it opens and how it ends.
+    _fp = pick_fingerprint(mood, _sh["k"] if _sh else "")
+    _angle_line += fingerprint_brief(_fp, one_block=mood in WHISPER_FUN_MOODS)
+    # v42: one-line registers do not need sonnet. the voice block is cached
+    # either way; the one-block posts (greg, shower, invention, badmath,
+    # terse, tail, entitled, threat, absurd...) ride haiku at a fifth of the
+    # price. the lore, receipt and brand posts stay on sonnet.
+    _model = "claude-haiku-4-5-20251001" if (mood in WHISPER_FUN_MOODS and mood != "brand") else "claude-sonnet-4-6"
     try:
         msg = claude.messages.create(
-            model="claude-sonnet-4-6",
+            model=_model,
             max_tokens=cap,
             system=[_voice_block(),
                     {"type": "text", "text": date_context() + "\n\n" + shell + _angle_line}],
@@ -10098,6 +11963,12 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
             return None
         if _example_echo(body):
             log.info(f"{mood} rejected: echoed an example from the voice prompt")
+            return None
+        if _opener_repeat(body):
+            log.info(f"{mood} rejected: the same three opening words as a post in the last 30 days")
+            return None
+        if _off_limits(body):
+            log.info(f"{mood} rejected: off-limits subject (owner rule: tsukiverse only)")
             return None
         if _too_similar(body):
             log.info(f"{mood} rejected: too close to something already posted")
@@ -10453,7 +12324,7 @@ X_MENTION_POLL_MIN = max(1, int(os.environ.get("X_MENTION_POLL_MIN", "1") or 1))
 X_REPLY_CAP_PER_RUN = int(os.environ.get("X_REPLY_CAP_PER_RUN", "4") or 4)
 # A ceiling on the DAY, not just the poll. The per-run cap alone allowed ~5,700
 # replies a day in theory, and each one is a model call plus up to two redrafts.
-X_REPLY_CAP_PER_DAY = int(os.environ.get("X_REPLY_CAP_PER_DAY", "15") or 15)
+X_REPLY_CAP_PER_DAY = int(os.environ.get("X_REPLY_CAP_PER_DAY", "24") or 24)
 
 
 def _replies_today() -> int:
@@ -10494,6 +12365,8 @@ _REPLY_WORDBAN = re.compile(
 def _reply_problem(text: str) -> str | None:
     if not text or len(text) < 4:
         return "empty"
+    if _off_limits(text):
+        return "off-limits subject. tsukiverse only"
     if "\n" in text.strip():
         return "more than one block, or it narrated its own plan first"
     if _TIC.search(text):
@@ -10571,6 +12444,12 @@ def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,
             "person would use one. NEVER explain a connection, never mention "
             "archives, frames, timestamps or records, never fawn, never ask them a "
             "question. land it and get out.")
+    if _GME_TALK.search(their_text or "") or their_handle.lower().lstrip("@") in ("gamestop", "ryancohen", "larryvc"):
+        facts = gme_live_facts()
+        if facts:
+            vip_brief += ("\n\nTHIS IS A GME CONVERSATION. you may use ONE of these live facts if it "
+                          "fits, exactly as written, never rounded differently, never a price "
+                          "target, never advice:\n" + facts)
     if img:
         vip_brief += (
             "\n\nYOU CAN SEE THE IMAGE attached to their post — it is included "
@@ -10692,7 +12571,7 @@ def _note_poll(**kw):
 # everyone in the orbit is reading that thread within minutes.
 VIP_REPLY_HANDLES = {"greg16676935420", "ryancohen", "tsukionsolana",
                      "theroaringkitty", "elonmusk", "blknoiz06", "gamestop",
-                     "bigboyjuju"}
+                     "bigboyjuju", "larryvc"}
 VIP_REPLY_COOLDOWN_H = 4          # legacy default; the tiers below override it.
 # TIERS — not every watched account deserves the same reply policy.
 #   ALWAYS: reply to every post. these are the home team.
@@ -10731,7 +12610,7 @@ def _vip_should_reply(handle: str, text: str = "") -> bool:
 # top 10-20 and actually converts to follows. managed at runtime: /snipers
 MID_REPLY_COOLDOWN_H = 6
 MID_REPLY_CAP_PER_DAY = int(os.environ.get("X_MID_CAP_PER_DAY", "4") or 4)
-QT_CAP_PER_DAY = int(os.environ.get("X_QT_CAP_PER_DAY", "1") or 1)
+QT_CAP_PER_DAY = int(os.environ.get("X_QT_CAP_PER_DAY", "3") or 3)
 # a VIP post that hits one of these is a QUOTE-TWEET moment, not a reply:
 # the take goes on top of their reach instead of under it.
 _QT_TRIGGER = re.compile(
@@ -10764,8 +12643,40 @@ def _mid_reply_ok(handle: str) -> bool:
         return False
     kv_set(f"midreply:{handle.lower()}", str(time.time()))
     return True
-VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "16") or 16)
+VIP_REPLY_CAP_PER_DAY = int(os.environ.get("X_VIP_CAP_PER_DAY", "24") or 24)
 CASHTAG_CAP_PER_DAY = int(os.environ.get("X_CASHTAG_CAP_PER_DAY", "8") or 8)
+# the GME hunt: fresh posts about GameStop / Roaring Kitty / Mr. Wizard / Cohen
+# from anyone, through the same judge, the same delay, the same inbox.
+GME_CAP_PER_DAY = int(os.environ.get("X_GME_CAP_PER_DAY", "8") or 8)
+_GME_TALK = re.compile(r"gamestop|\$gme\b|\bgme\b|roaring ?kitty|\brk\b|\bdfv\b|keith gill|"
+                       r"mr\.? ?wizard|ryan cohen|\bcohen\b|larry cheng|form 4|insider", re.I)
+
+
+def gme_live_facts() -> str:
+    """what the bot knows right now, for a reply that says something checkable."""
+    bits = []
+    try:
+        rows = _ledger_since()
+        if rows:
+            n, sh, val = _ledger_totals(rows)
+            last = rows[-1]
+            bits.append(f"insider buying since 1 sep 2026: {n} insiders, {_shares(sh)} shares, {_money(val)}. "
+                        f"latest: {last['name']} {_shares(last['buy_shares'])} @ ${last['buy_price']:.2f} on {last['date']}")
+    except Exception:
+        pass
+    try:
+        w = _wiz_now()
+        if w:
+            bits.append("mr. wizard profile (community read, not confirmed as keith): "
+                        f"mood \u201c{w.get('mood', '')}\u201d, last active {w.get('last active', '?')}")
+    except Exception:
+        pass
+    try:
+        days = (datetime.now(PROJECT_TZ).date() - date(2025, 1, 22)).days
+        bits.append(f"roaring kitty's last ordinary X post was 22 january 2025: {days} days ago")
+    except Exception:
+        pass
+    return "\n".join("- " + b for b in bits)
 
 
 def _bucket_count(name: str) -> int:
@@ -10858,8 +12769,8 @@ def _reply_worthy(t, media: list | None = None) -> tuple[bool, str]:
     # not everyone gets an answer. an account that replies to every single
     # mention reads as a support desk; one that answers most reads as a
     # personality with moods. ~1 in 4 is deliberately left on read.
-    if int(hashlib.md5(f"pick-{t.id}".encode()).hexdigest(), 16) % 4 == 0:
-        return False, "left on read (deliberate 1-in-4)"
+    if int(hashlib.md5(f"pick-{t.id}".encode()).hexdigest(), 16) % 6 == 0:
+        return False, "left on read (deliberate 1-in-6)"
     return True, ""
 
 
@@ -11055,6 +12966,11 @@ X_FAST_WATCH_SEC = max(5, int(os.environ.get("X_FAST_WATCH_SEC", "10") or 10))
 # accounts post rarely, so they ride every sixth tick (~60s at the default).
 FAST_WATCH_PRIMARY = {"tsukionsolana"}
 FAST_WATCH_SLOW = {"theroaringai", "theroaringkitty"}
+# the people whose posts the account wants to be under within a minute. a
+# user-timeline poll with since_id returns nothing on a quiet minute, so this
+# costs close to nothing; the search prowl (10 billed posts per call) is what
+# gets expensive, and it now runs every 3 hours instead of 90 minutes.
+FAST_WATCH_VIP = {"greg16676935420", "ryancohen", "gamestop", "larryvc", "bigboyjuju"}
 # what the account REPOSTS the moment it appears. alerts go out for all
 # official handles; the retweet is for tsuki's own posts.
 REPOST_HANDLES = {"tsukionsolana"}
@@ -11105,7 +13021,9 @@ async def job_x_fast_watch(app):
         return
     tick = int(kv_get("xfast_tick", "0") or 0) + 1
     kv_set("xfast_tick", str(tick))
-    handles = set(FAST_WATCH_PRIMARY) | (FAST_WATCH_SLOW if tick % 6 == 0 else set())
+    handles = set(FAST_WATCH_PRIMARY) \
+        | (FAST_WATCH_VIP if tick % 6 == 0 else set()) \
+        | (FAST_WATCH_SLOW if tick % 12 == 0 else set())
     try:
         client = _x_client()
     except Exception as e:
@@ -11304,7 +13222,7 @@ async def job_x_prowl(app):
                 if not worthy:
                     _mark_replied(t.id)
                     continue
-            queue.append({"id": str(t.id), "handle": handle,
+            queue.append({"id": str(t.id), "handle": handle, "src": label,
                           "text": (t.text or "")[:500], "vip": vip,
                           "media": _media_urls(resp, t),
                           "due": time.time() + _reply_delay_s(t.id)})
@@ -11332,6 +13250,10 @@ async def job_x_prowl(app):
     # and this account's asset is not worth an API suspension. VIP replies
     # remain (a reply under a public figure's post is normal behaviour);
     # mentions remain (solicited by definition).
+    if os.environ.get("X_GME_HUNT", "on").lower() == "on":
+        await _hunt("gme", '("GameStop" OR "Roaring Kitty" OR "Mr. Wizard" OR "Ryan Cohen" OR "$GME") '
+                           '-is:retweet -is:reply -is:quote lang:en',
+                    "x_prowl_gme_since", "xgme", GME_CAP_PER_DAY, False)
     if os.environ.get("X_CASHTAG_HUNT", "off").lower() == "on":
         await _hunt("cashtag", '("$TSUKI" OR "$GME") -is:retweet -is:reply lang:en',
                     "x_prowl_tag_since", "xtag", CASHTAG_CAP_PER_DAY, False)
@@ -11464,7 +13386,8 @@ async def job_x_mentions(app):
 #  asking the bot a question deserves the instant answer.
 # ══════════════════════════════════════════════════════════════════════════
 def _x_mode() -> str:
-    return kv_get("x_action_mode", "approve") or "approve"
+    # v42: auto by default. /xmode approve brings the cards back.
+    return kv_get("x_action_mode", "auto") or "auto"
 
 
 def _is_simple_question(text: str) -> bool:
@@ -11490,7 +13413,7 @@ async def _maybe_approve_post(app, body: str, label: str, image: bool = False,
                               extra: dict | None = None) -> bool:
     """Route an ORIGINAL post through juju's DM when posts are in approve
     mode. Returns True if it was carded (caller must NOT post)."""
-    if kv_get("x_post_mode", "approve") != "approve":
+    if kv_get("x_post_mode", "auto") != "approve":
         return False
     card = {"qid": hashlib.md5(f"{body[:40]}{time.time()}".encode()).hexdigest()[:10],
             "kind": "post", "target": "", "handle": label,
@@ -11761,7 +13684,9 @@ async def _drain_reply_queue(app, client):
                 continue
             # approve mode: prowl finds (vip/mid) always need a tap; plain
             # question mentions stay instant — that is the helpful core.
-            if mode == "approve" and (item.get("vip") or not _is_simple_question(item["text"])):
+            if (mode == "approve" and (item.get("vip") or not _is_simple_question(item["text"]))) \
+                    or (mode == "auto" and not item.get("vip") and item.get("src") in ("gme", "cashtag")
+                        and kv_get("x_stranger_mode", "approve") == "approve"):
                 card = {"qid": hashlib.md5(f"{item['id']}{time.time()}".encode()).hexdigest()[:10],
                         "kind": "reply", "target": item["id"], "handle": item["handle"],
                         "text": item["text"][:400], "draft": reply,
@@ -12609,7 +14534,7 @@ async def cmd_xmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     elif args and args[0].lower() in ("approve", "auto", "off"):
         kv_set("x_action_mode", args[0].lower())
     await update.effective_message.reply_text(
-        f"replies/QTs: {_x_mode()} · original posts: {kv_get('x_post_mode', 'approve')}\n\n"
+        f"replies/QTs: {_x_mode()} · original posts: {kv_get('x_post_mode', 'auto')}\n\n"
         "/xmode approve|auto|off — replies and quote-tweets\n"
         "/xmode posts approve|auto — original posts\n\n"
         "approve mode sends every draft to your DM with buttons. "
@@ -12635,7 +14560,7 @@ async def cmd_chatpost(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text("drafting from the chat's research, with the chat as the picture…")
     before = kv_get("x_post_seq", "0")
     await job_chat_digest(ctx.application)
-    if kv_get("x_post_mode", "approve") == "approve":
+    if kv_get("x_post_mode", "auto") == "approve":
         await update.effective_message.reply_text("draft + chat card are in your inbox ✅ (if nothing arrived, every draft failed a gate — try again in a bit)")
     else:
         await update.effective_message.reply_text("posted ✅" if kv_get("x_post_seq", "0") != before else "x refused it or every draft failed a gate — /xdiag")
@@ -12757,6 +14682,12 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
            f"{kv_get('xfast_reqs:' + str(now.date()), '0')} polls today · "
            f"baseline set: {'yes' if kv_get('xfast_since:tsukionsolana') else 'not yet'}{nl}{nl}"
            + f"<b>last successful post</b>{nl}{kv_get('x_last_ok') or '❌ none since this deploy'}{nl}{nl}"
+           + f"<b>original posts are in</b> <code>{kv_get('x_post_mode', 'auto')}</code> mode"
+           + (f" — every draft goes to your DM as a card and only posts when you press ✅. "
+              f"{len([i for i in _approval_q() if i.get('kind') == 'post'])} card(s) waiting (/inbox). "
+              f"breaking news (EDGAR) skips the cards, which is why filings post and nothing else does. "
+              f"<code>/xmode posts auto</code> lets the scheduled posts fly on their own.{nl}{nl}"
+              if kv_get('x_post_mode', 'auto') == 'approve' else f".{nl}{nl}") +
            f"<b>today's plan</b>{nl}" + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
            f"<b>last X errors</b>{nl}" + (nl.join("• " + e for e in errs[-5:]) or "none recorded") + f"{nl}{nl}"
            f"<b>recent gate rejections</b> (drafts killed before sending){nl}"
@@ -12767,7 +14698,8 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
            f" ├ QTs today: {_bucket_count('xqt')}/{QT_CAP_PER_DAY} · snipers: {len(_midtier())}{nl}"
            f"└ last poll: {kv_get('x_last_poll') or 'no poll data yet'}{nl}{nl}"
            f"<b>tsuki images</b>{nl}"
-           f" ├ xai key: {'set' if XAI_API_KEY else 'MISSING (add XAI_API_KEY)'} · "
+           + (f"└ OFF (owner rule). BOT_IMAGES=on re-enables every image path.{nl}{nl}" if not IMAGES_ENABLED else "")
+           + f" ├ xai key: {'set' if XAI_API_KEY else 'MISSING (add XAI_API_KEY)'} · "
            f"reference: {'found' if _tsuki_ref_path() else 'MISSING (commit assets/tsuki_ref.png)'}{nl}"
            f" ├ drawn today: {kv_get('aiimg:' + str(datetime.now(PROJECT_TZ).date()), '0')}/{X_IMAGES_PER_DAY}{nl}"
            f"└ last: {kv_get('aiimg_last') or 'none yet'}{nl}{nl}"
@@ -12811,7 +14743,9 @@ def main():
         ("case", cmd_case), ("rep", cmd_rep), ("xmode", cmd_xmode),
         ("xqueue", cmd_xqueue), ("inbox", cmd_inbox),
         ("braintest", cmd_braintest), ("chatpost", cmd_chatpost),
-        ("mindshare", cmd_mindshare),
+        ("mindshare", cmd_mindshare), ("sitewatch", cmd_sitewatch),
+        ("insiders", cmd_insiders), ("alerts", cmd_alerts), ("wizard", cmd_wizard),
+        ("board", cmd_board),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
@@ -12829,6 +14763,7 @@ def main():
     app.add_handler(CallbackQueryHandler(tree_callback, pattern=r"^tree:"))
     app.add_handler(CallbackQueryHandler(menu_callback, pattern=r"^menu:"))
     app.add_handler(CallbackQueryHandler(shill_callback, pattern=r"^shill:"))
+    app.add_handler(CallbackQueryHandler(sitewatch_callback, pattern=r"^sw:"))
     # the games-platform launch callback carries NO data (only
     # game_short_name), so it cannot be pattern-matched: it is registered
     # last and ignores anything that is not a game launch.
@@ -12856,7 +14791,12 @@ def main():
     scheduler.add_job(job_daily_campaign,    "cron", hour=7, minute=0, timezone=ny_tz, args=[app])  # 7am New York, auto-handles EST/EDT
     scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
     scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
-    scheduler.add_job(job_edgar_watch,  "interval", minutes=5, args=[app])
+    scheduler.add_job(job_edgar_watch,  "interval", minutes=2, args=[app])
+    scheduler.add_job(job_daily_board, "cron", hour=9, minute=20, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_insider_backfill, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=40), args=[app])
+    # theroaringai.com (and anything added with /sitewatch add), every 30s
+    scheduler.add_job(job_site_watch, "interval", seconds=SITE_WATCH_SEC, args=[app],
+                      max_instances=1, coalesce=True)
     # the google-news gamestop watcher is OFF by default (it was noise).
     # NEWS_WATCH=on brings it back without a code change.
     if os.environ.get("NEWS_WATCH", "off").lower() == "on":
@@ -12871,7 +14811,7 @@ def main():
                       max_instances=1, coalesce=True)
     # the chat's research becomes an X draft twice a day
     scheduler.add_job(job_chat_digest, "cron", hour="10,22", minute=5, timezone=ny_tz, args=[app])
-    scheduler.add_job(job_x_prowl,       "interval", minutes=90, args=[app])
+    scheduler.add_job(job_x_prowl,       "interval", minutes=180, args=[app])
     scheduler.add_job(job_x_scoreboard,  "cron", hour=6, minute=45, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_followers,   "cron", hour=6, minute=30, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_snapshots,   "interval", minutes=60, args=[app])
