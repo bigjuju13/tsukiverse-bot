@@ -3541,6 +3541,36 @@ def _maybe_post_image(slot_key: str):
     return files[idx % len(files)]
 
 
+X_POST_FLOOR = max(1, int(os.environ.get("X_POST_FLOOR", "7") or 7))
+
+
+async def job_x_floor(app):
+    """hourly at :45 from noon ET: if the day is behind the pace toward the
+    floor, write and post one more. the same gates as every other post."""
+    if not X_ENABLED:
+        return
+    now = datetime.now(PROJECT_TZ)
+    if now.hour < 12:
+        return
+    posted = int(kv_get(f"x_posts:{now.date()}", "0") or 0)
+    # pace: the floor spread over 8am-11pm, so at 3pm roughly half should be out
+    pace = X_POST_FLOOR * min(1.0, max(0.0, (now.hour + 1 - 8) / 15))
+    if posted >= X_POST_FLOOR or posted + 0.99 >= pace:
+        return
+    log.info(f"x floor: {posted} posted, pace {pace:.1f}, floor {X_POST_FLOOR} — posting one more")
+    global _CURRENT_POST_KIND
+    _CURRENT_POST_KIND = "floor"
+    for _ in range(2):
+        body = await compose_whisper(tries=3)
+        if body:
+            if await _maybe_approve_post(app, body, "floor post"):
+                return
+            url = post_to_x(body, signoff=False)
+            if url:
+                await raid_alert(app, url, body, "kept the pace")
+                return
+
+
 async def _x_post_whisper(app):
     body = await compose_whisper()
     if not body:
@@ -3588,7 +3618,19 @@ async def job_x_heartbeat(app):
     guard = f"xplan:{now.date()}:{slot[0]}:{slot[1]}"
     gval = kv_get(guard, "")
     if gval and not gval.startswith("a"):
-        return                                  # done (or legacy marker)
+        # this slot is done: look back for an EARLIER slot today that tried and
+        # failed, and give it another go now (v44: retries used to be lost
+        # because the half-hour had moved on by the time the heartbeat came back)
+        for (h, m), kind in sorted(plan.items()):
+            if (h, m) >= slot:
+                break
+            g2 = f"xplan:{now.date()}:{h}:{m}"
+            v2 = kv_get(g2, "")
+            if v2.startswith("a") and int(v2[1:] or 0) < 3:
+                slot, ptype, guard, gval = (h, m), kind, g2, v2
+                break
+        else:
+            return
     attempts = int(gval[1:] or 0) if gval else 0
     if attempts >= 3:
         return
@@ -8351,10 +8393,15 @@ def sw_parse(html_text: str, base: str) -> dict:
     fields = {}
     if "wizardcards" in base:
         fields = wizard_fields(h, base)
-        # strip the ever-changing "online now"/time-ago lines so the text diff is quiet
-        text = "\n".join(ln for ln in text.split("\n")
-                         if not re.search(r"\b(ago|online now|current time|users? browsing|"
-                                          r"time now|all times are)\b", ln, re.I))
+        # the text that is compared is the member table alone: the header's
+        # visitor clock and the footer's who's-online counter never count
+        blk = wizard_profile_block(h)
+        bt = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", blk)
+        bt = re.sub(r"(?i)<br\s*/?>|</(tr|td|th|p|div|li)>", "\n", bt)
+        bt = html.unescape(re.sub(r"<[^>]+>", " ", bt))
+        text = "\n".join(ln for ln in (re.sub(r"[ \t\u00a0]+", " ", x).strip() for x in bt.split("\n"))
+                         if ln and not re.search(r"\b(ago|online now|current time|users? browsing|"
+                                                 r"time now|all times are|last visit)\b", ln, re.I))
     return {
         "title": title,
         "fields": fields,
@@ -8387,9 +8434,9 @@ def sw_compare(old: dict, new: dict) -> list:
     if not old:
         return ch
     of, nf = old.get("fields") or {}, new.get("fields") or {}
-    for k in ("mood", "avatar", "last active", "status"):
+    for k in ("mood", "avatar", "last active"):
         if k in nf and of.get(k, nf[k]) != nf[k]:
-            ico = {"mood": "🧙 MOOD", "avatar": "🖼 AVATAR", "last active": "⏱ last active", "status": "📍 status"}[k]
+            ico = {"mood": "🧙 MOOD", "avatar": "🖼 AVATAR", "last active": "⏱ last active"}[k]
             ch.append(f"{ico}: “{of.get(k) or '(none)'}” → “{nf[k] or '(none)'}”")
     if old.get("title") != new.get("title"):
         ch.append(f"🏷 tab title: “{old.get('title') or '(none)'}” → “{new.get('title') or '(none)'}”")
@@ -8579,6 +8626,23 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
 
     lines = sw_compare(old, facts)
 
+    # v44 debounce: a text or field change has to be seen twice in a row before
+    # it counts. title and build-file changes are rarely noise and alert at once.
+    volatile = [l for l in lines if l.startswith(("📝", "🧙", "🖼", "⏱", "📍", "🔖"))]
+    stable_lines = [l for l in lines if l not in volatile]
+    if volatile:
+        sig = hashlib.md5("\n".join(volatile).encode()).hexdigest()[:12]
+        if st.get("pending_sig") == sig:
+            st.pop("pending_sig", None)                    # seen twice: real
+        else:
+            st["pending_sig"] = sig
+            lines = stable_lines                           # hold the volatile part one check
+            facts["text"] = old.get("text", facts.get("text"))
+            facts["text_hash"] = old.get("text_hash", facts.get("text_hash"))
+            facts["fields"] = old.get("fields", facts.get("fields"))
+            facts["metas"] = old.get("metas", facts.get("metas"))
+    else:
+        st.pop("pending_sig", None)
     # code-only changes (same text, same title, same files) are noisy on some
     # hosts that inject per-request tokens. alert on them only if the new raw
     # hash holds for two checks in a row, and stop if it flips every time.
@@ -8594,6 +8658,25 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
                 st["raw_noisy"] = True
                 log.info(f"sitewatch: {u} source changes every load; raw-hash alerts off")
             facts["raw_hash"] = old.get("raw_hash")   # keep comparing to the stable one
+
+    # text-only alerts: one per 10 minutes per url; a url that keeps producing
+    # them gets its text diff muted for 6 hours (fields/title/files never muted)
+    text_only = bool(lines) and all(l.startswith(("📝", "🧬")) for l in lines)
+    if text_only:
+        if st.get("text_muted_until", 0) > now:
+            lines = []
+        elif now - st.get("text_alerted", 0) < 600:
+            st["text_suppressed"] = st.get("text_suppressed", 0) + 1
+            lines = []
+            if st["text_suppressed"] >= 3:
+                st["text_muted_until"] = now + 6 * 3600
+                st["text_suppressed"] = 0
+                await _sw_send(app, f"🔇 {u} keeps changing its visible text on every load, so text "
+                                    f"alerts for it are muted for 6 hours. fields, title and build "
+                                    f"files still alert.\n{_sw_stamp(now)}", u)
+        else:
+            st["text_alerted"] = now
+            st["text_suppressed"] = 0
 
     # build files: re-hash the scripts and css every 5 minutes (and on any
     # change), so a redeploy that keeps the same file names still shows up
@@ -8834,10 +8917,27 @@ _WIZ_CHROME = re.compile(r"(images/(english|smilies|star|icons?|bbcode|buttons?)
                          r"pixel|blank\.gif|\.cur$|rss|xmb)", re.I)
 
 
+def wizard_profile_block(h: str) -> str:
+    """the member table only. XMB prints the visitor's own 'Last visit' and the
+    board clock in the page header, and those change on every load; the rows
+    about Mr Wizard live in one table. find the innermost table that has a
+    Mood row (or a Registered row) and work from that alone."""
+    best = None
+    for m in re.finditer(r"(?is)<table[^>]*>(?:(?!<table).)*?</table>", h):
+        blk = m.group(0)
+        if re.search(r"(?i)>\s*(?:<[^>]+>\s*)*Mood\s*:?", blk) or \
+           re.search(r"(?i)>\s*(?:<[^>]+>\s*)*(?:Registered|Last\s*active)\s*:?", blk):
+            if best is None or len(blk) < len(best):
+                best = blk
+    return best or h
+
+
 def wizard_fields(h: str, base: str) -> dict:
     f = {}
-    for key, rx in (("last active", r"Last\s*(?:Active|Visit|Online|Login)"),
-                    ("mood", r"Mood"), ("status", r"(?:Current\s*)?Status"),
+    whole = h
+    h = wizard_profile_block(h)
+    for key, rx in (("last active", r"Last\s*Active"),
+                    ("mood", r"Mood"),
                     ("registered", r"(?:Registered|Member\s*Since|Joined)"),
                     ("name", r"(?:Real\s*)?Name"), ("posts", r"Posts?"),
                     ("location", r"Location"), ("signature", r"Signature")):
@@ -8850,11 +8950,14 @@ def wizard_fields(h: str, base: str) -> dict:
     if m:
         av = m.group(1)
     else:
-        for src in re.findall(r"<img[^>]+src\s*=\s*[\"']([^\"']+)[\"']", h, re.I):
-            if _WIZ_CHROME.search(src):
-                continue
-            if "avatar" in src.lower() or src.lower().startswith("http") and "wizardcards" not in src.lower():
-                av = src
+        for scope in (h, whole):
+            for src in re.findall(r"<img[^>]+src\s*=\s*[\"']([^\"']+)[\"']", scope, re.I):
+                if _WIZ_CHROME.search(src):
+                    continue
+                if "avatar" in src.lower() or src.lower().startswith("http") and "wizardcards" not in src.lower():
+                    av = src
+                    break
+            if av:
                 break
     f["avatar"] = urllib.parse.urljoin(base, av) if av else ""
     return f
@@ -8887,7 +8990,7 @@ _WIZ_LABEL = {"mood": "mood", "avatar": "avatar", "last active": "last active",
 def wizard_changes(old: dict, new: dict) -> list:
     """[(key, before, after)] for the fields worth telling anyone about."""
     out = []
-    for k in ("mood", "avatar", "last active", "status", "signature", "location"):
+    for k in ("mood", "avatar", "last active", "signature", "location"):
         if k in new and old.get(k, new[k]) != new[k]:
             out.append((k, old.get(k, ""), new[k]))
     return out
@@ -9055,6 +9158,18 @@ def higgsfield_prompt_for(changes: list, new: dict) -> str:
 async def wizard_announce(app, changes: list, new: dict):
     """X post (with the card and the profile link), then one group message."""
     if not changes:
+        return
+    try:
+        last = json.loads(kv_get("wizard_last_announce", "{}") or "{}")
+    except Exception:
+        last = {}
+    if last.get("t") and time.time() - float(last["t"]) < 1800:
+        log.info("wizard: public post skipped, one went out under 30 minutes ago")
+        return
+    announced = {(k, str(b)) for k, a, b in (last.get("changes") or [])}
+    changes = [c for c in changes if (c[0], str(c[2])) not in announced]
+    if not changes:
+        log.info("wizard: nothing new to announce (same values as the last post)")
         return
     avatar_path = None
     if IMAGES_ENABLED:
@@ -11538,7 +11653,7 @@ async def compose_whisper(mood: str | None = None, tries: int = 2,
             kv_set("mood_history", json.dumps((mh + [mood])[-12:]))
         if mood == "pass":
             posted = int(kv_get(f"x_posts:{datetime.now(PROJECT_TZ).date()}", "0") or 0)
-            if posted >= 5:
+            if posted >= X_POST_FLOOR:
                 return None                 # the director chose silence, floor met
             mood, angle = whisper_mood(), ""   # floor not met: post anyway
     kv_set("whisper_mood_now", mood or "")
@@ -14688,7 +14803,8 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
               f"breaking news (EDGAR) skips the cards, which is why filings post and nothing else does. "
               f"<code>/xmode posts auto</code> lets the scheduled posts fly on their own.{nl}{nl}"
               if kv_get('x_post_mode', 'auto') == 'approve' else f".{nl}{nl}") +
-           f"<b>today's plan</b>{nl}" + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
+           f"<b>today's plan</b> (floor {X_POST_FLOOR}, posted {kv_get('x_posts:' + str(now.date()), '0')}){nl}"
+           + (nl.join(plan_lines) or "empty") + f"{nl}{nl}"
            f"<b>last X errors</b>{nl}" + (nl.join("• " + e for e in errs[-5:]) or "none recorded") + f"{nl}{nl}"
            f"<b>recent gate rejections</b> (drafts killed before sending){nl}"
            + (nl.join("• " + g for g in gates) or "none since boot") + f"{nl}{nl}"
@@ -14793,6 +14909,7 @@ def main():
     scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
     scheduler.add_job(job_edgar_watch,  "interval", minutes=2, args=[app])
     scheduler.add_job(job_daily_board, "cron", hour=9, minute=20, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_x_floor, "cron", minute=45, timezone=ny_tz, args=[app])
     scheduler.add_job(job_insider_backfill, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=40), args=[app])
     # theroaringai.com (and anything added with /sitewatch add), every 30s
     scheduler.add_job(job_site_watch, "interval", seconds=SITE_WATCH_SEC, args=[app],
