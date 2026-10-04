@@ -8437,7 +8437,11 @@ def sw_compare(old: dict, new: dict) -> list:
     for k in ("mood", "avatar", "last active"):
         if k in nf and of.get(k, nf[k]) != nf[k]:
             ico = {"mood": "🧙 MOOD", "avatar": "🖼 AVATAR", "last active": "⏱ last active"}[k]
-            ch.append(f"{ico}: “{of.get(k) or '(none)'}” → “{nf[k] or '(none)'}”")
+            a_, b_ = of.get(k) or "(none)", nf[k] or "(none)"
+            if k == "avatar":           # the file name says it; the full url is on the profile
+                a_ = a_.rsplit("/", 1)[-1] if a_ != "(none)" else a_
+                b_ = b_.rsplit("/", 1)[-1] if b_ != "(none)" else b_
+            ch.append(f"{ico}: “{a_}” → “{b_}”")
     if old.get("title") != new.get("title"):
         ch.append(f"🏷 tab title: “{old.get('title') or '(none)'}” → “{new.get('title') or '(none)'}”")
     om, nm = old.get("metas") or {}, new.get("metas") or {}
@@ -8522,6 +8526,68 @@ def _sw_alert_chat() -> int:
     return int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
 
 
+_SW_ROW_LABELS = (
+    ("🧙 MOOD:", "mood"), ("🖼 AVATAR:", "avatar"), ("⏱ last active:", "last active"),
+    ("🏷 tab title:", "title"), ("📝 visible text changed", "text"), ("🧱", "build"),
+    ("🧬", "source"), ("🧾", "headers"), ("↪️", "redirect"), ("🔖", "meta"), ("🌐", "dns"),
+    ("🟢", "status"), ("🔴", "status"), ("🛡", "status"), ("⚪", "status"),
+)
+
+
+def _sw_pretty(text: str) -> str:
+    """the plain alert -> one clean HTML message: heading, time, aligned rows.
+    the words are kept exactly (people search their DMs for them), only the
+    layout changes."""
+    esc = lambda x: html.escape(x, quote=False)
+    lines = [ln for ln in (text or "").split("\n")]
+    if not lines:
+        return esc(text)
+    head = lines[0]
+    rest = lines[1:]
+    # second line is the url, third the stamp, when the alert has them
+    url, stamp, body = "", "", []
+    for ln in rest:
+        if not url and ln.startswith(("http://", "https://")):
+            url = ln
+        elif not stamp and " ET · " in ln:
+            stamp = ln
+        else:
+            body.append(ln)
+    out = [f"<b>{esc(head)}</b>"]
+    if url:
+        host = urllib.parse.urlsplit(url).netloc or url
+        out.append(f"<i>{esc(host)}</i>")
+    if stamp:
+        out.append(f"🕒 <i>{esc(stamp)}</i>")
+    out.append("")
+    for ln in body:
+        if not ln.strip():
+            if out and out[-1] != "":
+                out.append("")
+            continue
+        if ln.startswith(("➕", "➖", "   ")):
+            out.append(f"<code>  {esc(ln.strip())}</code>")
+            continue
+        label = None
+        for pfx, lab in _SW_ROW_LABELS:
+            if ln.startswith(pfx):
+                label = lab
+                break
+        if label and ":" in ln:
+            cut = ln.find(": “")
+            if cut < 0:
+                cut = ln.find(": ")
+            if cut < 0:
+                cut = ln.find(":")
+            k, v = ln[:cut], ln[cut + 1:]
+            out.append(f"<b>{esc(k.strip())}</b>  {esc(v.strip())}")
+        else:
+            out.append(esc(ln))
+    while out and out[-1] == "":
+        out.pop()
+    return "\n".join(out)
+
+
 async def _sw_send(app, text: str, url: str = ""):
     chat = _sw_alert_chat()
     if not chat:
@@ -8535,11 +8601,17 @@ async def _sw_send(app, text: str, url: str = ""):
         rows.append([InlineKeyboardButton("🗄 wayback copies",
                                           url="https://web.archive.org/web/*/" + url)])
     try:
-        await app.bot.send_message(chat_id=chat, text=text[:4000],
+        await app.bot.send_message(chat_id=chat, text=_sw_pretty(text)[:4000], parse_mode="HTML",
                                    reply_markup=InlineKeyboardMarkup(rows),
                                    disable_web_page_preview=True)
     except Exception as e:
-        log.warning(f"sitewatch alert failed: {e}")
+        log.warning(f"sitewatch alert (html) failed: {e}; sending plain")
+        try:
+            await app.bot.send_message(chat_id=chat, text=text[:4000],
+                                       reply_markup=InlineKeyboardMarkup(rows),
+                                       disable_web_page_preview=True)
+        except Exception as e2:
+            log.warning(f"sitewatch alert failed: {e2}")
 
 
 async def sitewatch_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -8557,8 +8629,8 @@ async def sitewatch_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             await q.answer("that alert has expired", show_alert=True)
             return
         try:
-            await ctx.bot.send_message(chat_id=TARGET_CHAT_ID, text=a["text"][:4000],
-                                       disable_web_page_preview=True)
+            await ctx.bot.send_message(chat_id=TARGET_CHAT_ID, text=_sw_pretty(a["text"])[:4000],
+                                       parse_mode="HTML", disable_web_page_preview=True)
             await q.answer("posted to the chat")
         except Exception as e:
             await q.answer(f"couldn't post: {str(e)[:60]}", show_alert=True)
@@ -8625,6 +8697,17 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
         return sent
 
     lines = sw_compare(old, facts)
+    is_wizard = "wizardcards" in u
+    if is_wizard:
+        # v45: the profile alerts on mood, avatar and last active. nothing else
+        # on that page is a change anyone wants to hear about.
+        lines = [l for l in lines if l.startswith(("🧙", "🖼", "⏱"))]
+        facts["title"] = old.get("title", facts.get("title"))
+        facts["metas"] = old.get("metas", facts.get("metas"))
+        facts["text"] = old.get("text", facts.get("text"))
+        facts["text_hash"] = old.get("text_hash", facts.get("text_hash"))
+        facts["raw_hash"] = old.get("raw_hash", facts.get("raw_hash"))
+        facts["assets"] = old.get("assets", facts.get("assets"))
 
     # v44 debounce: a text or field change has to be seen twice in a row before
     # it counts. title and build-file changes are rarely noise and alert at once.
@@ -8646,7 +8729,7 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
     # code-only changes (same text, same title, same files) are noisy on some
     # hosts that inject per-request tokens. alert on them only if the new raw
     # hash holds for two checks in a row, and stop if it flips every time.
-    if not lines and old.get("raw_hash") != facts.get("raw_hash") and not st.get("raw_noisy"):
+    if not is_wizard and not lines and old.get("raw_hash") != facts.get("raw_hash") and not st.get("raw_noisy"):
         if st.get("raw_pending") == facts.get("raw_hash"):
             lines.append("🧬 the page source changed (same visible text and title)")
             st.pop("raw_pending", None)
@@ -8680,7 +8763,7 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
 
     # build files: re-hash the scripts and css every 5 minutes (and on any
     # change), so a redeploy that keeps the same file names still shows up
-    if force_assets or lines or now - st.get("assets_checked", 0) > 300:
+    if not is_wizard and (force_assets or lines or now - st.get("assets_checked", 0) > 300):
         hashes = await _sw_asset_hashes(client, facts.get("assets") or [])
         oldh = st.get("asset_hashes") or {}
         changed_files = [a for a, h in hashes.items() if a in oldh and oldh[a] != h]
@@ -8699,7 +8782,7 @@ async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:
         head = ("🚨 THE ROARING AI SITE CHANGED" if "theroaringai" in u else
                 "🧙 THE WIZARD PROFILE CHANGED" if "wizardcards" in u else "🚨 SITE CHANGED")
         msg = f"{head}\n{u}\n{_sw_stamp(now)}\n\n" + "\n".join(lines)
-        if facts.get("title"):
+        if facts.get("title") and not is_wizard:
             msg += f"\n\nnow: “{facts['title']}”"
         await _sw_send(app, msg, u)
         sent.append(msg)
@@ -8740,11 +8823,14 @@ async def sw_check_dns(app, client, host: str) -> list:
         if v is None:
             new[t] = old.get(t)
             continue
-        if t in old and old[t] is not None and old[t] != v:
-            lines.append(f"{t}: {', '.join(old[t]) or '(none)'} → {', '.join(v) or '(none)'}")
+        # v45: A/AAAA records at a CDN rotate between answers; TXT and MX move
+        # for mail reasons. only the nameservers or the CNAME moving means the
+        # site itself moved, so only those alert. everything is still recorded.
+        if t in ("NS", "CNAME") and t in old and old[t] is not None and old[t] != v:
+            lines.append(f"🌐 {t}: {', '.join(old[t]) or '(none)'} → {', '.join(v) or '(none)'}")
     kv_set(key, json.dumps(new))
     if lines and old:
-        msg = f"🌐 DNS changed for {host}\n{_sw_stamp()}\n\n" + "\n".join(l[:300] for l in lines)
+        msg = f"🌐 DNS MOVED for {host}\n{_sw_stamp()}\n\n" + "\n".join(l[:300] for l in lines)
         await _sw_send(app, msg, "https://" + host + "/")
         return [msg]
     return []
@@ -8794,12 +8880,25 @@ async def sw_check_certs(app, client, apex: str) -> list:
     if first or not fresh:
         return []
     names = sorted({n.lower().lstrip("*.") for c in fresh for n in c["names"]})
+    # v45: a renewal for names that already had a certificate is routine and
+    # silent. only a hostname that has never had one before is news.
+    nkey = "sw_cert_names:" + apex
+    try:
+        had = set(json.loads(kv_get(nkey, "[]")))
+    except Exception:
+        had = set()
+    if not had:
+        had = {n.lower().lstrip("*.") for c in certs for n in c["names"] if c["id"] in seen - {c2["id"] for c2 in fresh}}
+    brand_new = [n for n in names if n not in had]
+    kv_set(nkey, json.dumps(sorted(had | set(names))[-500:]))
+    if not brand_new:
+        return []
     known = {_sw_host(u) for u in _sw_urls()}
-    new_hosts = [n for n in names if n not in known and n.endswith(apex)]
-    msg = (f"🔐 NEW CERTIFICATE for {apex}\n{_sw_stamp()}\n\n"
-           f"covers: {', '.join(names[:12])}\n"
+    new_hosts = [n for n in brand_new if n not in known and n.endswith(apex)]
+    msg = (f"🔐 NEW HOSTNAME for {apex}\n{_sw_stamp()}\n\n"
+           f"first certificate ever seen for: {', '.join(brand_new[:12])}\n"
            f"issued: {fresh[0].get('not_before', '?')}\n\n"
-           "a new cert usually means something is about to go live.")
+           "a certificate for a new name usually means something is about to go live there.")
     if new_hosts:
         urls = _sw_urls()
         for h in new_hosts[:4]:
@@ -8913,6 +9012,7 @@ def _wiz_row(h: str, label_rx: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+_WIZ_AD = re.compile(r"(doubleclick|googlesyndication|adserv|/ads?/|banner|sponsor|pixel|track|beacon|counter)", re.I)
 _WIZ_CHROME = re.compile(r"(images/(english|smilies|star|icons?|bbcode|buttons?)|logo|spacer|"
                          r"pixel|blank\.gif|\.cur$|rss|xmb)", re.I)
 
@@ -8950,16 +9050,17 @@ def wizard_fields(h: str, base: str) -> dict:
     if m:
         av = m.group(1)
     else:
-        for scope in (h, whole):
-            for src in re.findall(r"<img[^>]+src\s*=\s*[\"']([^\"']+)[\"']", scope, re.I):
-                if _WIZ_CHROME.search(src):
-                    continue
-                if "avatar" in src.lower() or src.lower().startswith("http") and "wizardcards" not in src.lower():
-                    av = src
-                    break
-            if av:
-                break
-    f["avatar"] = urllib.parse.urljoin(base, av) if av else ""
+        # inside the member table only. no whole-page fallback: the first
+        # external image on a forum page is an advert, and adverts rotate.
+        for src in re.findall(r"<img[^>]+src\s*=\s*[\"']([^\"']+)[\"']", h, re.I):
+            if _WIZ_CHROME.search(src) or _WIZ_AD.search(src):
+                continue
+            av = src
+            break
+    if av:
+        av = urllib.parse.urljoin(base, av)
+        av = urllib.parse.urlunsplit(urllib.parse.urlsplit(av)[:3] + ("", ""))   # drop ?dateline=… cache-busters
+    f["avatar"] = av or ""
     return f
 
 
@@ -9030,13 +9131,16 @@ def wizard_tg_html(changes: list, new: dict, x_url: str | None) -> str:
         ico = {"mood": "🧙", "avatar": "🖼", "last active": "⏱", "status": "📍",
                "signature": "✍️", "location": "📌"}.get(k, "▪️")
         if k == "avatar":
-            rows.append(f"{ico} <b>avatar changed</b>" + ("" if b else " (removed)"))
+            rows.append(f"{ico} <b>avatar</b>  changed" + ("" if b else " (removed)"))
+        elif k == "last active":
+            rows.append(f"{ico} <b>last active</b>  {html.escape(_wiz_short(b, 80))}")
         else:
-            rows.append(f"{ico} <b>{html.escape(_WIZ_LABEL[k])}</b>: “{html.escape(_wiz_short(a, 80))}” "
+            rows.append(f"{ico} <b>{html.escape(_WIZ_LABEL[k])}</b>  “{html.escape(_wiz_short(a, 80))}” "
                         f"→ “{html.escape(_wiz_short(b, 80))}”")
-    body = ("🚨 <b>THE WIZARD PROFILE CHANGED</b>\n" + f"<i>{html.escape(when)}</i>\n\n" + "\n".join(rows))
-    if new.get("last active"):
-        body += f"\n\n⏱ last active: {html.escape(new['last active'])}"
+    body = ("🧙 <b>THE WIZARD PROFILE CHANGED</b>\n<i>wizardcards.com · Mr. Wizard</i>\n"
+            f"🕒 <i>{html.escape(when)}</i>\n\n" + "\n".join(rows))
+    if new.get("last active") and not any(k == "last active" for k, _, _ in changes):
+        body += f"\n⏱ <b>last active</b>  {html.escape(new['last active'])}"
     body += ("\n\n<i>Keith Gill played Wizard as Mr. Wizard. the community reads this profile as his. "
              "a read, not a confirmation.</i>")
     if x_url:
