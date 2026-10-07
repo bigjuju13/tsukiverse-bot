@@ -33,6 +33,7 @@ import random
 import re
 import html
 import sqlite3
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -1021,6 +1022,7 @@ it called when he'd return AND what he'd say. nobody has explained it.
     """📊 numbers, whenever you want them
 
 ▪️ /price — TSUKI + RWA, live
+▪️ /gme — $GME close, volume, short volume
 ▪️ /mc — market caps and the road to 25M
 ▪️ /silence — how long the accounts have been quiet
 ▪️ /misses — yes, we keep those too
@@ -1175,6 +1177,19 @@ NEGATIVE_KEYWORDS = [
 class PingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path, _, query = self.path.partition("?")
+        if path == "/api/site.json":
+            try:
+                body = json.dumps(_site_feed()).encode("utf-8")
+                self.send_response(200)
+            except Exception as e:
+                body = json.dumps({"error": str(e)[:120]}).encode("utf-8")
+                self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Cache-Control", "public, max-age=60")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if path == "/game":
             fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "game.html")
             if os.path.isfile(fp):
@@ -4782,6 +4797,8 @@ async def menu_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await cmd_silence(update, ctx)
     elif dest == "price":
         await cmd_price(update, ctx)
+    elif dest == "gme":
+        await cmd_gme(update, ctx)
     elif dest == "links":
         await cmd_links(update, ctx)
     elif dest == "rk":
@@ -9568,6 +9585,10 @@ _EDGAR_FORMS = {
     "10-Q": "quarterly report",
     "10-K": "annual report",
     "10-K/A": "amended annual report",
+    "SCHEDULE 13D": "a 5%+ holder's ownership report",
+    "SCHEDULE 13D/A": "a 5%+ holder updated their stake",
+    "SCHEDULE 13G": "a passive holder passed 5%",
+    "SCHEDULE 13G/A": "passive holder update",
     "SC 13D": "an activist holder passed 5%",
     "SC 13D/A": "activist holder update",
     "SC 13G": "a passive holder passed 5%",
@@ -9622,8 +9643,9 @@ def _edgar_accepted_et(f: dict) -> str:
 
 
 def _x(tag: str, blob: str) -> str:
-    m = re.search(rf"<{tag}>\s*(?:<value>)?\s*([^<]*?)\s*(?:</value>)?\s*</{tag}>", blob, re.S)
-    return (m.group(1) if m else "").strip()
+    # v46: <tag><value>x</value><footnoteId/></tag> used to come back empty,
+    # so every footnoted (weighted-average) price was read as $0
+    return _xv(tag, blob)
 
 
 def _edgar_form4_parse(xml: str) -> dict | None:
@@ -9635,9 +9657,7 @@ def _edgar_form4_parse(xml: str) -> dict | None:
     ob = own.group(1) if own else ""
     name = _x("rptOwnerName", ob)
     # EDGAR gives "COHEN RYAN" / "Cheng Lawrence": put it the right way round
-    parts = name.split()
-    if name.isupper() and len(parts) >= 2:
-        name = " ".join(w.capitalize() for w in parts[1:] + parts[:1])
+    name = _edgar_person(name)
     roles = []
     if _x("isDirector", ob) in ("1", "true"): roles.append("director")
     if _x("isOfficer", ob) in ("1", "true"): roles.append(_x("officerTitle", ob).lower() or "officer")
@@ -9787,10 +9807,10 @@ def _ledger_text(html_mode: bool = True) -> str:
     out = [f"<b>$GME insider buying since 1 Sep 2026</b>" if html_mode else "$GME insider buying since 1 Sep 2026", ""]
     for r in rows:
         line = (f"▪️ {r['date'][5:].replace('-', '/')} · {esc(r['name'])}: "
-                f"{_shares(r['buy_shares'])} @ ${r['buy_price']:.2f} ({_money(r['buy_value'])})")
+                f"{_shares(r['buy_shares'])} @ {_px_str(r.get('buy_price_raw')) or '$%.2f' % r['buy_price']} ({_money(r['buy_value'])})")
         if r.get("link") and html_mode:
             line = f'▪️ {r["date"][5:].replace("-", "/")} · <a href="{esc(r["link"])}">{esc(r["name"])}</a>: ' \
-                   f'{_shares(r["buy_shares"])} @ ${r["buy_price"]:.2f} ({_money(r["buy_value"])})'
+                   f'{_shares(r["buy_shares"])} @ {_px_str(r.get("buy_price_raw")) or "$%.2f" % r["buy_price"]} ({_money(r["buy_value"])})'
         out.append(line)
     out += ["", f"{n} insiders · {_shares(sh)} shares · {_money(val)}",
             "every line is a Form 4 on EDGAR. tap a name to read it."]
@@ -14930,6 +14950,1971 @@ async def cmd_xdiag(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         txt[:4000], parse_mode="HTML", disable_web_page_preview=True)
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v46 · THE GME DESK
+#  Everything here runs WITHOUT Claude: SEC filings are read straight from
+#  their XML, prices come from a market data feed, and every number printed is
+#  copied from its source. Decks are drawn with Pillow in the Juju layout
+#  (light blue header, light red page, Tsuki red), so Railway needs no browser.
+# ══════════════════════════════════════════════════════════════════════════════
+DECKS_ENABLED = os.environ.get("BOT_DECKS", "on").lower() != "off"
+GME_DESK = os.environ.get("GME_DESK", "on").lower() != "off"
+GME_CHATTER = os.environ.get("GME_CHATTER", "on").lower() != "off"
+GME_CHATTER_READS = int(os.environ.get("GME_CHATTER_READS", "25") or 25)
+_V46_ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+_DECK_TMP = os.path.join(tempfile.gettempdir(), "tsuki-decks")
+
+# ── numbers exactly as filed ─────────────────────────────────────────────────
+def _px_str(raw) -> str:
+    """'24.4061' -> '$24.4061', '24.2600' -> '$24.26', '25' -> '$25.00'.
+    The filed digits are kept; only trailing zeros past the cents go."""
+    s = str(raw or "").strip().replace(",", "").lstrip("$")
+    if not re.fullmatch(r"\d+(\.\d+)?", s):
+        return ""
+    whole, _, frac = s.partition(".")
+    frac = (frac.rstrip("0") + "00")[:max(2, len(frac.rstrip("0")))]
+    return f"${int(whole):,}.{frac}"
+
+
+def _num_str(raw) -> str:
+    s = str(raw or "").strip().replace(",", "")
+    try:
+        v = float(s)
+    except ValueError:
+        return ""
+    return f"{v:,.0f}" if abs(v - round(v)) < 1e-9 else f"{v:,.2f}"
+
+
+def _edgar_person(raw: str, surname_first: bool = True) -> str:
+    """EDGAR writes people surname first: 'Robinson Mark Haymond',
+    'COHEN RYAN'. -> 'Mark Robinson', 'Ryan Cohen'. Companies stay as they are."""
+    n = " ".join((raw or "").split())
+    if not n:
+        return ""
+    if re.search(r"\b(LLC|L\.?P\.?|INC\.?|CORP\.?|LTD|TRUST|FUND|PARTNERS|HOLDINGS|CAPITAL|GROUP|N\.A\.)\b", n, re.I):
+        return n
+    parts = n.split()
+    fix = lambda w: w.title() if w.isupper() or w.islower() else w
+    if len(parts) == 1:
+        return fix(parts[0])
+    if not surname_first:                         # Form 144 writes "MARK ROBINSON"
+        return f"{fix(parts[0])} {fix(parts[-1])}"
+    last, first = parts[0], parts[1]
+    return f"{fix(first)} {fix(last)}"
+
+
+def _xv(tag: str, blob: str) -> str:
+    """value of <tag>, whether it is <tag>x</tag> or <tag><value>x</value>
+    <footnoteId/></tag>. (the v45 regex missed the footnote case, read the
+    price as 0 and blended it into a price nobody paid.)"""
+    m = re.search(rf"<{tag}\b[^>]*>(.*?)</{tag}>", blob or "", re.S)
+    if not m:
+        return ""
+    inner = m.group(1)
+    v = re.search(r"<value>\s*(.*?)\s*</value>", inner, re.S)
+    out = v.group(1) if v else re.sub(r"<[^>]+>", " ", inner)
+    return html.unescape(" ".join(out.split()))
+
+
+_F4_CODES = {"P": "open-market buy", "S": "open-market sale", "F": "shares withheld for tax",
+             "A": "grant or award", "M": "option exercise", "G": "gift", "C": "conversion",
+             "D": "returned to the company", "J": "other", "X": "option exercise", "W": "inheritance"}
+
+
+def _form4_rows(xml: str) -> dict | None:
+    """A Form 4, line by line, every figure as filed."""
+    if not xml or "<ownershipDocument" not in xml:
+        return None
+    own = re.search(r"<reportingOwner>(.*?)</reportingOwner>", xml, re.S)
+    ob = own.group(1) if own else ""
+    notes = {m.group(1): " ".join(html.unescape(m.group(2)).split())
+             for m in re.finditer(r'<footnote id="(F\d+)">(.*?)</footnote>', xml, re.S)}
+    roles = []
+    if _xv("isDirector", ob) in ("1", "true"): roles.append("Director")
+    if _xv("isOfficer", ob) in ("1", "true"): roles.append(_xv("officerTitle", ob) or "Officer")
+    if _xv("isTenPercentOwner", ob) in ("1", "true"): roles.append("10% owner")
+    rows = []
+    for t in re.findall(r"<nonDerivativeTransaction>(.*?)</nonDerivativeTransaction>", xml, re.S):
+        ids = re.findall(r'footnoteId id="(F\d+)"', t)
+        fn = " ".join(notes.get(i, "") for i in ids)
+        px_raw = _xv("transactionPricePerShare", t)
+        rng = re.search(r"rang\w* from \$?([\d,.]+) to \$?([\d,.]+)", fn)
+        code = _xv("transactionCode", t)
+        rows.append({
+            "date": _xv("transactionDate", t), "code": code,
+            "ad": _xv("transactionAcquiredDisposedCode", t),
+            "shares_raw": _xv("transactionShares", t), "price_raw": px_raw,
+            "after_raw": _xv("sharesOwnedFollowingTransaction", t),
+            "direct": _xv("directOrIndirectOwnership", t) == "D",
+            "weighted": "weighted average" in fn.lower(),
+            "range": (_px_str(rng.group(1)), _px_str(rng.group(2))) if rng else None,
+            "plan": "10b5-1" in fn,
+            "tax": code == "F" or "withholding tax" in fn.lower() or "to cover" in fn.lower()
+                   and "tax" in fn.lower(),
+            "notes": fn})
+    return {"name": _edgar_person(_xv("rptOwnerName", ob)), "roles": roles, "rows": rows,
+            "period": _xv("periodOfReport", xml), "plan_box": _xv("aff10b5One", xml) in ("1", "true")}
+
+
+def _f4_float(s) -> float:
+    try:
+        return float(str(s).replace(",", ""))
+    except ValueError:
+        return 0.0
+
+
+def _day_words(iso: str, year: bool = False) -> str:
+    """'2026-10-05' or '10/05/2026' -> '5 Oct' ('5 Oct 2026' with year=True)."""
+    fmt = "%-d %b %Y" if year else "%-d %b"
+    for pat in ("%Y-%m-%d", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(iso.strip()[:10], pat).strftime(fmt)
+        except Exception:
+            continue
+    return iso
+
+
+def _f4_line(r: dict) -> str:
+    """one transaction in plain words, numbers exactly as filed."""
+    sh = _num_str(r["shares_raw"])
+    px = _px_str(r["price_raw"])
+    verb = {"P": "bought", "S": "sold", "F": "had withheld for tax", "A": "was granted",
+            "M": "exercised", "G": "gifted"}.get(r["code"], "reported")
+    s = f"{verb} {sh} shares"
+    if px and _f4_float(r["price_raw"]) > 0:
+        s += f" at {px}" + (" (weighted avg" + (f", range {r['range'][0]} to {r['range'][1]})" if r["range"] else ")")
+                            if r["weighted"] else "")
+    s += f" on {_day_words(r['date'])}"
+    if r["code"] == "S" and r["tax"]:
+        s += ", to cover taxes on vesting stock (not a discretionary sale)"
+    elif r["plan"]:
+        s += ", under a pre-scheduled 10b5-1 plan"
+    elif r["code"] == "P":
+        s += ", open market"
+    return s
+
+
+# ── Form 144 · Schedule 13D/A ────────────────────────────────────────────────
+def _parse_144(xml: str) -> dict | None:
+    if not xml or "<submissionType>144" not in xml:
+        return None
+    past = []
+    for b in re.findall(r"<securitiesSoldInPast3Months>(.*?)</securitiesSoldInPast3Months>", xml, re.S):
+        past.append({"date": _xv("saleDate", b), "shares_raw": _xv("amountOfSecuritiesSold", b),
+                     "proceeds_raw": _xv("grossProceeds", b), "who": _xv("name", b)})
+    return {"name": _edgar_person(_xv("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold", xml), surname_first=False),
+            "relationship": ", ".join(re.findall(r"<relationshipToIssuer>(.*?)</relationshipToIssuer>", xml)),
+            "shares_raw": _xv("noOfUnitsSold", xml), "value_raw": _xv("aggregateMarketValue", xml),
+            "sale_date": _xv("approxSaleDate", xml), "nature": _xv("natureOfAcquisitionTransaction", xml),
+            "plan_date": _xv("planAdoptionDate", xml), "past": past}
+
+
+def _parse_13d(xml: str) -> dict | None:
+    if not xml or "schedule13D" not in xml and "SCHEDULE 13D" not in xml:
+        return None
+    def first_sent(s):
+        t = re.sub(r"^Item [^:]+:\s*", "", " ".join((s or "").split()))
+        for m in re.finditer(r"\.\s+(?=[A-Z])", t):
+            prev = t[:m.start()].split()[-1] if t[:m.start()].split() else ""
+            if prev.rstrip(".") in ("Mr", "Mrs", "Ms", "Dr", "No", "Inc", "Corp", "Co", "Jr", "Sr", "St", "U.S", "L.P"):
+                continue
+            return t[:m.start() + 1]
+        return t
+    return {"name": _edgar_person(_xv("reportingPersonName", xml)),
+            "amendment": _xv("amendmentNo", xml), "event": _xv("dateOfEvent", xml),
+            "owned_raw": _xv("aggregateAmountOwned", xml), "pct_raw": _xv("percentOfClass", xml),
+            "funds": " ".join(re.sub(r"^Item [^:]+:\s*", "", _xv("fundsSource", xml)).split()),
+            "holdings": " ".join(re.sub(r"^Item [^:]+:\s*", "", _xv("percentageOfClassSecurities", xml)).split()),
+            "tx": first_sent(_xv("transactionDesc", xml)),
+            "tx_full": " ".join(re.sub(r"^Item [^:]+:\s*", "", _xv("transactionDesc", xml)).split())}
+
+
+async def _edgar_raw(client, f: dict) -> str:
+    """the filing's own XML (EDGAR's primaryDocument points at the xsl-rendered
+    copy; the raw file sits one folder up)."""
+    doc = f.get("doc") or ""
+    if not doc:
+        return ""
+    nodash = f["acc"].replace("-", "")
+    raw = re.sub(r"^xsl[^/]+/", "", doc)
+    if not raw.endswith(".xml"):
+        return ""
+    try:
+        r = await client.get(f"https://www.sec.gov/Archives/edgar/data/{int(EDGAR_CIK)}/{nodash}/{raw}",
+                             headers={"User-Agent": EDGAR_UA})
+        return r.text if r.status_code == 200 else ""
+    except Exception as e:
+        log.warning(f"edgar raw fetch: {e}")
+        return ""
+
+
+# every number in a model's summary must appear in the filing itself, written
+# the same way. anything else (a computed price, a rounded total) is refused.
+_NUM_RX = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
+
+
+def _grounded(summary: str, source: str) -> bool:
+    src = re.sub(r"\s+", " ", source or "")
+    src_n = src.replace(",", "")
+    for tok in _NUM_RX.findall(summary or ""):
+        t = tok.rstrip("%").lstrip("$").rstrip(".,")
+        if not t or (len(t) <= 2 and "." not in t):
+            continue                              # "1", "2", "10": item numbers and counts
+        if t in src or t.replace(",", "") in src_n:
+            continue
+        return False
+    return True
+
+
+# ── the deck renderer (Pillow) ───────────────────────────────────────────────
+# the Juju deck palette, exactly: light blue header, pale blue page, Tsuki red
+_DK = {"bg": (216, 233, 240), "hd": (157, 200, 221), "card": (255, 255, 255), "ink": (17, 17, 17),
+       "mute": (70, 78, 84), "red": (211, 44, 52), "line": (232, 238, 241), "pill": (214, 226, 234),
+       "foot": (0, 0, 0), "white": (255, 255, 255), "sub": (27, 27, 27), "bar": (157, 200, 221)}
+_FONT_CACHE: dict = {}
+
+
+def _dk_font(kind: str, size: int):
+    key = (kind, size)
+    if key not in _FONT_CACHE:
+        from PIL import ImageFont
+        name = {"head": "Fredoka-SemiBold.ttf", "bold": "Fredoka-Bold.ttf",
+                "body": "DidactGothic-Regular.ttf"}[kind]
+        try:
+            _FONT_CACHE[key] = ImageFont.truetype(os.path.join(_V46_ASSETS, "fonts", name), size)
+        except Exception:
+            _FONT_CACHE[key] = ImageFont.load_default()
+    return _FONT_CACHE[key]
+
+
+def _dk_clean(s: str) -> str:
+    """the bundled fonts carry latin only: arrows and emoji would draw as boxes."""
+    s = (s or "").replace("→", "to").replace("—", ", ").replace("–", "-")
+    return re.sub(r"[^\x00-ɏ -⁯€™]", "", s)
+
+
+def _dk_wrap(text: str, font, width: int) -> list:
+    out = []
+    for para in _dk_clean(text).split("\n"):
+        words, line = para.split(), ""
+        for w in words:
+            t = (line + " " + w).strip()
+            if font.getlength(t) <= width:
+                line = t
+            else:
+                if line:
+                    out.append(line)
+                line = w
+        out.append(line)
+    return out
+
+
+def _dk_round(draw, box, fill, radius=22, outline=None, width=0):
+    draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
+
+
+def _dk_shadow(img, box, radius=22):
+    from PIL import Image, ImageDraw, ImageFilter
+    pad = 30
+    x0, y0, x1, y1 = box
+    sh = Image.new("RGBA", (x1 - x0 + pad * 2, y1 - y0 + pad * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle((pad, pad + 8, pad + x1 - x0, pad + 8 + y1 - y0),
+                                         radius=radius, fill=(40, 90, 120, 26))
+    sh = sh.filter(ImageFilter.GaussianBlur(14))
+    img.alpha_composite(sh, (x0 - pad, y0 - pad))
+
+
+class _Deck:
+    W, H, HEAD, FOOT, SIDE = 1600, 900, 150, 46, 72
+
+    def __init__(self, title: str, sub: str = ""):
+        from PIL import Image, ImageDraw
+        self.img = Image.new("RGBA", (self.W, self.H), _DK["bg"] + (255,))
+        self.d = ImageDraw.Draw(self.img)
+        self.blocks = []
+        self._header(title, sub)
+        self._footer()
+
+    def _header(self, title, sub):
+        from PIL import Image
+        d = self.d
+        d.rectangle((0, 0, self.W, self.HEAD), fill=_DK["hd"])
+        room = 1040
+        size = 54
+        t = _dk_clean(title).upper()
+        while size > 30 and _dk_font("head", size).getlength(t) > room:
+            size -= 2
+        d.text((self.SIDE, 34 + (54 - size) // 2), t, font=_dk_font("head", size), fill=_DK["white"])
+        if sub:
+            d.text((self.SIDE, 102), _dk_clean(sub)[:110], font=_dk_font("body", 21), fill=_DK["sub"])
+        try:                                      # the $TSUKI logo and the cat, as on the Juju decks
+            av = Image.open(os.path.join(_V46_ASSETS, "deck_avatar.png")).convert("RGBA").resize((110, 110))
+            self.img.alpha_composite(av, (self.W - 64 - 110, 20))
+            lg = Image.open(os.path.join(_V46_ASSETS, "deck_logo.png")).convert("RGBA")
+            lg = lg.resize((int(lg.width * 62 / lg.height), 62))
+            self.img.alpha_composite(lg, (self.W - 192 - lg.width, 44))
+        except Exception:
+            pass
+
+    def _footer(self):
+        d = self.d
+        y = self.H - self.FOOT
+        d.rectangle((0, y, self.W, self.H), fill=_DK["foot"])
+        d.text((self.SIDE, y + 13), "DISCLAIMER: None of this is financial advice. Always do your own research.",
+               font=_dk_font("body", 17), fill=_DK["white"])
+        f = _dk_font("head", 18)
+        t = "@tsukiverseai"
+        d.text((self.W - self.SIDE - f.getlength(t), y + 12), t, font=f, fill=_DK["white"])
+
+    # blocks are measured first, then laid out centred in the body
+    def table(self, rows, cols=None, hl=()):
+        """rows: list of tuples. cols: pixel widths for every column but the last."""
+        self.blocks.append(("table", rows, cols, set(hl)))
+        return self
+
+    def cards(self, items, cols=None):
+        """items: dicts with title, text, optional tag, num, big, hl."""
+        self.blocks.append(("cards", items, cols or len(items)))
+        return self
+
+    def close(self, plain, accent=""):
+        self.blocks.append(("close", plain, accent))
+        return self
+
+    def bars(self, values, labels, hl_last=True, caption=""):
+        self.blocks.append(("bars", values, labels, hl_last, caption))
+        return self
+
+    def _measure(self, b):
+        inner = self.W - 2 * self.SIDE
+        if b[0] == "table":
+            _, rows, cols, _hl = b
+            cols = cols or [300]
+            h = 28
+            for r in rows:
+                last_w = inner - 96 - sum(cols[:len(r) - 1]) - 20 * (len(r) - 1)
+                lines = len(_dk_wrap(str(r[-1]), _dk_font("body", 27), max(200, last_w)))
+                h += max(64, 18 + 38 * lines)
+            return h
+        if b[0] == "cards":
+            _, items, ncol = b
+            w = (inner - 22 * (ncol - 1)) // ncol
+            rows = [items[i:i + ncol] for i in range(0, len(items), ncol)]
+            tot = 0
+            for row in rows:
+                hs = []
+                for it in row:
+                    h = 64
+                    if it.get("tag"):
+                        h += 52
+                    if it.get("big"):
+                        h += 84
+                    if it.get("title"):
+                        h += 46 * len(_dk_wrap(it["title"], _dk_font("head", 34), w - 72))
+                    if it.get("text"):
+                        h += 37 * len(_dk_wrap(it["text"], _dk_font("body", 25), w - 72))
+                    hs.append(h)
+                tot += max(hs) + 22
+            return tot - 22
+        if b[0] == "close":
+            return 54
+        if b[0] == "bars":
+            return 330
+        return 0
+
+    def render(self, path: str) -> str:
+        from PIL import ImageDraw
+        d = self.d
+        inner = self.W - 2 * self.SIDE
+        gap = 26
+        total = sum(self._measure(b) for b in self.blocks) + gap * (len(self.blocks) - 1)
+        y = self.HEAD + max(30, (self.H - self.HEAD - self.FOOT - total) // 2)
+        for b in self.blocks:
+            h = self._measure(b)
+            x0 = self.SIDE
+            if b[0] == "table":
+                _, rows, cols, hl = b
+                cols = cols or [300]
+                _dk_shadow(self.img, (x0, y, x0 + inner, y + h))
+                d = self.d = ImageDraw.Draw(self.img)
+                _dk_round(d, (x0, y, x0 + inner, y + h), _DK["card"])
+                ry = y + 14
+                for i, r in enumerate(rows):
+                    last_w = inner - 96 - sum(cols[:len(r) - 1]) - 20 * (len(r) - 1)
+                    lines = _dk_wrap(str(r[-1]), _dk_font("body", 27), max(200, last_w))
+                    rh = max(64, 18 + 38 * len(lines))
+                    colr = _DK["red"] if i in hl else _DK["ink"]
+                    cx = x0 + 48
+                    for j, cell in enumerate(r[:-1]):
+                        d.text((cx, ry + (rh - 32) // 2), _dk_clean(str(cell)), font=_dk_font("head", 26), fill=colr)
+                        cx += cols[j] + 20
+                    ly = ry + (rh - 38 * len(lines)) // 2 + 2
+                    for ln in lines:
+                        d.text((cx, ly), ln, font=_dk_font("head" if i in hl else "body", 27), fill=colr)
+                        ly += 38
+                    ry += rh
+                    if i < len(rows) - 1:
+                        d.line((x0 + 30, ry, x0 + inner - 30, ry), fill=_DK["line"], width=2)
+            elif b[0] == "cards":
+                _, items, ncol = b
+                w = (inner - 22 * (ncol - 1)) // ncol
+                rows = [items[i:i + ncol] for i in range(0, len(items), ncol)]
+                ry = y
+                for row in rows:
+                    hs = []
+                    for it in row:
+                        hh = 64 + (52 if it.get("tag") else 0) + (84 if it.get("big") else 0)
+                        if it.get("title"):
+                            hh += 46 * len(_dk_wrap(it["title"], _dk_font("head", 34), w - 72))
+                        if it.get("text"):
+                            hh += 37 * len(_dk_wrap(it["text"], _dk_font("body", 25), w - 72))
+                        hs.append(hh)
+                    rh = max(hs)
+                    for k, it in enumerate(row):
+                        cx = x0 + k * (w + 22)
+                        _dk_shadow(self.img, (cx, ry, cx + w, ry + rh))
+                        d = self.d = ImageDraw.Draw(self.img)
+                        hl = it.get("hl")
+                        _dk_round(d, (cx, ry, cx + w, ry + rh), _DK["card"],
+                                  outline=_DK["red"] if hl else None, width=4 if hl else 0)
+                        ty = ry + 32
+                        if it.get("tag"):
+                            tg = _dk_clean(it["tag"]).upper()
+                            f = _dk_font("head", 16)
+                            pw = f.getlength(tg) + 32
+                            _dk_round(d, (cx + 36, ty, cx + 36 + pw, ty + 34), _DK["red"] if hl else _DK["pill"], radius=17)
+                            d.text((cx + 52, ty + 7), tg, font=f, fill=_DK["white"] if hl else _DK["ink"])
+                            ty += 52
+                        if it.get("big"):
+                            d.text((cx + 36, ty), _dk_clean(it["big"]), font=_dk_font("bold", 68), fill=_DK["red"])
+                            ty += 84
+                        if it.get("title"):
+                            for ln in _dk_wrap(it["title"], _dk_font("head", 34), w - 72):
+                                d.text((cx + 36, ty), ln, font=_dk_font("head", 34), fill=_DK["red"] if hl else _DK["ink"])
+                                ty += 46
+                        if it.get("text"):
+                            for ln in _dk_wrap(it["text"], _dk_font("body", 25), w - 72):
+                                d.text((cx + 36, ty), ln, font=_dk_font("body", 25), fill=_DK["ink"])
+                                ty += 37
+                    ry += rh + 22
+            elif b[0] == "close":
+                _, plain, acc = b
+                f = _dk_font("head", 32)
+                d.text((x0, y + 6), _dk_clean(plain), font=f, fill=_DK["ink"])
+                if acc:
+                    d.text((x0 + f.getlength(_dk_clean(plain) + " "), y + 6), _dk_clean(acc), font=f, fill=_DK["red"])
+            elif b[0] == "bars":
+                _, vals, labels, hl_last, cap = b
+                _dk_shadow(self.img, (x0, y, x0 + inner, y + h))
+                d = self.d = ImageDraw.Draw(self.img)
+                _dk_round(d, (x0, y, x0 + inner, y + h), _DK["card"])
+                top, base = y + 50, y + h - 56
+                vmax = max(vals) if vals else 1
+                n = max(1, len(vals))
+                bw = (inner - 96) / n
+                for i, v in enumerate(vals):
+                    bh = 0 if not vmax else (base - top) * v / vmax
+                    bx = x0 + 48 + i * bw
+                    last = hl_last and i == n - 1
+                    d.rounded_rectangle((bx + bw * 0.18, base - bh, bx + bw * 0.82, base), radius=6,
+                                        fill=_DK["red"] if last else _DK["bar"])
+                    if last or i == 0 or i % max(1, n // 5) == 0:
+                        lb = _dk_clean(labels[i])
+                        f = _dk_font("body", 18)
+                        d.text((bx + bw / 2 - f.getlength(lb) / 2, base + 12), lb, font=f, fill=_DK["mute"])
+                if cap:
+                    d.text((x0 + 48, y + 14), _dk_clean(cap), font=_dk_font("head", 22), fill=_DK["ink"])
+            y += h + gap
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        self.img.convert("RGB").save(path, "PNG", optimize=True)
+        return path
+
+
+def _deck_path(tag: str, i: int) -> str:
+    return os.path.join(_DECK_TMP, f"{re.sub(r'[^a-z0-9-]', '', tag.lower())[:40]}-{int(time.time())}-{i}.png")
+
+
+# ── filing decks ─────────────────────────────────────────────────────────────
+def _filing_cards(f: dict, kind: str, data: dict, brief: str = "") -> list:
+    """-> list of rendered slide paths (max 4 for X)."""
+    if not DECKS_ENABLED:
+        return []
+    form = f["form"]
+    when = _edgar_accepted_et(f)
+    words = _edgar_form_words(form)
+    sub = f"{words[:1].upper() + words[1:]} · filed {when}"
+    title = f"New GME filing · Form {form}" if not form.startswith("SCHEDULE") else f"New GME filing · {form.title()}"
+    tag = f"f-{form}-{f['acc'][-6:]}"
+    out = []
+    try:
+        if kind == "4" and data:
+            rows = data["rows"]
+            after = next((r["after_raw"] for r in reversed(rows) if r["direct"]), rows[-1]["after_raw"] if rows else "")
+            buys = [r for r in rows if r["code"] == "P"]
+            sells = [r for r in rows if r["code"] == "S"]
+            if buys:
+                what = f"Bought {_num_str(sum(_f4_float(r['shares_raw']) for r in buys))} shares"
+            elif sells:
+                what = f"Sold {_num_str(sum(_f4_float(r['shares_raw']) for r in sells))} shares"
+            else:
+                what = ", ".join(sorted({_F4_CODES.get(r["code"], r["code"]) for r in rows})).capitalize() or "No transactions"
+            if len(rows) > 1:
+                what += f" in {len(rows)} transactions"
+            s1 = _Deck(title, sub).table([
+                ("Who", data["name"]), ("Role", ", ".join(data["roles"]) or "Insider"),
+                ("What", what), ("Holding after", f"{_num_str(after)} shares" + (" (direct)" if after else ""))],
+                cols=[260])
+            if buys:
+                s1.close("Code P:", "an open-market purchase.")
+            elif sells and all(r["tax"] for r in sells):
+                s1.close("Sold to cover taxes on vesting stock.", "Not a discretionary trade.")
+            elif sells and any(r["plan"] for r in sells):
+                s1.close("At least one sale was pre-scheduled", "under a 10b5-1 plan.")
+            else:
+                s1.close("Every figure here is", "exactly as filed.")
+            out.append(s1.render(_deck_path(tag, 1)))
+            trows = []
+            for r in rows[:6]:
+                note = ("tax cover, not discretionary" if r["code"] == "S" and r["tax"] else
+                        "10b5-1 plan" if r["plan"] else
+                        "open market" if r["code"] == "P" else _F4_CODES.get(r["code"], ""))
+                if r["weighted"]:
+                    note += " · weighted avg" + (f" {r['range'][0]} to {r['range'][1]}" if r["range"] else "")
+                px = _px_str(r["price_raw"]) if _f4_float(r["price_raw"]) > 0 else "no price"
+                trows.append((_day_words(r["date"]), f"{_F4_CODES.get(r['code'], r['code']).split(' ')[-1].capitalize()} · {r['code']}",
+                              _num_str(r["shares_raw"]), px, note))
+            s2 = _Deck("The transactions, as filed", f"{data['name']} · Form 4 · {len(rows)} line{'s' if len(rows) != 1 else ''}")
+            s2.table(trows, cols=[130, 220, 170, 170], hl={len(trows) - 1} if buys else set())
+            s2.close("Prices copied from the filing.", "Nothing rounded, nothing blended.")
+            out.append(s2.render(_deck_path(tag, 2)))
+            if buys:
+                led = _ledger_since()[-6:]
+                if led:
+                    n, sh, val = _ledger_totals(_ledger_since())
+                    s3 = _Deck("Insider buying since 1 Sep", "Every open-market buy on a Form 4 · GameStop")
+                    s3.table([(_day_words(r["date"]), r["name"], f"{_num_str(r['buy_shares'])} @ "
+                               + (_px_str(r.get("buy_price_raw")) or _px_str(f"{r['buy_price']:.4f}")))
+                              for r in led], cols=[130, 300], hl={len(led) - 1})
+                    s3.close(f"{n} insider{'s' if n != 1 else ''} · {_num_str(sh)} shares ·", f"{_money(val)} in total.")
+                    out.append(s3.render(_deck_path(tag, 3)))
+        elif kind == "144" and data:
+            s1 = _Deck(title, "Notice of a proposed insider sale · filed " + when)
+            rows = [("Who", data["name"]), ("Relationship", data["relationship"] or "Insider"),
+                    ("Plans to sell", f"{_num_str(data['shares_raw'])} shares"),
+                    ("Est. market value", (_px_str(data["value_raw"]) or "not stated") + " (filer's estimate)"),
+                    ("Around", _day_words(data["sale_date"], True))]
+            if data.get("nature"):
+                rows.append(("Acquired via", data["nature"]))
+            s1.table(rows, cols=[300])
+            s1.close("A Form 144 is a notice,", "not a completed sale.")
+            out.append(s1.render(_deck_path(tag, 1)))
+            if data["past"]:
+                s2 = _Deck("Sales in the last 3 months", f"{data['name']} · as listed on the Form 144")
+                s2.table([(_day_words(r["date"], True), f"{_num_str(r['shares_raw'])} shares",
+                           f"{_px_str(r['proceeds_raw'])} gross proceeds") for r in data["past"][:6]],
+                         cols=[200, 260])
+                if data.get("plan_date"):
+                    s2.close("10b5-1 plan adopted", _day_words(data["plan_date"], True) + ".")
+                out.append(s2.render(_deck_path(tag, 2)))
+        elif kind == "13d" and data:
+            s1 = _Deck(title, f"Amendment No. {data['amendment']} · event {data['event']} · filed {when}")
+            s1.table([("Who", data["name"]), ("Owns", f"{_num_str(data['owned_raw'])} shares"),
+                      ("Of the class", f"{data['pct_raw']}%"), ("Amendment", f"No. {data['amendment']}")],
+                     cols=[260], hl={1})
+            s1.close("Schedule 13D:", "the 5%+ holder's own filing.")
+            out.append(s1.render(_deck_path(tag, 1)))
+            s2 = _Deck("What changed · Item 5(c)", "Quoted from the filing")
+            s2.cards([{"tag": "Item 5(c)", "text": data["tx"] or "No new transactions described.", "hl": True}])
+            if data.get("holdings"):
+                s2.close("Holdings and % are", "from Item 5(a) of the filing.")
+            out.append(s2.render(_deck_path(tag, 2)))
+        else:
+            s1 = _Deck(title, sub)
+            items = data.get("items") if data else None
+            if items:
+                s1.table([(f"Item {k}", _8K_ITEMS[k]) for k in items], cols=[160])
+            if brief:
+                s1.cards([{"tag": "What it says", "text": brief}])
+            if not items and not brief:
+                s1.cards([{"tag": f"Form {form}", "title": words[:1].upper() + words[1:],
+                           "text": "Read the full document on EDGAR. The link is in the post."}])
+            s1.close("Source:", "SEC EDGAR, accession " + f["acc"] + ".")
+            out.append(s1.render(_deck_path(tag, 1)))
+    except Exception as e:
+        log.warning(f"filing deck failed: {e}")
+    return out[:4]
+
+
+# ── X with several images, and Telegram albums ──────────────────────────────
+def _upload_x_many(paths: list) -> list | None:
+    ids = []
+    for p in paths[:4]:
+        if p and os.path.isfile(p):
+            m = _upload_x_media(p)
+            if m:
+                ids += m
+    return ids or None
+
+
+async def _tg_album(app, chat_id, paths: list, caption_html: str = "", reply_to=None):
+    from telegram import InputMediaPhoto
+    paths = [p for p in paths if p and os.path.isfile(p)][:10]
+    if not paths:
+        return None
+    try:
+        media = []
+        for i, p in enumerate(paths):
+            with open(p, "rb") as fh:
+                data = fh.read()
+            media.append(InputMediaPhoto(media=data, caption=caption_html[:1000] if i == 0 and caption_html else None,
+                                         parse_mode="HTML" if i == 0 and caption_html else None))
+        msgs = await app.bot.send_media_group(chat_id=chat_id, media=media, reply_to_message_id=reply_to)
+        return msgs[0] if msgs else None
+    except Exception as e:
+        log.warning(f"telegram album failed: {e}")
+        return None
+
+
+def _desk_format(text: str, limit: int) -> str:
+    """the data posts keep their exact numbers and line layout. only the
+    house bans apply: no em dashes, one cashtag, fits the limit."""
+    t = (text or "").strip()
+    t = re.sub(r"[ \t]*—[ \t]*", ", ", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return _one_cashtag(_trim_to(t, limit), keep_first=True)
+
+
+def post_desk(text: str, images: list | None = None, append_url: str | None = None,
+              kind: str = "desk") -> str | None:
+    """X door for the GME desk: exact text, up to 4 images, one link."""
+    global _CURRENT_POST_KIND, LAST_X_ERROR
+    if not X_ENABLED or _off_limits(text):
+        return None
+    body = _desk_format(text, X_POST_LIMIT - 25 if append_url else X_POST_LIMIT)
+    if append_url:
+        body += "\n\n" + append_url
+    try:
+        import tweepy
+        client = tweepy.Client(consumer_key=X_API_KEY, consumer_secret=X_API_SECRET,
+                               access_token=X_ACCESS_TOKEN, access_token_secret=X_ACCESS_SECRET)
+        media_ids = _upload_x_many(images or []) if (images and DECKS_ENABLED) else None
+        resp = client.create_tweet(text=body, media_ids=media_ids) if media_ids else client.create_tweet(text=body)
+        tid = (resp.data or {}).get("id")
+        _CURRENT_POST_KIND = kind
+        kv_set("x_post_seq", str(int(kv_get("x_post_seq", "0") or 0) + 1))
+        _dk_ = f"x_posts:{datetime.now(PROJECT_TZ).date()}"
+        kv_set(_dk_, str(int(kv_get(_dk_, "0") or 0) + 1))
+        kv_set("x_last_ok", datetime.now(PROJECT_TZ).strftime("%d %b %H:%M") + f" ({kind})")
+        if tid:
+            try:
+                _remember_own(body, kind=kind, tid=str(tid))
+                _own_log_add(body, kind, f"https://x.com/i/status/{tid}")
+            except Exception:
+                pass
+        log.info(f"desk post ({kind})" + (f" with {len(media_ids)} images" if media_ids else ""))
+        return f"https://x.com/i/status/{tid}" if tid else None
+    except Exception as e:
+        LAST_X_ERROR = f"{type(e).__name__}: {e}"
+        log.warning(f"desk post error: {LAST_X_ERROR}")
+        _x_err_note("desk: " + LAST_X_ERROR)
+        return None
+
+
+def _ledger_lines(f: dict, d: dict, buys: list) -> list:
+    """one ledger row per purchase line, each at its own filed price."""
+    out = []
+    for i, r in enumerate(buys):
+        sh, px = _f4_float(r["shares_raw"]), _f4_float(r["price_raw"])
+        out.append({"acc": f"{f['acc']}#{i}", "date": r["date"] or f["date"], "name": d["name"],
+                    "roles": d["roles"], "buy_shares": sh, "buy_price": px, "buy_price_raw": r["price_raw"],
+                    "buy_value": round(sh * px, 2), "after": _f4_float(r["after_raw"]), "link": _edgar_link(f)})
+    return out
+
+
+def _ledger_add_lines(f: dict, d: dict, buys: list):
+    for row in _ledger_lines(f, d, buys):
+        _ledger_add(row)
+
+
+# ── the v46 filing compose (no model unless the form is free text) ──────────
+async def _edgar_compose_v46(client, f: dict) -> tuple:
+    """-> (x_text, tg_html, headline, slide_paths). Every number is lifted
+    from the filing as written."""
+    form = f["form"]
+    words = _edgar_form_words(form)
+    when = _edgar_accepted_et(f)
+    x = [f"new $GME filing: {('Form ' + form) if not form.startswith('SCHEDULE') else form.title()} ({words})"]
+    tg = [f"🚨 <b>new GameStop SEC filing: {html.escape(form if form.startswith('SCHEDULE') else 'Form ' + form)}</b>",
+          f"<i>{html.escape(words)}</i>", ""]
+    headline = f"gamestop sec filing form {form}"
+    kind, data, brief = "other", None, ""
+    raw = await _edgar_raw(client, f)
+    if form in ("4", "4/A", "5", "3"):
+        data = _form4_rows(raw)
+        if data:
+            kind = "4"
+            headline += " " + data["name"]
+            who = data["name"] + (f", {', '.join(data['roles'])}" if data["roles"] else "")
+            x += ["", who, ""] + [_f4_line(r) for r in data["rows"][:4]]
+            tg += [f"👤 <b>{html.escape(data['name'])}</b>" + (f" · {html.escape(', '.join(data['roles']))}" if data["roles"] else "")]
+            for r in data["rows"][:8]:
+                dot = "🟢" if r["code"] == "P" else "🔴" if r["code"] == "S" else "▪️"
+                tg.append(f"{dot} {html.escape(_f4_line(r))}")
+            after = next((r["after_raw"] for r in reversed(data["rows"]) if r["direct"]), "")
+            if after:
+                x.append("")
+                x.append(f"direct holding now {_num_str(after)} shares")
+                tg.append(f"📦 direct holding now {_num_str(after)} shares")
+            buys = [r for r in data["rows"] if r["code"] == "P"]
+            if buys:
+                _ledger_add_lines(f, data, buys)
+                n, tsh, tval = _ledger_totals(_ledger_since())
+                x.append(f"insider buying since 1 sep (sum of Form 4s): {n} {'person' if n == 1 else 'people'}, {_num_str(tsh)} shares, {_money(tval)}")
+                tg.append(f"📒 since 1 Sep: {n} insiders · {_num_str(tsh)} shares · {_money(tval)} (/insiders)")
+    elif form == "144":
+        data = _parse_144(raw)
+        if data:
+            kind = "144"
+            headline += " " + data["name"]
+            x += ["", f"{data['name']} ({data['relationship'] or 'insider'}) gave notice of a planned sale of "
+                      f"{_num_str(data['shares_raw'])} shares around {_day_words(data['sale_date'], True)}",
+                  f"filer's estimated market value: {_px_str(data['value_raw'])}",
+                  "", "a 144 is a notice, not a completed sale. the Form 4 follows if it happens"]
+            tg += [f"👤 <b>{html.escape(data['name'])}</b> · {html.escape(data['relationship'] or 'insider')}",
+                   f"📝 plans to sell {_num_str(data['shares_raw'])} shares around {_day_words(data['sale_date'], True)}",
+                   f"💵 filer's estimated market value {_px_str(data['value_raw'])}",
+                   "ℹ️ a notice, not a completed sale"]
+    elif form.startswith(("SCHEDULE 13D", "SC 13D")):
+        data = _parse_13d(raw)
+        if data:
+            kind = "13d"
+            headline += " " + data["name"]
+            x += ["", f"{data['name']} now reports {_num_str(data['owned_raw'])} shares, {data['pct_raw']}% of the class "
+                      f"(amendment no. {data['amendment']})"]
+            if data["tx"]:
+                x += ["", f"item 5(c): {data['tx']}"]
+            tg += [f"👤 <b>{html.escape(data['name'])}</b> · amendment no. {html.escape(data['amendment'])}",
+                   f"📦 {_num_str(data['owned_raw'])} shares · {html.escape(data['pct_raw'])}% of the class",
+                   f"📝 <i>{html.escape(data['tx'])}</i>" if data["tx"] else ""]
+    if kind == "other":
+        if form.startswith("8-K"):
+            items = await _edgar_8k_items(client, f)
+            data = {"items": items}
+            if items:
+                x += [""] + [f"item {k}: {_8K_ITEMS[k]}" for k in items]
+                tg += [f"▪️ Item {k}: {html.escape(_8K_ITEMS[k])}" for k in items]
+                headline += " " + " ".join(_8K_ITEMS[k] for k in items)
+        brief = await _edgar_brief_grounded(client, f)
+        if brief:
+            x += ["", f"what it says: {brief}"]
+            tg += ["", f"📄 <b>what it says</b>\n{html.escape(brief)}"]
+    x += ["", f"filed {when}"]
+    tg += ["", f"🕒 filed {when}",
+           f'📰 <a href="{html.escape(_edgar_link(f), quote=True)}">read it on EDGAR</a> · '
+           f'<a href="{html.escape(_edgar_index_link(f), quote=True)}">all documents</a>']
+    slides = _filing_cards(f, kind, data or {}, brief)
+    if kind == "4" and data and data["rows"]:
+        what = _f4_line(data["rows"][-1]).split(",")[0] + (f" (+{len(data['rows']) - 1} more)" if len(data["rows"]) > 1 else "")
+    elif kind == "144" and data:
+        what = f"plans to sell {_num_str(data['shares_raw'])} shares"
+    elif kind == "13d" and data:
+        what = f"{_num_str(data['owned_raw'])} shares, {data['pct_raw']}% of the class"
+    else:
+        what = words
+    _desk_today_add({"form": form, "who": (data or {}).get("name", ""), "acc": f["acc"], "what": what})
+    return "\n".join(x), "\n".join(t for t in tg if t is not None), headline, slides
+
+
+async def _edgar_brief_grounded(client, f: dict) -> str:
+    """the haiku brief, kept only if every number in it is in the filing."""
+    try:
+        r = await client.get(_edgar_link(f), headers={"User-Agent": EDGAR_UA})
+        if r.status_code != 200:
+            return ""
+        text = r.text
+        if "<" in text:
+            text = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", text)
+            text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+        text = re.sub(r"\s+", " ", text).strip()
+        if len(text) < 200:
+            return ""
+        for attempt in range(2):
+            out = claude.messages.create(
+                model="claude-haiku-4-5-20251001", max_tokens=160,
+                system=("you summarise SEC filings for retail shareholders. two sentences, plain words, "
+                        "lowercase, no hype, no advice. copy every number, date and dollar figure EXACTLY as it "
+                        "is written in the filing. never calculate a price, total, average or percentage that "
+                        "is not printed in it. if a figure is not in the text, leave it out. if the filing is "
+                        "boilerplate with no news, say so in one sentence."),
+                messages=[{"role": "user", "content": f"form {f['form']} filed by GameStop. the filing text:\n\n{text[:9000]}"}])
+            brief = re.sub(r"\s+", " ", " ".join(b.text for b in out.content if getattr(b, "type", "") == "text")).strip()[:420]
+            if brief and _grounded(brief, text):
+                return brief
+            log.warning(f"edgar brief refused (a number not in the filing): {brief[:120]}")
+        return ""
+    except Exception as e:
+        log.warning(f"edgar brief failed: {e}")
+        return ""
+
+
+def _desk_today_add(row: dict):
+    k = f"desk_filings:{datetime.now(PROJECT_TZ).date()}"
+    try:
+        rows = json.loads(kv_get(k, "[]") or "[]")
+    except Exception:
+        rows = []
+    if not any(r.get("acc") == row.get("acc") for r in rows):
+        rows.append(row)
+    kv_set(k, json.dumps(rows[-20:]))
+
+
+def _desk_today(day=None) -> list:
+    try:
+        return json.loads(kv_get(f"desk_filings:{day or datetime.now(PROJECT_TZ).date()}", "[]") or "[]")
+    except Exception:
+        return []
+
+
+async def job_edgar_watch_v46(app):
+    filings = await fetch_edgar_latest()
+    if not filings:
+        return
+    last = kv_get("edgar_last_acc", "")
+    if not last:
+        kv_set("edgar_last_acc", filings[0]["acc"])
+        for f in filings[:8]:
+            _edgar_mark(f["acc"])
+        log.info("EDGAR watcher baseline initialised")
+        return
+    posted = _edgar_posted()
+    new = []
+    for f in filings:
+        if f["acc"] == last:
+            break
+        if f["acc"] not in posted:
+            new.append(f)
+    kv_set("edgar_last_acc", filings[0]["acc"])
+    if not new:
+        return
+    async with httpx.AsyncClient(timeout=20) as client:
+        for f in reversed(new[:3]):
+            if f["acc"] in _edgar_posted():
+                continue
+            _edgar_mark(f["acc"])
+            x_text, tg_html, headline, slides = await _edgar_compose_v46(client, f)
+            _story_claim(headline)
+            x_url = post_desk(x_text, images=slides, append_url=_edgar_link(f), kind="filing")
+            if x_url:
+                tg_html += f'\n\n🐦 <a href="{x_url}">the bot posted it on X</a> · first hour decides the reach'
+            markup = _edgar_markup(_edgar_link(f), x_url)
+            first = None
+            if slides:
+                first = await _tg_album(app, TARGET_CHAT_ID, slides)
+            try:
+                await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=tg_html, parse_mode="HTML",
+                                           disable_web_page_preview=True, reply_markup=markup,
+                                           reply_to_message_id=getattr(first, "message_id", None))
+            except Exception as e:
+                log.warning(f"edgar announce failed: {e}")
+            try:
+                n = await _alert_fanout(app, tg_html, markup)
+                if n:
+                    log.info(f"edgar: DM'd {n} subscribers")
+            except Exception as e:
+                log.warning(f"edgar fanout: {e}")
+
+
+async def job_insider_rebuild_v46(app):
+    """the v45 ledger read footnoted prices as $0. rebuild it once from EDGAR."""
+    if kv_get("insider_rebuild_v46b"):
+        return
+    filings = await fetch_edgar_latest()
+    rows = []
+    async with httpx.AsyncClient(timeout=20) as client:
+        for f in filings:
+            if f["form"] not in ("4", "4/A") or f["date"] < "2026-09-01":
+                continue
+            d = _form4_rows(await _edgar_raw(client, f))
+            buys = [r for r in (d or {}).get("rows", []) if r["code"] == "P"]
+            if buys:
+                rows += _ledger_lines(f, d, buys)
+            await asyncio.sleep(0.4)
+    if rows:
+        rows.sort(key=lambda r: (r["date"], r["acc"]))
+        kv_set("insider_ledger", json.dumps(rows[-200:]))
+    kv_set("insider_rebuild_v46b", "1")
+    log.info(f"insider ledger rebuilt with as-filed prices: {len(rows)} rows")
+
+
+# ── market data (no keys, no Claude) ─────────────────────────────────────────
+_YH = "https://query1.finance.yahoo.com/v8/finance/chart/GME"
+_STOOQ_HIST = "https://stooq.com/q/d/l/?s=gme.us&i=d"
+_UA_WEB = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+                         "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"}
+
+
+async def _gme_bars_yahoo(client, rng="3mo") -> dict | None:
+    try:
+        r = await client.get(_YH, params={"range": rng, "interval": "1d", "includePrePost": "false"},
+                             headers=_UA_WEB)
+        if r.status_code != 200:
+            return None
+        res = (r.json().get("chart") or {}).get("result") or []
+        if not res:
+            return None
+        res = res[0]
+        q = res["indicators"]["quote"][0]
+        bars = []
+        for i, ts in enumerate(res.get("timestamp") or []):
+            o, h, l, c, v = (q["open"][i], q["high"][i], q["low"][i], q["close"][i], q["volume"][i])
+            if None in (o, h, l, c):
+                continue
+            d = datetime.fromtimestamp(ts, PROJECT_TZ).date()
+            bars.append({"date": d.isoformat(), "o": o, "h": h, "l": l, "c": c, "v": v or 0})
+        m = res.get("meta") or {}
+        return {"bars": bars, "src": "Yahoo Finance", "hi52": m.get("fiftyTwoWeekHigh"),
+                "lo52": m.get("fiftyTwoWeekLow"), "last": m.get("regularMarketPrice"),
+                "last_t": m.get("regularMarketTime")}
+    except Exception as e:
+        log.warning(f"yahoo GME: {e}")
+        return None
+
+
+async def _gme_bars_stooq(client) -> dict | None:
+    try:
+        r = await client.get(_STOOQ_HIST, headers=_UA_WEB)
+        if r.status_code != 200 or "Date" not in r.text[:40]:
+            return None
+        bars = []
+        for ln in r.text.strip().splitlines()[1:]:
+            p = ln.split(",")
+            if len(p) < 6:
+                continue
+            try:
+                bars.append({"date": p[0], "o": float(p[1]), "h": float(p[2]), "l": float(p[3]),
+                             "c": float(p[4]), "v": float(p[5] or 0)})
+            except ValueError:
+                continue
+        return {"bars": bars[-70:], "src": "Stooq"} if bars else None
+    except Exception as e:
+        log.warning(f"stooq GME: {e}")
+        return None
+
+
+async def gme_market() -> dict | None:
+    """daily bars from Yahoo, checked against Stooq. if the two disagree on the
+    last close by more than 0.5%, the numbers are held back (never guessed)."""
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+        y = await _gme_bars_yahoo(c)
+        s = await _gme_bars_stooq(c)
+    base = y or s
+    if not base or not base["bars"]:
+        return None
+    base["checked"] = False
+    if y and s and y["bars"] and s["bars"]:
+        yb, sb = y["bars"][-1], {b["date"]: b for b in s["bars"]}.get(y["bars"][-1]["date"])
+        if sb:
+            diff = abs(yb["c"] - sb["c"]) / max(0.01, sb["c"])
+            base["checked"] = diff <= 0.005
+            base["mismatch"] = diff > 0.005
+            if diff > 0.005:
+                log.warning(f"GME close mismatch yahoo {yb['c']} vs stooq {sb['c']}")
+    return base
+
+
+def _pct(a, b) -> str:
+    if not b:
+        return ""
+    v = (a - b) / b * 100
+    return f"{'+' if v >= 0 else ''}{v:.2f}%"
+
+
+def _vol(v) -> str:
+    v = float(v or 0)
+    if v >= 1e6:
+        return f"{v / 1e6:.1f}M"
+    if v >= 1e3:
+        return f"{v / 1e3:.0f}K"
+    return f"{v:,.0f}"
+
+
+def _usd(v) -> str:
+    return f"${v:,.2f}"
+
+
+def _today_et():
+    return datetime.now(PROJECT_TZ).date()
+
+
+def gme_recap_parts(mk: dict, day=None) -> dict | None:
+    """the numbers for one session, or None if the market did not trade that day."""
+    day = (day or _today_et()).isoformat()
+    bars = mk["bars"]
+    idx = next((i for i, b in enumerate(bars) if b["date"] == day), None)
+    if idx is None or idx == 0:
+        return None
+    b, prev = bars[idx], bars[idx - 1]
+    last20 = [x["v"] for x in bars[max(0, idx - 20):idx]]
+    avg20 = sum(last20) / len(last20) if last20 else 0
+    wk = [x for x in bars[:idx + 1] if datetime.fromisoformat(x["date"]).isocalendar()[1]
+          == datetime.fromisoformat(day).isocalendar()[1]]
+    wk_prev = bars[idx - len(wk)] if idx - len(wk) >= 0 else None
+    return {"day": day, "b": b, "prev": prev, "chg": _pct(b["c"], prev["c"]), "avg20": avg20,
+            "vol_x": (b["v"] / avg20) if avg20 else 0, "last5": bars[max(0, idx - 4):idx + 1],
+            "wk_chg": _pct(b["c"], wk_prev["c"]) if wk_prev else "", "hi52": mk.get("hi52"),
+            "lo52": mk.get("lo52"), "src": mk["src"], "checked": mk.get("checked")}
+
+
+def gme_recap_text(p: dict) -> str:
+    b = p["b"]
+    day = datetime.fromisoformat(p["day"]).strftime("%a %-d %b")
+    lines = [f"$GME closed at {_usd(b['c'])} today, {p['chg']} on the day ({day})", "",
+             f"open {_usd(b['o'])} · high {_usd(b['h'])} · low {_usd(b['l'])}",
+             f"volume {_vol(b['v'])}" + (f", {p['vol_x']:.1f}x its 20 day average" if p["vol_x"] else "")]
+    if p.get("wk_chg"):
+        lines.append(f"week so far {p['wk_chg']}")
+    fl = _desk_today(p["day"])
+    if fl:
+        lines += ["", f"SEC filings today: {len(fl)} (" + ", ".join(
+            ("Form " + r.get("form", "") if not str(r.get('form', '')).startswith("SCHEDULE") else "13D/A")
+            + (f" · {r['who']}" if r.get("who") else "") for r in fl[:3]) + ")"]
+    lines += ["", f"data: {p['src']}, end of day"]
+    return "\n".join(lines)
+
+
+def gme_recap_deck(p: dict) -> list:
+    if not DECKS_ENABLED:
+        return []
+    b = p["b"]
+    day = datetime.fromisoformat(p["day"]).strftime("%A %-d %B %Y")
+    tag = f"recap-{p['day']}"
+    out = []
+    try:
+        s1 = _Deck("GME daily recap", f"{day} · NYSE close · data: {p['src']}")
+        s1.cards([{"tag": "Close", "big": _usd(b["c"]), "text": f"{p['chg']} on the day", "hl": True},
+                  {"tag": "Open", "big": _usd(b["o"]), "text": f"prev close {_usd(p['prev']['c'])}"},
+                  {"tag": "High", "big": _usd(b["h"]), "text": "intraday"},
+                  {"tag": "Low", "big": _usd(b["l"]), "text": "intraday"}], cols=4)
+        vx = f"{p['vol_x']:.1f}x its 20 day average" if p["vol_x"] else ""
+        s1.table([("Volume", f"{_vol(b['v'])} shares" + (f" · {vx}" if vx else "")),
+                  ("52 week range", f"{_usd(p['lo52'])} to {_usd(p['hi52'])}" if p.get("hi52") else "n/a")],
+                 cols=[280])
+        up = p["chg"].startswith("+")
+        s1.close(f"{'Up' if up else 'Down'} {p['chg'].lstrip('+-')} on the day.",
+                 f"Week so far {p['wk_chg']}." if p.get("wk_chg") else "")
+        out.append(s1.render(_deck_path(tag, 1)))
+        s2 = _Deck("The last 5 sessions", "Daily open, close and volume · " + p["src"])
+        rows = []
+        for i, x in enumerate(p["last5"]):
+            prevc = p["last5"][i - 1]["c"] if i else None
+            rows.append((datetime.fromisoformat(x["date"]).strftime("%a %-d %b"), _usd(x["o"]), _usd(x["c"]),
+                         (_pct(x["c"], prevc) if prevc else "") + f"   vol {_vol(x['v'])}"))
+        s2.table(rows, cols=[240, 200, 200], hl={len(rows) - 1})
+        s2.close("Every figure is the exchange's", "end-of-day print.")
+        out.append(s2.render(_deck_path(tag, 2)))
+        fl = _desk_today(p["day"])
+        n, sh, val = _ledger_totals(_ledger_since())
+        rows3 = []
+        for r in fl[:4]:
+            rows3.append(("13D/A" if str(r.get("form", "")).startswith("SCHEDULE") else "Form " + r.get("form", "")[:8], (r.get("who") or "") + (" · " if r.get("who") else "") + str(r.get("what", ""))[:90]))
+        if n:
+            rows3.append(("Ledger", f"{n} insider{'s' if n != 1 else ''} bought {_num_str(sh)} shares since 1 Sep ({_money(val)})"))
+        days = (date(2026, 10, 23) - date.fromisoformat(p["day"])).days
+        if days >= 0:
+            rows3.append(("23 Oct", f"TSUKI/GME 45 day lock ends ({days} day{'s' if days != 1 else ''})"))
+        if rows3:
+            s3 = _Deck("On the GME desk today", "Filings, the insider ledger and the dates")
+            s3.table(rows3, cols=[200], hl={0} if fl else set())
+            s3.close("Filings link straight to", "EDGAR in the replies.")
+            out.append(s3.render(_deck_path(tag, 3)))
+    except Exception as e:
+        log.warning(f"recap deck failed: {e}")
+    return out
+
+
+async def job_gme_open(app):
+    if not GME_DESK:
+        return
+    day = _today_et()
+    if day.weekday() >= 5 or kv_get(f"gme_open_done:{day}"):
+        return
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(_YH, params={"range": "1d", "interval": "5m"}, headers=_UA_WEB)
+        res = r.json()["chart"]["result"][0]
+        ts = res.get("timestamp") or []
+        if not ts or datetime.fromtimestamp(ts[0], PROJECT_TZ).date() != day:
+            return                                   # holiday or no prints yet
+        o = res["indicators"]["quote"][0]["open"][0]
+        prev = res["meta"].get("chartPreviousClose") or res["meta"].get("previousClose")
+        if not o or not prev:
+            return
+    except Exception as e:
+        log.warning(f"gme open: {e}")
+        return
+    kv_set(f"gme_open_done:{day}", "1")
+    gap = _pct(o, prev)
+    text = (f"$GME opened at {_usd(o)} this morning\n\nprevious close {_usd(prev)}, a {gap} gap\n\n"
+            f"data: Yahoo Finance, first 5 minute print")
+    url = post_desk(text, kind="gme-open")
+    tg = (f"🔔 <b>$GME open</b>: {_usd(o)}\nprevious close {_usd(prev)} · gap {gap}"
+          + (f'\n🐦 <a href="{url}">on X</a>' if url else ""))
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=tg, parse_mode="HTML", disable_web_page_preview=True)
+    except Exception as e:
+        log.warning(f"gme open tg: {e}")
+
+
+async def job_gme_close(app, force: bool = False, chat_override=None):
+    if not GME_DESK and not force:
+        return
+    day = _today_et()
+    if not force and (day.weekday() >= 5 or kv_get(f"gme_close_done:{day}")):
+        return
+    mk = await gme_market()
+    if not mk:
+        return
+    if mk.get("mismatch") and not force:
+        chat = _sw_alert_chat()
+        if chat:
+            await app.bot.send_message(chat_id=chat, text="⚠️ GME recap held: Yahoo and Stooq disagree on today's close by more than 0.5%. /gme recap to see both.")
+        return
+    p = gme_recap_parts(mk, day)
+    if not p:
+        if force and chat_override:
+            await app.bot.send_message(chat_id=chat_override, text="no session today (weekend or holiday), so there's no recap.")
+        return
+    text = gme_recap_text(p)
+    slides = gme_recap_deck(p)
+    if chat_override:                                 # owner preview: nothing public
+        if slides:
+            await _tg_album(app, chat_override, slides)
+        await app.bot.send_message(chat_id=chat_override, text="preview of the X post:\n\n" + text)
+        return
+    kv_set(f"gme_close_done:{day}", "1")
+    url = post_desk(text, images=slides, kind="gme-recap")
+    first = await _tg_album(app, TARGET_CHAT_ID, slides) if slides else None
+    tg = "📊 <b>$GME daily recap</b>\n\n" + html.escape(text) + (f'\n\n🐦 <a href="{url}">the recap on X</a>' if url else "")
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=tg, parse_mode="HTML", disable_web_page_preview=True,
+                                   reply_to_message_id=getattr(first, "message_id", None))
+    except Exception as e:
+        log.warning(f"gme recap tg: {e}")
+
+
+# ── FINRA daily short volume ────────────────────────────────────────────────
+def _finra_url(day) -> str:
+    return f"https://cdn.finra.org/equity/regsho/daily/CNMSshvol{day.strftime('%Y%m%d')}.txt"
+
+
+def _parse_finra(txt: str, symbol: str = "GME") -> dict | None:
+    for ln in (txt or "").splitlines():
+        p = ln.split("|")
+        if len(p) >= 5 and p[1] == symbol:
+            try:
+                sv, tv = float(p[2]), float(p[4])
+                return {"date": p[0], "short": sv, "total": tv, "ratio": sv / tv * 100 if tv else 0}
+            except ValueError:
+                return None
+    return None
+
+
+def _sv_hist() -> list:
+    try:
+        return json.loads(kv_get("gme_shortvol_hist", "[]") or "[]")
+    except Exception:
+        return []
+
+
+async def job_gme_shortvol(app, force: bool = False, chat_override=None):
+    if not GME_DESK and not force:
+        return
+    day = _today_et()
+    if not force and (day.weekday() >= 5 or kv_get(f"gme_sv_done:{day}")):
+        return
+    try:
+        async with httpx.AsyncClient(timeout=20) as c:
+            hist = _sv_hist()
+            if len(hist) < 10:                       # first run: backfill 20 sessions
+                for k in range(30, 0, -1):
+                    d = day - timedelta(days=k)
+                    if d.weekday() >= 5 or any(h["date"] == d.strftime("%Y%m%d") for h in hist):
+                        continue
+                    r = await c.get(_finra_url(d))
+                    row = _parse_finra(r.text) if r.status_code == 200 else None
+                    if row:
+                        hist.append(row)
+                    await asyncio.sleep(0.2)
+            r = await c.get(_finra_url(day))
+            row = _parse_finra(r.text) if r.status_code == 200 else None
+    except Exception as e:
+        log.warning(f"finra: {e}")
+        return
+    if not row:
+        return                                       # not published yet; the next run tries again
+    hist = [h for h in hist if h["date"] != row["date"]] + [row]
+    hist.sort(key=lambda h: h["date"])
+    hist = hist[-40:]
+    kv_set("gme_shortvol_hist", json.dumps(hist))
+    prev = hist[-21:-1]
+    avg = sum(h["ratio"] for h in prev) / len(prev) if prev else 0
+    hi = max((h["ratio"] for h in prev), default=0)
+    text = (f"$GME short volume today (FINRA, all reporting venues): {_vol(row['short'])} of {_vol(row['total'])} "
+            f"shares, {row['ratio']:.1f}%\n\n"
+            + (f"20 session average {avg:.1f}%" + (", the highest in 20 sessions" if row["ratio"] > hi and prev else "") + "\n\n" if avg else "")
+            + "short volume counts every sale marked short, market makers included. it is not short interest")
+    slides = []
+    if DECKS_ENABLED:
+        try:
+            dd = datetime.strptime(row["date"], "%Y%m%d").strftime("%A %-d %B %Y")
+            s = _Deck("GME short volume", f"{dd} · FINRA Reg SHO daily file, consolidated")
+            s.cards([{"tag": "Short volume", "big": _vol(row["short"]), "text": "shares sold short"},
+                     {"tag": "Total volume", "big": _vol(row["total"]), "text": "on FINRA-reported venues"},
+                     {"tag": "Ratio", "big": f"{row['ratio']:.1f}%", "text": f"20 session avg {avg:.1f}%" if avg else "", "hl": True}], cols=3)
+            last = hist[-20:]
+            s.bars([h["ratio"] for h in last], [datetime.strptime(h["date"], "%Y%m%d").strftime("%-d %b") for h in last],
+                   caption="Short volume ratio, last 20 sessions")
+            s.close("Short volume is not short interest.", "Market makers are in it too.")
+            slides.append(s.render(_deck_path(f"sv-{row['date']}", 1)))
+        except Exception as e:
+            log.warning(f"short volume deck: {e}")
+    if chat_override:
+        if slides:
+            await _tg_album(app, chat_override, slides)
+        await app.bot.send_message(chat_id=chat_override, text="preview of the X post:\n\n" + text)
+        return
+    kv_set(f"gme_sv_done:{day}", "1")
+    url = post_desk(text, images=slides, kind="gme-shortvol")
+    first = await _tg_album(app, TARGET_CHAT_ID, slides) if slides else None
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, parse_mode="HTML", disable_web_page_preview=True,
+                                   text="🩳 <b>$GME short volume</b>\n\n" + html.escape(text)
+                                        + (f'\n\n🐦 <a href="{url}">on X</a>' if url else ""),
+                                   reply_to_message_id=getattr(first, "message_id", None))
+    except Exception as e:
+        log.warning(f"short volume tg: {e}")
+
+
+# ── the weekly wrap (Saturday) ──────────────────────────────────────────────
+async def job_gme_weekly(app, force: bool = False, chat_override=None):
+    if not GME_DESK and not force:
+        return
+    today = _today_et()
+    if not force and kv_get(f"gme_week_done:{today.isocalendar()[1]}"):
+        return
+    mk = await gme_market()
+    if not mk:
+        return
+    wk = today.isocalendar()[1]
+    bars = [b for b in mk["bars"] if date.fromisoformat(b["date"]).isocalendar()[1] == wk]
+    before = [b for b in mk["bars"] if date.fromisoformat(b["date"]).isocalendar()[1] < wk]
+    if not bars or not before:
+        return
+    start, end = before[-1]["c"], bars[-1]["c"]
+    hi, lo = max(b["h"] for b in bars), min(b["l"] for b in bars)
+    vol = sum(b["v"] for b in bars)
+    filings = []
+    for b in bars:
+        filings += _desk_today(b["date"])
+    led = [r for r in _ledger_since() if any(r["date"] == b["date"] for b in bars)]
+    text = (f"$GME this week: {_usd(start)} to {_usd(end)}, {_pct(end, start)}\n\n"
+            f"weekly high {_usd(hi)} · low {_usd(lo)} · volume {_vol(vol)}\n"
+            f"SEC filings: {len(filings)}" + (f" · insider buys: {len(led)}" if led else "") + "\n\n"
+            f"data: {mk['src']}, end of day")
+    slides = []
+    if DECKS_ENABLED:
+        try:
+            s1 = _Deck("GME week in review", f"Week {wk} · {bars[0]['date']} to {bars[-1]['date']} · {mk['src']}")
+            s1.cards([{"tag": "Week", "big": _pct(end, start), "text": f"{_usd(start)} to {_usd(end)}", "hl": True},
+                      {"tag": "High", "big": _usd(hi), "text": "weekly"},
+                      {"tag": "Low", "big": _usd(lo), "text": "weekly"},
+                      {"tag": "Volume", "big": _vol(vol), "text": "shares, all week"}], cols=4)
+            s1.table([(datetime.fromisoformat(b["date"]).strftime("%a %-d %b"), _usd(b["c"]), f"vol {_vol(b['v'])}")
+                      for b in bars], cols=[240, 200], hl={len(bars) - 1})
+            out1 = s1.render(_deck_path(f"week-{wk}", 1))
+            slides.append(out1)
+            if filings or led:
+                s2 = _Deck("The week's filings", "Straight from EDGAR")
+                s2.table([("13D/A" if str(r.get("form", "")).startswith("SCHEDULE") else "Form " + r.get("form", "")[:8], (r.get("who") or "") + " · " + str(r.get("what", ""))[:80])
+                          for r in filings[:7]] or [("None", "no filings this week")], cols=[200])
+                s2.close(f"{len(filings)} filings this week.", f"{len(led)} insider buys." if led else "")
+                slides.append(s2.render(_deck_path(f"week-{wk}", 2)))
+        except Exception as e:
+            log.warning(f"weekly deck: {e}")
+    if chat_override:
+        if slides:
+            await _tg_album(app, chat_override, slides)
+        await app.bot.send_message(chat_id=chat_override, text="preview of the X post:\n\n" + text)
+        return
+    kv_set(f"gme_week_done:{wk}", "1")
+    url = post_desk(text, images=slides, kind="gme-weekly")
+    first = await _tg_album(app, TARGET_CHAT_ID, slides) if slides else None
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, parse_mode="HTML", disable_web_page_preview=True,
+                                   text="🗓 <b>$GME week in review</b>\n\n" + html.escape(text)
+                                        + (f'\n\n🐦 <a href="{url}">on X</a>' if url else ""),
+                                   reply_to_message_id=getattr(first, "message_id", None))
+    except Exception as e:
+        log.warning(f"weekly tg: {e}")
+
+
+# ── what GME twitter is saying (the chatter board) ──────────────────────────
+async def job_gme_chatter(app, force: bool = False, chat_override=None):
+    if not (GME_CHATTER and X_ENABLED) and not force:
+        return
+    day = _today_et()
+    if not force and kv_get(f"gme_chatter_done:{day}"):
+        return
+    try:
+        import tweepy
+        client = tweepy.Client(consumer_key=X_API_KEY, consumer_secret=X_API_SECRET,
+                               access_token=X_ACCESS_TOKEN, access_token_secret=X_ACCESS_SECRET)
+        resp = client.search_recent_tweets(
+            query='($GME OR GameStop OR "Ryan Cohen" OR "Roaring Kitty") -is:retweet -is:reply lang:en',
+            max_results=max(10, min(100, GME_CHATTER_READS)), sort_order="relevancy", user_auth=True,
+            start_time=(datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            tweet_fields=["public_metrics", "created_at", "author_id"], expansions=["author_id"],
+            user_fields=["username"])
+    except Exception as e:
+        log.warning(f"gme chatter search: {e}")
+        return
+    tweets = resp.data or []
+    kv_set(f"prowlreads:{day}", str(int(kv_get(f"prowlreads:{day}", "0") or 0) + len(tweets)))
+    users = {u.id: u.username for u in (resp.includes or {}).get("users", [])}
+    me = (kv_get("x_me_handle") or "").lower()
+    seen, picks = set(), []
+    for t in sorted(tweets, key=lambda t: -(t.public_metrics or {}).get("like_count", 0)):
+        h = users.get(t.author_id, "")
+        likes = (t.public_metrics or {}).get("like_count", 0)
+        if not h or h.lower() == me or h in seen or likes < 20 or _off_limits(t.text):
+            continue
+        seen.add(h)
+        snippet = re.sub(r"https?://\S+", "", " ".join(t.text.split())).strip()
+        picks.append({"h": h, "text": snippet[:150] + ("..." if len(snippet) > 150 else ""), "likes": likes,
+                      "url": f"https://x.com/{h}/status/{t.id}"})
+        if len(picks) >= 4:
+            break
+    if len(picks) < 2:
+        return
+    slides = []
+    if DECKS_ENABLED:
+        try:
+            s = _Deck("What GME Twitter is saying", "The most-liked $GME posts in the last 24 hours, as posted")
+            s.table([(f"@{p['h']}"[:18], f"{p['likes']:,} likes", p["text"]) for p in picks], cols=[280, 150])
+            s.close("Chatter, not confirmed.", "Check every claim yourself.")
+            slides.append(s.render(_deck_path(f"chatter-{day}", 1)))
+        except Exception as e:
+            log.warning(f"chatter deck: {e}")
+    text = (f"what $GME twitter talked about today: the {len(picks)} most-liked posts in the last 24 hours, as posted\n\n"
+            "chatter, not confirmed. receipts in the card 👀")
+    if chat_override:
+        if slides:
+            await _tg_album(app, chat_override, slides)
+        await app.bot.send_message(chat_id=chat_override, text="preview:\n\n" + text + "\n\n" + "\n".join(p["url"] for p in picks))
+        return
+    kv_set(f"gme_chatter_done:{day}", "1")
+    url = post_desk(text, images=slides, kind="gme-chatter")
+    tg = ["🗣 <b>what GME Twitter is saying</b> (most-liked, last 24h, unverified)", ""]
+    for p in picks:
+        tg.append(f'▪️ <a href="{p["url"]}">@{html.escape(p["h"])}</a> · {p["likes"]:,} likes\n<i>{html.escape(p["text"])}</i>')
+    if url:
+        tg += ["", f'🐦 <a href="{url}">the board on X</a>']
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text="\n".join(tg), parse_mode="HTML",
+                                   disable_web_page_preview=True)
+    except Exception as e:
+        log.warning(f"chatter tg: {e}")
+
+
+# ── commands ────────────────────────────────────────────────────────────────
+async def cmd_gme(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/gme · /gme recap · /gme shortvol · /gme week · /gme chatter (previews go to the maker's DM)."""
+    msg = update.effective_message
+    arg = (ctx.args[0].lower() if ctx.args else "")
+    if arg in ("recap", "shortvol", "week", "chatter", "filing"):
+        if not _is_maker(update.effective_user):
+            await msg.reply_text("that one's juju's. /gme shows the latest numbers.")
+            return
+        await msg.reply_text("rendering a private preview, nothing goes public…")
+        cid = update.effective_chat.id
+        if arg == "recap":
+            await job_gme_close(ctx.application, force=True, chat_override=cid)
+        elif arg == "shortvol":
+            await job_gme_shortvol(ctx.application, force=True, chat_override=cid)
+        elif arg == "week":
+            await job_gme_weekly(ctx.application, force=True, chat_override=cid)
+        elif arg == "chatter":
+            await job_gme_chatter(ctx.application, force=True, chat_override=cid)
+        else:
+            filings = await fetch_edgar_latest()
+            if filings:
+                async with httpx.AsyncClient(timeout=20) as c:
+                    x_text, tg_html, _, slides = await _edgar_compose_v46(c, filings[0])
+                if slides:
+                    await _tg_album(ctx.application, cid, slides)
+                await ctx.bot.send_message(chat_id=cid, text="X post:\n\n" + x_text)
+                await ctx.bot.send_message(chat_id=cid, text=tg_html, parse_mode="HTML", disable_web_page_preview=True)
+        return
+    mk = await gme_market()
+    if not mk or not mk["bars"]:
+        await msg.reply_text("couldn't reach the market data feeds just now. try again in a minute.")
+        return
+    b = mk["bars"][-1]
+    prev = mk["bars"][-2] if len(mk["bars"]) > 1 else None
+    out = [f"<b>$GME</b> · last session {datetime.fromisoformat(b['date']).strftime('%a %-d %b')}",
+           f"close {_usd(b['c'])}" + (f" ({_pct(b['c'], prev['c'])})" if prev else ""),
+           f"open {_usd(b['o'])} · high {_usd(b['h'])} · low {_usd(b['l'])}",
+           f"volume {_vol(b['v'])}"]
+    if mk.get("last") and mk.get("last_t") and datetime.fromtimestamp(mk["last_t"], PROJECT_TZ).date() == _today_et():
+        out.append(f"latest print {_usd(mk['last'])}")
+    sv = _sv_hist()
+    if sv:
+        out.append(f"short volume ratio {sv[-1]['ratio']:.1f}% ({datetime.strptime(sv[-1]['date'], '%Y%m%d').strftime('%-d %b')}, FINRA)")
+    out.append(f"<i>data: {mk['src']}" + (", cross-checked with Stooq" if mk.get("checked") else "") + "</i>")
+    await msg.reply_text("\n".join(out), parse_mode="HTML")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v47 · THE WELCOME CARD + THE ELON DESKS (X only)
+#  Moon desk, SpaceX launches, Grok on the App Store, Tesla (close + filings),
+#  and the X Money / xAI wire. No Claude: every number comes from a feed or is
+#  computed here. These post to X only, never to the Telegram chat.
+# ══════════════════════════════════════════════════════════════════════════════
+ELON_DESK = os.environ.get("ELON_DESK", "on").lower() != "off"
+WELCOME_STORY_URL = os.environ.get("WELCOME_STORY_URL", "https://tinyurl.com/tsukipdf")
+WELCOME_LINKS_URL = os.environ.get("WELCOME_LINKS_URL", "https://linktr.ee/tsukionsol")
+
+
+def _welcome_caption(name: str) -> str:
+    return (f"🐈‍⬛ <b>Welcome to the Tsukiverse, {html.escape(name)}</b>\n\n"
+            "There are no coincidences. Start with the story, then ask me anything.")
+
+
+def _welcome_markup() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([[InlineKeyboardButton("📖 The story", url=WELCOME_STORY_URL),
+                                  InlineKeyboardButton("🔗 Links", url=WELCOME_LINKS_URL),
+                                  InlineKeyboardButton("📊 GME desk", callback_data="menu:gme")]])
+
+
+async def _welcome_card(msg, name: str):
+    """one message: the clip, two lines, three buttons. text card if no clip."""
+    cap, kb = _welcome_caption(name), _welcome_markup()
+    for fid in (WELCOME_VIDEO_FILE_ID, kv_get("welcome_video_fid")):
+        if not fid:
+            continue
+        try:
+            await msg.reply_video(video=fid, caption=cap, parse_mode="HTML", reply_markup=kb)
+            return
+        except Exception as e:
+            log.info(f"welcome card by file_id failed: {e}")
+    path = _welcome_video_file()
+    if path:
+        try:
+            with open(path, "rb") as f:
+                sent = await msg.reply_video(video=f, caption=cap, parse_mode="HTML", reply_markup=kb,
+                                             supports_streaming=True, width=1280, height=548)
+            if sent and sent.video:
+                kv_set("welcome_video_fid", sent.video.file_id)
+            return
+        except Exception as e:
+            log.warning(f"welcome card video failed: {e}")
+    else:
+        try:
+            await _welcome_video_missing_alert(msg.get_bot())
+        except Exception:
+            pass
+    await msg.reply_text(cap, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+
+
+async def handle_new_members_v47(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    if not msg or not msg.new_chat_members:
+        return
+    for member in msg.new_chat_members:
+        if member.is_bot or _recently_welcomed(member.id):
+            continue
+        await _welcome_card(msg, member.first_name or "fren")
+
+
+# ── generic market data (TSLA uses the GME desk's feeds) ────────────────────
+async def ticker_market(sym: str) -> dict | None:
+    sym = sym.upper()
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+        try:
+            r = await c.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}",
+                            params={"range": "3mo", "interval": "1d"}, headers=_UA_WEB)
+            res = r.json()["chart"]["result"][0]
+            q = res["indicators"]["quote"][0]
+            bars = [{"date": datetime.fromtimestamp(ts, PROJECT_TZ).date().isoformat(),
+                     "o": q["open"][i], "h": q["high"][i], "l": q["low"][i], "c": q["close"][i],
+                     "v": q["volume"][i] or 0}
+                    for i, ts in enumerate(res.get("timestamp") or []) if q["close"][i] is not None]
+            m = res.get("meta") or {}
+            return {"bars": bars, "src": "Yahoo Finance", "hi52": m.get("fiftyTwoWeekHigh"),
+                    "lo52": m.get("fiftyTwoWeekLow"), "checked": False}
+        except Exception as e:
+            log.warning(f"{sym} market: {e}")
+            return None
+
+
+async def job_tsla_close(app, force: bool = False):
+    if not ELON_DESK and not force:
+        return
+    day = _today_et()
+    if not force and (day.weekday() >= 5 or kv_get(f"tsla_close_done:{day}")):
+        return
+    mk = await ticker_market("TSLA")
+    p = gme_recap_parts(mk, day) if mk else None
+    if not p:
+        return
+    kv_set(f"tsla_close_done:{day}", "1")
+    b = p["b"]
+    text = (f"$TSLA closed at {_usd(b['c'])} today, {p['chg']} on the day\n\n"
+            f"open {_usd(b['o'])} · high {_usd(b['h'])} · low {_usd(b['l'])}\n"
+            f"volume {_vol(b['v'])}" + (f", {p['vol_x']:.1f}x its 20 day average" if p["vol_x"] else "")
+            + (f"\nweek so far {p['wk_chg']}" if p.get("wk_chg") else "") + f"\n\ndata: {p['src']}, end of day")
+    slides = []
+    if DECKS_ENABLED:
+        try:
+            s = _Deck("Tesla daily recap", f"{datetime.fromisoformat(p['day']).strftime('%A %-d %B %Y')} · Nasdaq close · {p['src']}")
+            s.cards([{"tag": "Close", "big": _usd(b["c"]), "text": f"{p['chg']} on the day", "hl": True},
+                     {"tag": "Open", "big": _usd(b["o"]), "text": f"prev close {_usd(p['prev']['c'])}"},
+                     {"tag": "High", "big": _usd(b["h"]), "text": "intraday"},
+                     {"tag": "Low", "big": _usd(b["l"]), "text": "intraday"}], cols=4)
+            s.table([("Volume", f"{_vol(b['v'])} shares" + (f" · {p['vol_x']:.1f}x its 20 day average" if p["vol_x"] else ""))], cols=[280])
+            slides.append(s.render(_deck_path(f"tsla-{p['day']}", 1)))
+        except Exception as e:
+            log.warning(f"tsla deck: {e}")
+    post_desk(text, images=slides, kind="tsla-recap")
+
+
+# ── Tesla SEC filings (Elon's Form 4s included) ─────────────────────────────
+TESLA_CIK = "0001318605"
+
+
+async def _fetch_edgar_cik(cik: str) -> list:
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(f"https://data.sec.gov/submissions/CIK{cik}.json", headers={"User-Agent": EDGAR_UA})
+            if r.status_code != 200:
+                return []
+            rec = (r.json().get("filings") or {}).get("recent") or {}
+            n = len(rec.get("accessionNumber", []))
+            return [{"acc": rec["accessionNumber"][i], "form": rec["form"][i], "date": rec["filingDate"][i],
+                     "accepted": rec["acceptanceDateTime"][i], "doc": rec["primaryDocument"][i],
+                     "desc": (rec.get("primaryDocDescription") or [""] * n)[i], "cik": cik}
+                    for i in range(min(30, n))]
+    except Exception as e:
+        log.warning(f"edgar {cik}: {e}")
+        return []
+
+
+def _cik_link(f: dict) -> str:
+    nodash = f["acc"].replace("-", "")
+    return f"https://www.sec.gov/Archives/edgar/data/{int(f['cik'])}/{nodash}/{f['doc']}"
+
+
+async def _cik_raw(client, f: dict) -> str:
+    raw = re.sub(r"^xsl[^/]+/", "", f.get("doc") or "")
+    if not raw.endswith(".xml"):
+        return ""
+    try:
+        r = await client.get(f"https://www.sec.gov/Archives/edgar/data/{int(f['cik'])}/{f['acc'].replace('-', '')}/{raw}",
+                             headers={"User-Agent": EDGAR_UA})
+        return r.text if r.status_code == 200 else ""
+    except Exception:
+        return ""
+
+
+_TSLA_FORMS = {"4", "4/A", "144", "8-K", "10-Q", "10-K", "SCHEDULE 13D", "SCHEDULE 13D/A", "SCHEDULE 13G/A", "DEF 14A", "S-8"}
+
+
+async def job_tesla_filings(app):
+    if not ELON_DESK:
+        return
+    fl = await _fetch_edgar_cik(TESLA_CIK)
+    if not fl:
+        return
+    seen = set(json.loads(kv_get("tsla_seen", "[]") or "[]"))
+    if not seen:
+        kv_set("tsla_seen", json.dumps([f["acc"] for f in fl]))     # baseline: nothing old is posted
+        return
+    new = [f for f in fl if f["acc"] not in seen and f["form"] in _TSLA_FORMS][:3]
+    for f in fl:
+        seen.add(f["acc"])
+    kv_set("tsla_seen", json.dumps(sorted(seen)[-400:]))
+    async with httpx.AsyncClient(timeout=20) as c:
+        for f in reversed(new):
+            when = _edgar_accepted_et(f)
+            words = _edgar_form_words(f["form"])
+            x = [f"new $TSLA filing: Form {f['form']} ({words})"]
+            slides, who = [], ""
+            if f["form"] in ("4", "4/A"):
+                d = _form4_rows(await _cik_raw(c, f))
+                if d and d["rows"]:
+                    who = d["name"]
+                    x += ["", d["name"] + (f", {', '.join(d['roles'])}" if d["roles"] else ""), ""]
+                    x += [_f4_line(r) for r in d["rows"][:4]]
+                    if DECKS_ENABLED:
+                        try:
+                            s = _Deck(f"New Tesla filing · Form {f['form']}", f"{d['name']} · filed {when}")
+                            s.table([(_day_words(r["date"]), _F4_CODES.get(r["code"], r["code"]).capitalize(),
+                                      _num_str(r["shares_raw"]),
+                                      _px_str(r["price_raw"]) if _f4_float(r["price_raw"]) > 0 else "no price")
+                                     for r in d["rows"][:6]], cols=[130, 300, 200])
+                            s.close("Copied line by line", "from the filing.")
+                            slides.append(s.render(_deck_path(f"tsla-{f['acc'][-6:]}", 1)))
+                        except Exception as e:
+                            log.warning(f"tesla f4 deck: {e}")
+            elif f["form"] == "144":
+                d = _parse_144(await _cik_raw(c, f))
+                if d:
+                    who = d["name"]
+                    x += ["", f"{d['name']} gave notice of a planned sale of {_num_str(d['shares_raw'])} shares "
+                              f"around {_day_words(d['sale_date'], True)}. a notice, not a completed sale"]
+            x += ["", f"filed {when}"]
+            if who and "musk" in who.lower():
+                x.insert(1, "")
+                x.insert(2, "this one is elon's 👀")
+            post_desk("\n".join(x), images=slides, append_url=_cik_link(f), kind="tsla-filing")
+
+
+# ── the moon desk (computed here, no feed needed) ───────────────────────────
+# Meeus, Astronomical Algorithms ch. 49: true new and full moon instants to a
+# few minutes, which matters when a full moon lands near midnight ET.
+_SYNODIC = 29.530588861
+
+
+def _jd(t: datetime) -> float:
+    return t.timestamp() / 86400 + 2440587.5
+
+
+def _from_jd(jd: float) -> datetime:
+    return datetime.fromtimestamp((jd - 2440587.5) * 86400, timezone.utc)
+
+
+def _moon_phase_jde(k: float) -> float:
+    import math
+    T = k / 1236.85
+    jde = (2451550.09766 + 29.530588861 * k + 0.00015437 * T * T - 0.000000150 * T ** 3 + 0.00000000073 * T ** 4)
+    E = 1 - 0.002516 * T - 0.0000074 * T * T
+    r = math.radians
+    M = r(2.5534 + 29.10535670 * k - 0.0000014 * T * T - 0.00000011 * T ** 3)
+    Mp = r(201.5643 + 385.81693528 * k + 0.0107582 * T * T + 0.00001238 * T ** 3 - 0.000000058 * T ** 4)
+    F = r(160.7108 + 390.67050284 * k - 0.0016118 * T * T - 0.00000227 * T ** 3 + 0.000000011 * T ** 4)
+    Om = r(124.7746 - 1.56375588 * k + 0.0020672 * T * T + 0.00000215 * T ** 3)
+    sin = math.sin
+    full = abs(k % 1 - 0.5) < 1e-6
+    a = (-0.40614, 0.17302, 0.01614) if full else (-0.40720, 0.17241, 0.01608)
+    c = (a[0] * sin(Mp) + a[1] * E * sin(M) + a[2] * sin(2 * Mp) + (0.01043 if full else 0.01039) * sin(2 * F)
+         + (0.00734 if full else 0.00739) * E * sin(Mp - M) - (0.00515 if full else 0.00514) * E * sin(Mp + M)
+         + (0.00209 if full else 0.00208) * E * E * sin(2 * M) - 0.00111 * sin(Mp - 2 * F) - 0.00057 * sin(Mp + 2 * F)
+         + 0.00056 * E * sin(2 * Mp + M) - 0.00042 * sin(3 * Mp) + 0.00042 * E * sin(M + 2 * F)
+         + 0.00038 * E * sin(M - 2 * F) - 0.00024 * E * sin(2 * Mp - M) - 0.00017 * sin(Om))
+    return jde + c
+
+
+def _next_phase(at: datetime, full: bool) -> datetime:
+    import math
+    k0 = math.floor((_jd(at) - 2451550.09766) / _SYNODIC) - 1
+    for k in range(k0, k0 + 4):
+        t = _from_jd(_moon_phase_jde(k + (0.5 if full else 0.0)))
+        if t > at:
+            return t
+    return at
+
+
+def moon_state(at: datetime | None = None) -> dict:
+    import math
+    at = at or datetime.now(timezone.utc)
+    nxt_new = _next_phase(at, False)
+    prev_new = _next_phase(at - timedelta(days=30), False)
+    while _next_phase(prev_new, False) < at:
+        prev_new = _next_phase(prev_new, False)
+    age = (at - prev_new).total_seconds() / 86400
+    full_at = _next_phase(at, True)
+    if (at - (full_at - timedelta(days=_SYNODIC))).total_seconds() < 18 * 3600:
+        full_at = full_at - timedelta(days=_SYNODIC)            # the full moon was within the last 18h
+    illum = (1 - math.cos(2 * math.pi * age / _SYNODIC)) / 2
+    names = [(1.0, "new moon"), (6.4, "waxing crescent"), (8.4, "first quarter"), (13.8, "waxing gibbous"),
+             (15.8, "full moon"), (21.1, "waning gibbous"), (23.1, "last quarter"), (28.5, "waning crescent"),
+             (31.0, "new moon")]
+    name = next(n for lim, n in names if age < lim)
+    to_full = (full_at - at).total_seconds() / 86400
+    return {"age": age, "illum": illum, "name": name, "to_full": to_full,
+            "to_new": (nxt_new - at).total_seconds() / 86400, "full_date": full_at.astimezone(PROJECT_TZ)}
+
+
+_MOON_LINES = [
+    "tsuki is japanese for moon. I check on it every night, professionally",
+    "the moon does not care about your chart. it shows up on schedule anyway",
+    "some cats watch birds. this one watches the moon",
+    "a reminder from the night shift: it was never about the candles, it was about the cycle",
+    "the moon has kept perfect time for four billion years. most roadmaps can't manage four weeks",
+]
+
+
+async def job_moon_desk(app, force: bool = False):
+    if not ELON_DESK and not force:
+        return
+    day = _today_et()
+    if not force and kv_get(f"moon_done:{day}"):
+        return
+    m = moon_state()
+    big = -0.75 <= m["to_full"] < 1.0
+    countdown = 1.0 <= m["to_full"] <= 3.6
+    if not (big or countdown or day.weekday() == 6 or force):
+        return                                       # posts on full-moon days, the 3 days before, and Sundays
+    kv_set(f"moon_done:{day}", "1")
+    pct = round(m["illum"] * 100)
+    if big:
+        head = f"full moon tonight 🌙 {pct}% lit"
+    elif countdown:
+        head = f"{pct}% lit tonight. full moon in {round(m['to_full'])} day{'s' if round(m['to_full']) != 1 else ''}, {m['full_date'].strftime('%a %-d %b')}"
+    else:
+        head = f"tonight's moon: {m['name']}, {pct}% lit. next full moon {m['full_date'].strftime('%a %-d %b')}"
+    line = _MOON_LINES[day.toordinal() % len(_MOON_LINES)]
+    lunar = kv_get("next_lunar_mission", "")
+    text = head + "\n\n" + line + (f"\n\nnext launch headed for the moon: {lunar}" if lunar else "")
+    post_desk(text, kind="moon")
+
+
+# ── SpaceX launches (Launch Library 2, free) ────────────────────────────────
+_LL2 = "https://ll.thespacedevs.com/2.3.0/launches"
+
+
+async def _ll2(path: str, params: dict) -> list:
+    try:
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.get(f"{_LL2}/{path}/", params=params, headers={"User-Agent": "TsukiverseBot"})
+            if r.status_code != 200:
+                return []
+            return r.json().get("results") or []
+    except Exception as e:
+        log.warning(f"launch library: {e}")
+        return []
+
+
+def _launch_view(l: dict) -> dict:
+    mission = l.get("mission") or {}
+    orbit = ((mission.get("orbit") or {}).get("abbrev") or "")
+    rocket = (((l.get("rocket") or {}).get("configuration") or {}).get("name") or "")
+    try:
+        net = datetime.fromisoformat(l["net"].replace("Z", "+00:00"))
+    except Exception:
+        net = None
+    return {"id": l.get("id"), "name": l.get("name", ""), "rocket": rocket, "net": net,
+            "status": ((l.get("status") or {}).get("abbrev") or ""), "orbit": orbit,
+            "pad": ((l.get("pad") or {}).get("name") or ""), "mission": mission.get("name") or "",
+            "lunar": orbit in ("TLI", "LO", "Lunar") or "moon" in (mission.get("description") or "").lower()
+                     or "lunar" in (mission.get("description") or "").lower(),
+            "starship": "starship" in rocket.lower() or "starship" in (l.get("name") or "").lower(),
+            "url": f"https://ll.thespacedevs.com/2.3.0/launches/{l.get('id')}/"}
+
+
+async def job_spacex_desk(app):
+    """every 30 min: Starship gets T-24h and T-1h posts; every launch gets a
+    result post; the next lunar launch is remembered for the moon desk."""
+    if not ELON_DESK:
+        return
+    up = [_launch_view(l) for l in await _ll2("upcoming", {"lsp__name": "SpaceX", "limit": 15, "mode": "normal"})]
+    now = datetime.now(timezone.utc)
+    lunar = next((u for u in up if u["lunar"] and u["net"]), None)
+    kv_set("next_lunar_mission", f"{lunar['name']}, NET {lunar['net'].astimezone(PROJECT_TZ).strftime('%-d %b')}" if lunar else "")
+    for u in up:
+        if not u["net"] or u["status"] not in ("Go", "TBC", "TBD"):
+            continue
+        hrs = (u["net"] - now).total_seconds() / 3600
+        for mark, label in ((24, "24h"), (1, "1h")):
+            key = f"sx_t:{u['id']}:{label}"
+            if not (u["starship"] or label == "1h"):
+                continue
+            if mark - 0.6 <= hrs <= mark + 0.1 and not kv_get(key) and u["status"] == "Go":
+                kv_set(key, "1")
+                et = u["net"].astimezone(PROJECT_TZ).strftime("%-I:%M%p ET").replace("AM", "am").replace("PM", "pm")
+                text = (f"T-{label}: {u['name']}\n\n{u['rocket']} from {u['pad']}, "
+                        f"no earlier than {et}" + (f"\nmission: {u['mission']}" if u["mission"] else "")
+                        + ("\n\nheaded for the moon 🌙" if u["lunar"] else ""))
+                slides = []
+                if DECKS_ENABLED and u["starship"]:
+                    try:
+                        s = _Deck(f"Starship · T-{label}", f"{u['name']} · {u['pad']}")
+                        s.cards([{"tag": "Launch window", "big": et, "text": u["net"].astimezone(PROJECT_TZ).strftime("%A %-d %B"), "hl": True},
+                                 {"tag": "Vehicle", "title": u["rocket"], "text": u["mission"] or "SpaceX"}], cols=2)
+                        s.close("Times move.", "The bot posts the result either way.")
+                        slides.append(s.render(_deck_path(f"sx-{u['id'][:8]}-{label}", 1)))
+                    except Exception as e:
+                        log.warning(f"spacex deck: {e}")
+                post_desk(text, images=slides, kind="spacex")
+    # results
+    prev = [_launch_view(l) for l in await _ll2("previous", {"lsp__name": "SpaceX", "limit": 6, "mode": "normal"})]
+    for p in prev:
+        if p["status"] not in ("Success", "Failure", "Partial Failure") or not p["net"]:
+            continue
+        if (now - p["net"]).total_seconds() > 6 * 3600 or kv_get(f"sx_r:{p['id']}"):
+            continue
+        kv_set(f"sx_r:{p['id']}", "1")
+        if not (p["starship"] or p["lunar"] or p["status"] != "Success"):
+            continue                                 # routine falcon successes: no post, the feed would drown
+        verdict = {"Success": "success", "Failure": "failure", "Partial Failure": "partial failure"}[p["status"]]
+        post_desk(f"{p['name']}: {verdict}\n\n{p['rocket']} from {p['pad']}" + (f"\nmission: {p['mission']}" if p["mission"] else ""),
+                  kind="spacex-result")
+
+
+async def job_spacex_week(app):
+    """monday morning: the week's SpaceX launches in one card."""
+    if not ELON_DESK:
+        return
+    up = [_launch_view(l) for l in await _ll2("upcoming", {"lsp__name": "SpaceX", "limit": 20, "mode": "normal"})]
+    now = datetime.now(timezone.utc)
+    wk = [u for u in up if u["net"] and 0 <= (u["net"] - now).days < 7]
+    if not wk:
+        return
+    text = (f"SpaceX this week: {len(wk)} launch{'es' if len(wk) != 1 else ''} on the schedule"
+            + (f", including {sum(u['starship'] for u in wk)} Starship" if any(u["starship"] for u in wk) else "")
+            + "\n\n" + "\n".join(f"{u['net'].astimezone(PROJECT_TZ).strftime('%a %-d %b')} · {u['rocket']} · {u['mission'] or u['name']}"
+                                 for u in wk[:6]) + "\n\nschedule: Launch Library 2. dates move")
+    slides = []
+    if DECKS_ENABLED:
+        try:
+            s = _Deck("SpaceX this week", "Upcoming launches · Launch Library 2 · times move")
+            s.table([(u["net"].astimezone(PROJECT_TZ).strftime("%a %-d %b"), u["rocket"], u["mission"] or u["name"])
+                     for u in wk[:7]], cols=[180, 300], hl={i for i, u in enumerate(wk[:7]) if u["starship"] or u["lunar"]})
+            slides.append(s.render(_deck_path(f"sx-week-{_today_et()}", 1)))
+        except Exception as e:
+            log.warning(f"spacex week deck: {e}")
+    post_desk(text, images=slides, kind="spacex-week")
+
+
+# ── Grok on the App Store (Apple's public chart feed) ───────────────────────
+_APPLE_TOP = "https://rss.applemarketingtools.com/api/v2/us/apps/top-free/100/apps.json"
+
+
+def _rank_of(results: list, needle: str) -> int | None:
+    for i, a in enumerate(results, 1):
+        if needle in (a.get("name") or "").lower():
+            return i
+    return None
+
+
+async def job_grok_rank(app, force: bool = False):
+    if not ELON_DESK and not force:
+        return
+    day = _today_et()
+    if not force and kv_get(f"grok_rank_done:{day}"):
+        return
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(_APPLE_TOP)
+            res = (r.json().get("feed") or {}).get("results") or []
+    except Exception as e:
+        log.warning(f"app store feed: {e}")
+        return
+    if not res:
+        return
+    grok, gpt, gem = _rank_of(res, "grok"), _rank_of(res, "chatgpt"), _rank_of(res, "gemini")
+    hist = json.loads(kv_get("grok_rank_hist", "[]") or "[]")
+    prev = hist[-1]["grok"] if hist else None
+    hist.append({"d": day.isoformat(), "grok": grok, "gpt": gpt, "gem": gem})
+    kv_set("grok_rank_hist", json.dumps(hist[-60:]))
+    kv_set(f"grok_rank_done:{day}", "1")
+    if grok is None:
+        text = "Grok is outside the US App Store top 100 free apps today"
+    else:
+        move = ""
+        if prev:
+            move = f", up {prev - grok}" if grok < prev else f", down {grok - prev}" if grok > prev else ", unchanged"
+        text = f"Grok is #{grok} on the US App Store's top free apps today{move}"
+    others = [f"ChatGPT #{gpt}" if gpt else "", f"Gemini #{gem}" if gem else ""]
+    if any(others):
+        text += "\n\nfor scale: " + ", ".join(o for o in others if o)
+    text += "\n\nsource: Apple's top free chart, US"
+    post_desk(text, kind="grok-rank")
+
+
+# ── the X Money / xAI wire (Google News headlines, capped) ──────────────────
+_WIRE_FEEDS = {
+    "xmoney": "https://news.google.com/rss/search?q=%22X%20Money%22%20(Musk%20OR%20payments)&hl=en-US&gl=US&ceid=US:en",
+    "xai": "https://news.google.com/rss/search?q=xAI%20Grok%20(launch%20OR%20release%20OR%20model)&hl=en-US&gl=US&ceid=US:en",
+}
+
+
+async def job_elon_wire(app):
+    if not ELON_DESK:
+        return
+    day = _today_et()
+    cap_key = f"elon_wire:{day}"
+    sent = int(kv_get(cap_key, "0") or 0)
+    if sent >= 3:
+        return
+    for lane, url in _WIRE_FEEDS.items():
+        try:
+            async with httpx.AsyncClient(timeout=15) as c:
+                r = await c.get(url, headers=_UA_WEB)
+            items = re.findall(r"<item>(.*?)</item>", r.text, re.S)
+        except Exception as e:
+            log.warning(f"elon wire {lane}: {e}")
+            continue
+        for it in items[:8]:
+            title = html.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", (re.search(r"<title>(.*?)</title>", it, re.S) or [None, ""])[1])).strip()
+            link = (re.search(r"<link>(.*?)</link>", it, re.S) or [None, ""])[1].strip()
+            pub = (re.search(r"<pubDate>(.*?)</pubDate>", it, re.S) or [None, ""])[1].strip()
+            try:
+                from email.utils import parsedate_to_datetime
+                age = (datetime.now(timezone.utc) - parsedate_to_datetime(pub)).total_seconds() / 3600
+            except Exception:
+                age = 99
+            if not title or age > 6 or _off_limits(title):
+                continue
+            if not _story_claim("elonwire " + title, ttl_hours=72):
+                continue
+            label = "X Money" if lane == "xmoney" else "xAI"
+            post_desk(f"{label} wire: {title}", append_url=link, kind=f"wire-{lane}")
+            sent += 1
+            kv_set(cap_key, str(sent))
+            if sent >= 3:
+                return
+            break                                  # one headline per lane per run
+
+
+async def cmd_elon(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/elon (maker): what the Elon desks would post right now, privately."""
+    if not _is_maker(update.effective_user):
+        return
+    m = moon_state()
+    up = [_launch_view(l) for l in await _ll2("upcoming", {"lsp__name": "SpaceX", "limit": 5, "mode": "normal"})]
+    lines = [f"🌙 moon: {m['name']}, {round(m['illum'] * 100)}% lit, full {m['full_date'].strftime('%a %-d %b')}",
+             "🚀 next SpaceX: " + (", ".join(f"{u['rocket']} {u['net'].astimezone(PROJECT_TZ).strftime('%-d %b')}" for u in up[:3] if u["net"]) or "feed unreachable"),
+             "🤖 grok rank history: " + ", ".join(f"#{h['grok']}" for h in json.loads(kv_get("grok_rank_hist", "[]") or "[]")[-5:] if h.get("grok")),
+             f"desks: {'on' if ELON_DESK else 'off'} · X only, never the chat"]
+    await update.effective_message.reply_text("\n".join(lines))
+
+
+
+# ── v48 · the site feed ──────────────────────────────────────────────────────
+def _site_feed() -> dict:
+    """what tsukiverse.xyz shows on the GME desk. read-only, no secrets."""
+    led = []
+    for r in _ledger_since("2026-09-08"):
+        led.append([r.get("date", ""), r.get("name", ""), ", ".join(r.get("roles") or []) or "Insider",
+                    _num_str(r.get("buy_shares", 0)),
+                    _px_str(r.get("buy_price_raw")) or _px_str(f"{r.get('buy_price', 0):.4f}"),
+                    str(r.get("acc", "")).split("#")[0]])
+    fl = []
+    today = datetime.now(PROJECT_TZ).date()
+    for k in range(0, 21):
+        d = today - timedelta(days=k)
+        for r in reversed(_desk_today(d.isoformat())):
+            form = str(r.get("form", ""))
+            fl.append([d.strftime("%-d %b"), "13D/A" if form.startswith("SCHEDULE") else "Form " + form,
+                       r.get("who", ""), r.get("what", ""), r.get("acc", "")])
+    sv = _sv_hist()
+    return {"updated": datetime.now(PROJECT_TZ).isoformat(timespec="minutes"), "ledger": led, "filings": fl[:8],
+            "shortvol": sv[-1] if sv else None}
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
@@ -14965,7 +16950,7 @@ def main():
         ("braintest", cmd_braintest), ("chatpost", cmd_chatpost),
         ("mindshare", cmd_mindshare), ("sitewatch", cmd_sitewatch),
         ("insiders", cmd_insiders), ("alerts", cmd_alerts), ("wizard", cmd_wizard),
-        ("board", cmd_board),
+        ("board", cmd_board), ("gme", cmd_gme), ("elon", cmd_elon),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
@@ -14989,7 +16974,7 @@ def main():
     # last and ignores anything that is not a game launch.
     app.add_handler(CallbackQueryHandler(game_launch_callback))
     app.add_error_handler(on_error)
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members))
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_members_v47))
     from telegram.ext import ChatMemberHandler
     app.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.CHAT_MEMBER))
     # the maker sends the welcome clip in DM -> file_id back
@@ -15011,7 +16996,21 @@ def main():
     scheduler.add_job(job_daily_campaign,    "cron", hour=7, minute=0, timezone=ny_tz, args=[app])  # 7am New York, auto-handles EST/EDT
     scheduler.add_job(job_campaign_hype,      "interval", minutes=30, args=[app])
     scheduler.add_job(job_rwa_wallet_watch,   "interval", minutes=10, args=[app])
-    scheduler.add_job(job_edgar_watch,  "interval", minutes=2, args=[app])
+    scheduler.add_job(job_edgar_watch_v46, "interval", minutes=2, args=[app])
+    scheduler.add_job(job_insider_rebuild_v46, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=75), args=[app])
+    scheduler.add_job(job_gme_open,     "cron", day_of_week="mon-fri", hour=9, minute="36,45", timezone=ny_tz, args=[app])
+    scheduler.add_job(job_gme_close,    "cron", day_of_week="mon-fri", hour=16, minute="12,30", timezone=ny_tz, args=[app])
+    scheduler.add_job(job_gme_shortvol, "cron", day_of_week="mon-fri", hour="18,19,20", minute=20, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_gme_chatter,  "cron", hour=20, minute=40, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_gme_weekly,   "cron", day_of_week="sat", hour=10, minute=5, timezone=ny_tz, args=[app])
+    # v47 · Elon desks, X only
+    scheduler.add_job(job_tsla_close,    "cron", day_of_week="mon-fri", hour=16, minute="22,42", timezone=ny_tz, args=[app])
+    scheduler.add_job(job_tesla_filings, "interval", minutes=10, args=[app])
+    scheduler.add_job(job_moon_desk,     "cron", hour=20, minute=5, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_spacex_desk,   "interval", minutes=30, args=[app])
+    scheduler.add_job(job_spacex_week,   "cron", day_of_week="mon", hour=8, minute=50, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_grok_rank,     "cron", hour=11, minute=10, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_elon_wire,     "interval", minutes=45, args=[app])
     scheduler.add_job(job_daily_board, "cron", hour=9, minute=20, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_floor, "cron", minute=45, timezone=ny_tz, args=[app])
     scheduler.add_job(job_insider_backfill, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=40), args=[app])
