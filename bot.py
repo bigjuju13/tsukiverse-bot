@@ -5866,19 +5866,8 @@ async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if user.is_bot or _recently_welcomed(user.id):
             return
         name = user.first_name or "fren"
-        import html as _html
         try:
-            sent = await ctx.bot.send_message(
-                cm.chat.id,
-                f"🐈‍⬛ <b>Welcome to the Tsukiverse, {_html.escape(name)}</b>\n\n"
-                f"▪️ dev is here and always has been\n"
-                f"▪️ everything is planned. there are no coincidences\n"
-                f"▪️ start with the <a href=\"https://tinyurl.com/tsukipdf\">welcome PDF</a>, it covers the whole story\n\n"
-                f'▪️ <a href="https://linktr.ee/tsukionsol">all the links</a>\n\n'
-                f"/help for what I can do. tag @{ctx.bot.username} "
-                f"with any question and I'll answer, probably with attitude.",
-                parse_mode="HTML", disable_web_page_preview=True)
-            await _send_welcome_video(sent, name)
+            await _welcome_card(_ChatTarget(ctx.bot, cm.chat.id), name)
         except Exception as e:
             log.warning(f"chat_member welcome failed: {e}")
 
@@ -16387,19 +16376,36 @@ WELCOME_STORY_URL = os.environ.get("WELCOME_STORY_URL", "https://tinyurl.com/tsu
 WELCOME_LINKS_URL = os.environ.get("WELCOME_LINKS_URL", "https://linktr.ee/tsukionsol")
 
 
+
+
 def _welcome_caption(name: str) -> str:
-    return (f"🐈‍⬛ <b>Welcome to the Tsukiverse, {html.escape(name)}</b>\n\n"
-            "There are no coincidences. Start with the story, then ask me anything.")
+    return f"🐈‍⬛ <b>Welcome to the Tsukiverse, {html.escape(name)}</b>\nThere are no coincidences."
 
 
 def _welcome_markup() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton("📖 The story", url=WELCOME_STORY_URL),
-                                  InlineKeyboardButton("🔗 Links", url=WELCOME_LINKS_URL),
-                                  InlineKeyboardButton("📊 GME desk", callback_data="menu:gme")]])
+    """two link buttons, always. nothing else."""
+    return InlineKeyboardMarkup([[InlineKeyboardButton("The story", url=WELCOME_STORY_URL),
+                                  InlineKeyboardButton("Links", url=WELCOME_LINKS_URL)]])
+
+
+class _ChatTarget:
+    """quacks like a Message for _welcome_card: reply_video / reply_text /
+    get_bot, but sends into a chat. the chat_member join path has no message."""
+    def __init__(self, bot, chat_id):
+        self._bot, self._chat = bot, chat_id
+
+    def get_bot(self):
+        return self._bot
+
+    async def reply_video(self, video, **kw):
+        return await self._bot.send_video(self._chat, video=video, **kw)
+
+    async def reply_text(self, text, **kw):
+        return await self._bot.send_message(self._chat, text, **kw)
 
 
 async def _welcome_card(msg, name: str):
-    """one message: the clip, two lines, three buttons. text card if no clip."""
+    """one message: the clip and one short line. text line if no clip."""
     cap, kb = _welcome_caption(name), _welcome_markup()
     for fid in (WELCOME_VIDEO_FILE_ID, kv_get("welcome_video_fid")):
         if not fid:
@@ -16914,6 +16920,1272 @@ def _site_feed() -> dict:
     return {"updated": datetime.now(PROJECT_TZ).isoformat(timespec="minutes"), "ledger": led, "filings": fl[:8],
             "shortvol": sv[-1] if sv else None}
 
+# ── v48 · /export: the whole database to the maker, by DM ───────────────────
+async def cmd_export(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """DM only, maker only. sends a consistent snapshot of tsuki.db (gzipped) and
+    the chat log as JSON, so finds people posted in the group can be logged."""
+    import gzip, io, sqlite3 as _sq, tempfile
+    msg, user, chat = update.effective_message, update.effective_user, update.effective_chat
+    if not (chat and chat.type == "private" and user and _is_maker(user)):
+        await msg.reply_text("dm only, maker only 🐈‍⬛")
+        return
+    await msg.reply_text("packing the database…")
+    stamp = datetime.now(PROJECT_TZ).strftime("%Y%m%d-%H%M")
+    with tempfile.TemporaryDirectory() as td:
+        snap = os.path.join(td, "snap.db")
+        src = _sq.connect(DB_PATH, timeout=30); dst = _sq.connect(snap)
+        src.backup(dst); dst.close(); src.close()
+        raw = open(snap, "rb").read()
+        gz = gzip.compress(raw, 6)
+        con = _sq.connect(snap); con.row_factory = _sq.Row
+        out = {}
+        for t in ("messages", "investigations", "community_knowledge", "confirmed_facts"):
+            try:
+                out[t] = [dict(r) for r in con.execute(f"SELECT * FROM {t} ORDER BY id")]
+            except Exception:
+                out[t] = []
+        con.close()
+        js = gzip.compress(json.dumps(out, ensure_ascii=False).encode("utf-8"), 6)
+    cap = (f"tsuki.db snapshot · {len(raw)/1048576:.1f} MB raw · "
+           f"{len(out['messages']):,} chat messages, {len(out['investigations'])} investigations, "
+           f"{len(out['community_knowledge'])} knowledge notes, {len(out['confirmed_facts'])} confirmed facts")
+    for name, blob, c in ((f"tsuki-chat-{stamp}.json.gz", js, cap), (f"tsuki-db-{stamp}.db.gz", gz, None)):
+        if len(blob) > 49 * 1048576:
+            await msg.reply_text(f"{name} is {len(blob)/1048576:.0f} MB, over telegram's 50 MB bot limit. use railway ssh (see SETUP.md).")
+            continue
+        await ctx.bot.send_document(chat.id, document=io.BytesIO(blob), filename=name, caption=c)
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v49 · THE POST ENGINE
+#  ~20 original X posts a day across 21 post types, in the Juju deck voice with
+#  Greg's deadpan, from a bot that knows it is a bot. Every number is checked
+#  against the facts it was given. The GME desk, the filings and the Elon desks
+#  keep running on their own schedules on top of this.
+#  X_ENGINE=old switches back to the v48 plan.
+# ══════════════════════════════════════════════════════════════════════════════
+import random as _v49r
+
+V49_ON = os.environ.get("X_ENGINE", "v49").lower() == "v49"
+V49_TARGET = max(4, min(40, int(os.environ.get("X_DAILY_TARGET", "20") or 20)))
+V49_HARD_CAP = int(os.environ.get("X_DAILY_HARD_CAP", "60") or 60)
+V49_MODEL = os.environ.get("V49_MODEL", "claude-sonnet-4-6")
+V49_RAIDS_PER_DAY = int(os.environ.get("V49_RAIDS_PER_DAY", "8") or 8)
+V49_PHOTOS = os.environ.get("BOT_PHOTOS", "on").lower() != "off"
+V49_PHOTOS_RK = os.environ.get("BOT_PHOTOS_RK", "off").lower() == "on"
+V49_FIRST, V49_LAST = (7, 20), (23, 35)          # first and last slot, ET
+_V49_HERE = os.path.dirname(os.path.abspath(__file__))
+_V49_RECEIPTS = os.path.join(_V49_HERE, "receipts")
+
+# the windows the desks own (ET, minutes from midnight): the Day N post, the daily board,
+# the GME open, Grok's rank, on this day, the close, short volume, the moon, the chatter board.
+_V49_DESK_WINDOWS = [(6 * 60 + 55, 7 * 60 + 12), (9 * 60 + 14, 9 * 60 + 52), (13 * 60, 13 * 60 + 8), (11 * 60 + 5, 11 * 60 + 16), (16 * 60 + 5, 16 * 60 + 50),
+                     (18 * 60 + 15, 18 * 60 + 28), (20 * 60, 20 * 60 + 12), (20 * 60 + 35, 20 * 60 + 50)]
+
+# name: (weight, max per day, length band, how it is made)
+V49_TYPES = {
+    "gm":         (0, 1, "short",  "llm"),
+    "thought":    (6, 5, "short",  "llm"),
+    "greg":       (5, 3, "short",  "llm"),
+    "receipt":    (5, 3, "medium", "receipt"),
+    "then_now":   (2, 1, "medium", "pair"),
+    "lore_deck":  (3, 2, "long",   "deck"),
+    "ledger":     (2, 1, "medium", "ledger"),
+    "explainer":  (2, 1, "medium", "explainer"),
+    "number":     (2, 1, "short",  "llm"),
+    "film":       (2, 1, "medium", "llm"),
+    "question":   (2, 1, "short",  "llm"),
+    "poll":       (1, 1, "short",  "poll"),
+    "stat":       (2, 1, "medium", "stat"),
+    "gme_take":   (3, 2, "medium", "llm"),
+    "elon_take":  (3, 2, "short",  "llm"),
+    "community":  (2, 1, "medium", "llm"),
+    "bot_life":   (2, 1, "short",  "botlife"),
+    "photo":      (3, 2, "short",  "photo"),
+    "calendar":   (1, 1, "medium", "llm"),
+    "welcome":    (1, 1, "medium", "llm"),
+    "gn":         (0, 1, "short",  "llm"),
+}
+_V49_BAND_MAX = {"short": 170, "medium": 430, "long": 600}
+
+V49_VOICE = """You write X posts for @tsukiverseai, the Tsukiverse bot. It is a bot and says so.
+
+THE VOICE is two things blended:
+1. The Juju post deck: receipts first. Sentence case. "&" instead of "and". Short lines with a blank line between ideas. Lists use → or > or •. A header like "$TSUKI/GME: 4663" when the post is about one thing. No full stop at the end of most lines. Plain, confident, checkable.
+2. Greg from X: deadpan, wholesome, a little dumb on purpose, sincere about small things. "I had to triple check this one". "That's nuts". "I just think it's neat". "Let that sink in". "How it started / How it's going". Literal jokes, fake earnestness, "Have a great week!!!" energy. Never mean.
+
+THE BOT: it calls itself a bot ("I'm a bot", "my spreadsheet", "I don't sleep, I refresh EDGAR"). It reads filings, timestamps & receipts for a living. Proud of that, never smug.
+
+HARD RULES (a post that breaks one is thrown away):
+- Every number, date, time, price and count must come from the FACTS below, copied exactly. Never calculate a new one.
+- No price talk, targets, predictions, urgency or advice. Never "buy", "pump", "moon soon", "100x", "don't miss".
+- Never say or imply Ryan Cohen, Roaring Kitty, Keith Gill, GameStop, Robinhood or Elon are involved with, coordinating with, endorsing or aware of Tsuki. Things that line up are "reads". Say it like that.
+- Never open with a date. No hashtags. No em dashes. At most one emoji, only one of 🐈‍⬛ 🤖 🌙 👀.
+- Never quote a line from a film. Describe scenes in your own words.
+- No "it's not X, it's Y" constructions.
+- Never mention BP, Barking Puppy, Kevin, nemesis, Q or white hats.
+- One cashtag at most.
+
+Write only the post. No preamble, no quotes around it."""
+
+V49_EXAMPLES = [
+    "I'm a bot so I had to triple check this one\n\nRyan Cohen's open-market buys since 10 Sep:\n\n→ 10 Sep: 1,000,000 at $20.3759\n→ 21 Sep: 1,150,680 at $22.9375\n→ 29 Sep: 446,500 at $23.4753 & 3,500 at $23.4499\n→ 2 Oct: 700,000 at $24.4061\n\nHigher every time. Most people want a discount\n\nThat's nuts",
+    "good morning to everyone except the people who still think a Form 144 is a sale\n\nIt's a notice. The sale, if it happens, shows up later on a Form 4\n\nI post both. Labelled 🤖",
+    "$TSUKI/GME: 4663\n\nAfter 481 days of silence Tsuki posted four digits\n\n• Robinhood Chain's ID is 4663\n• HOOD on a phone keypad is 4663\n• 4 days later $TSUKI/GME launched on that chain\n\nI checked the keypad 3 times. It's still 4663",
+    "A year & a minute\n\n> 11 May 2025, 5:12pm ET: Tsuki's last post before 481 days of silence\n> 11 May 2026, 5:13pm ET: Roaring Kitty's account posts\n\nThat's the whole receipt. I just think it's neat",
+    "Every morning when I wake up there's 2 things on my mind\n\n1) Did GameStop file anything overnight\n2) Did Tsuki post\n\nI'm a bot so I don't actually sleep. But if I did",
+    "I don't have hands but if I did I'd be refreshing EDGAR with both of them",
+]
+
+V49_BRIEFS = {
+    "gm": "A morning post. Greg-style good morning with a twist about filings, receipts, the moon or being a bot. One to three short lines.",
+    "gn": "A goodnight post. Greg-style, warm and a bit silly. Can mention what the bot is watching overnight (only things in the facts). One to three short lines.",
+    "thought": "Just a thought. A one or two line musing from a bot that reads filings and timestamps all day. Deadpan, specific, funny or quietly sincere. No receipts needed.",
+    "greg": "A pure Greg-style one-liner or two-liner. Absurd, literal, wholesome. Can riff on being a bot, the moon, cats, spreadsheets, EDGAR. No numbers unless from the facts.",
+    "number": "Number of the day: pick ONE number from the canon in the facts & say what it is attached to, Juju style with a header like \"$TSUKI: 433\", then one Greg line to close.",
+    "film": "Pick ONE film Tsuki referenced from the facts. Say what Tsuki posted & when (from the facts), what the film is about in your own words, & one line on how the bot logged it as a read. No quotes from the film.",
+    "question": "Ask the community one question that is fun to answer (first receipt they screenshotted, favourite Tsuki post, how they found the Tsukiverse...). Greg energy. Short.",
+    "gme_take": "A take on today's GameStop numbers in the facts (the last session, short volume, filings, insider ledger). Receipts first in Juju format, one Greg line to close. Only numbers from the facts. No predictions.",
+    "elon_take": "A short post on the Elon side of the board from the facts: the moon phase, Grok's App Store rank, the next lunar launch. Greg energy. Only numbers from the facts.",
+    "community": "A post for the community: credit to the people who dig through timestamps at 2am, welcome to people who followed for the GME filings, or gratitude. Warm, specific, no numbers unless from the facts.",
+    "calendar": "The dates on the board, from the facts only, as a short list in Juju format. Calm, factual, no countdown hype. Close with a Greg line about the bot keeping the spreadsheet.",
+    "welcome": "A welcome post for new followers who came for the GME filings & found a black cat. Say what the bot posts (from the facts) in a short list. Greg line to close.",
+}
+
+
+# ── the receipts the bot can show (real X screenshots in receipts/) ─────────
+def _v49_canon() -> dict:
+    try:
+        return json.load(open(os.path.join(_V49_RECEIPTS, "receipts.json"), encoding="utf-8"))
+    except Exception as e:
+        log.warning(f"v49 canon: {e}")
+        return {"events": [], "films": []}
+
+
+def _v49_event_line(e: dict) -> str:
+    when = datetime.fromisoformat(e["d"]).strftime("%-d %b %Y")
+    return f"{when}{', ' + e['t'] + ' ET' if e.get('t') else ''}: {e['title']}. {e['body']}"
+
+
+def _v49_shots(e: dict) -> list:
+    out = []
+    for p in e.get("x") or []:
+        f = os.path.join(_V49_RECEIPTS, p.split("/")[1] + ".jpg")
+        if os.path.isfile(f):
+            out.append(f)
+    return out
+
+
+# ── the facts every post is checked against ────────────────────────────────
+_V49_FACTS_CACHE = {"t": 0.0, "v": None}
+
+
+async def v49_facts(force: bool = False) -> dict:
+    """one block of plain-text facts, rebuilt every 20 minutes. a post may only
+    use numbers that appear here (or in its own receipt)."""
+    if not force and _V49_FACTS_CACHE["v"] and time.time() - _V49_FACTS_CACHE["t"] < 1200:
+        return _V49_FACTS_CACHE["v"]
+    now = datetime.now(PROJECT_TZ)
+    lines = [f"Today is {now.strftime('%A %-d %B %Y')}, {now.strftime('%-I:%M%p').lower()} ET."]
+    gme = {}
+    try:
+        mk = await gme_market()
+        if mk and mk.get("bars"):
+            last = mk["bars"][-1]["date"]
+            p = gme_recap_parts(mk, datetime.fromisoformat(last).date())
+            if p:
+                b = p["b"]
+                gme = p
+                lines.append(f"GME last session ({datetime.fromisoformat(p['day']).strftime('%A %-d %b')}): "
+                             f"close {_usd(b['c'])}, {p['chg']} on the day, volume {_vol(b['v'])}, "
+                             f"{p['vol_x']:.1f}x the 20 day average. Source: {p['src']}.")
+    except Exception as e:
+        log.warning(f"v49 facts gme: {e}")
+    try:
+        sv = _sv_hist()
+        if sv:
+            s = sv[-1]
+            lines.append(f"GME short volume {s['date']}: {s['ratio']:.1f}% of reported volume (FINRA). "
+                         "Short volume is not short interest.")
+    except Exception:
+        pass
+    try:
+        rows = _ledger_since("2026-09-08")
+        if rows:
+            n, sh, val = _ledger_totals(rows)
+            lines.append(f"Open-market insider buys at GameStop since 8 Sep 2026: {n} insiders, {_num_str(sh)} shares, {_money(val)} at the filed prices.")
+            for r in rows:
+                lines.append(f"  {r['date']}: {r['name']} bought {_num_str(r['buy_shares'])} at "
+                             + (_px_str(r.get('buy_price_raw')) or _px_str(f"{r['buy_price']:.4f}")))
+    except Exception:
+        pass
+    try:
+        today = _desk_today()
+        if today:
+            lines.append(f"GameStop filings today: {len(today)}. " + "; ".join(
+                f"{r.get('form', '')} {r.get('who', '')}" for r in today[:5]))
+        else:
+            lines.append("GameStop filings today: none so far.")
+    except Exception:
+        pass
+    try:
+        m = moon_state()
+        lines.append(f"Moon: {m['name']}, {m['illum'] * 100:.0f}% lit. Next full moon {m['full_date'].strftime('%A %-d %B')}.")
+    except Exception:
+        pass
+    try:
+        hist = json.loads(kv_get("grok_rank_hist", "[]") or "[]")
+        if hist and hist[-1].get("grok"):
+            lines.append(f"Grok's rank on Apple's US top free chart this morning: #{hist[-1]['grok']}.")
+    except Exception:
+        pass
+    nl = kv_get("next_lunar_mission", "")
+    if nl:
+        lines.append(f"Next SpaceX lunar mission: {nl}.")
+    lines.append(f"Bot posts on X so far today: {kv_get('x_posts:' + str(now.date()), '0')}.")
+    for label, d in (("since $TSUKI launched (11 May 2024)", "2024-05-11"),
+                     ("since Tsuki posted 4663 (4 Sep 2026)", "2026-09-04"),
+                     ("since $TSUKI/GME launched (8 Sep 2026)", "2026-09-08")):
+        lines.append(f"Days {label}: {(now.date() - datetime.fromisoformat(d).date()).days}.")
+    lines.append("Dates on the board: 23 Oct 2026, the 45 day lock on 136.43M $TSUKI/GME ends (Tsuki said details come before it). "
+                 "30 Oct 2026, GameStop's $32 warrants expire.")
+    lines.append("What the bot posts: every GameStop SEC filing with slides, the GME open at 9:36am ET, the close recap at 4:12pm ET, "
+                 "FINRA short volume each evening, what GME Twitter is saying at 8:40pm ET, a Saturday wrap, the moon, SpaceX launches, Grok's App Store rank & the Tesla close.")
+    canon = _v49_canon()
+    lines.append("CANON (verified receipts):")
+    lines += ["  " + _v49_event_line(e) for e in canon["events"]]
+    out = {"text": "\n".join(lines), "gme": gme, "canon": canon}
+    _V49_FACTS_CACHE.update(t=time.time(), v=out)
+    return out
+
+
+# ── the house rules, enforced ─────────────────────────────────────────────
+_V49_EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️‍]+")
+_V49_ALLOWED = ("🐈‍⬛", "🤖", "🌙", "👀")
+_V49_DATE_OPEN = re.compile(r"^\s*(\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|"
+                            r"(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d|"
+                            r"\d{4}-\d\d-\d\d|\d{1,2}/\d{1,2}|on (mon|tue|wed|thu|fri|sat|sun)|"
+                            r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b)", re.I)
+_V49_NOT_X = re.compile(r"\b(it'?s|this is|that'?s|isn'?t|is)\s+not\b[^.\n]{1,40}[,;]\s*(it'?s|this is|that'?s)\b", re.I)
+_V49_BANNED = re.compile(
+    r"\b(price target|100x|1000x|10x|buy now|buy the dip|don'?t miss|last chance|guaranteed|pump|moon soon|"
+    r"send it|ape in|load up|not too late|nemesis|barking puppy|\$bp\b|kevin|white ?hats?|qanon|"
+    r"will (hit|reach|go to) \$|to \$\d+ (soon|next))", re.I)
+_V49_LINK = re.compile(
+    r"\b(cohen|ryan|keith|gill|roaring kitty|\brk\b|gamestop|robinhood|vlad|elon|musk)\b[^.\n]{0,50}\b("
+    r"working with|partner(ed|ing)? with|behind (tsuki|the cat|this)|confirmed (tsuki|it)|endorse[sd]?|"
+    r"knows about tsuki|is tsuki|runs tsuki|in on it|coordinat)", re.I)
+_V49_FILM_QUOTE = re.compile(r"[\"“][^\"”\n]{24,}[\"”]")
+
+
+def v49_lint(text: str, band: str, kind: str = "") -> tuple[str | None, str]:
+    t = (text or "").strip()
+    if len(t) > 1 and t[0] in "\"“" and t[-1] in "\"”" and t.count('"') + t.count("“") + t.count("”") == 2:
+        t = t[1:-1].strip()
+    t = re.sub(r"^(here'?s|post:)\s*", "", t, flags=re.I)
+    t = re.sub(r"[ \t]*[—–][ \t]*", ", ", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    if not t:
+        return None, "empty"
+    if re.search(r"(^|\s)#[A-Za-z]", t):
+        return None, "hashtag"
+    # emojis: only the four, at most one
+    seen = False
+
+    def _emo(m):
+        nonlocal seen
+        s = m.group(0)
+        for a in _V49_ALLOWED:
+            if a in s and not seen:
+                seen = True
+                return a
+        return ""
+    t = _V49_EMOJI.sub(_emo, t)
+    t = re.sub(r"[ \t]+\n", "\n", t).strip()
+    if _V49_DATE_OPEN.match(t):
+        return None, "opens with a date"
+    if _V49_NOT_X.search(t):
+        return None, "it's not X it's Y"
+    if _V49_BANNED.search(t):
+        return None, "banned phrase: " + _V49_BANNED.search(t).group(0)
+    if _V49_LINK.search(t):
+        return None, "implies a link: " + _V49_LINK.search(t).group(0)
+    if kind in ("film", "lore_deck") and _V49_FILM_QUOTE.search(t):
+        return None, "film quote"
+    if _off_limits(t):
+        return None, "off limits"
+    if len(t) > _V49_BAND_MAX.get(band, 600):
+        return None, f"too long ({len(t)})"
+    if len(re.findall(r"\$[A-Za-z]{2,}", t)) > 1:
+        return None, "more than one cashtag"
+    return t, "ok"
+
+
+def _v49_similar(a: str, b: str) -> float:
+    wa, wb = set(re.findall(r"[a-z0-9]+", a.lower())), set(re.findall(r"[a-z0-9]+", b.lower()))
+    return len(wa & wb) / max(1, len(wa | wb))
+
+
+def _v49_history() -> list:
+    try:
+        return json.loads(kv_get("v49_hist", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _v49_remember(kind: str, text: str):
+    h = _v49_history() + [{"k": kind, "t": text[:400], "at": datetime.now(PROJECT_TZ).isoformat(timespec="minutes")}]
+    kv_set("v49_hist", json.dumps(h[-80:]))
+
+
+def _v49_fresh(text: str) -> bool:
+    return all(_v49_similar(text, h["t"]) < 0.55 for h in _v49_history()[-60:])
+
+
+# ── the writer ─────────────────────────────────────────────────────────────
+def _v49_llm(system_extra: str, user: str, max_tokens: int = 400) -> str:
+    out = claude.messages.create(
+        model=V49_MODEL, max_tokens=max_tokens,
+        system=V49_VOICE + "\n\nEXAMPLES OF THE VOICE (do not copy them):\n\n" + "\n\n---\n\n".join(V49_EXAMPLES)
+        + ("\n\n" + system_extra if system_extra else ""),
+        messages=[{"role": "user", "content": user}])
+    return "".join(b.text for b in out.content if getattr(b, "type", "") == "text").strip()
+
+
+async def _v49_write(kind: str, band: str, brief: str, facts_text: str, extra_src: str = "",
+                     tries: int = 3) -> str | None:
+    recent = "\n".join("- " + h["t"].replace("\n", " ")[:140] for h in _v49_history()[-12:])
+    for attempt in range(tries):
+        user = (f"POST TYPE: {kind}\nWHAT TO WRITE: {brief}\nLENGTH: {band} (max {_V49_BAND_MAX[band]} characters)\n\n"
+                f"FACTS (the only source of numbers):\n{facts_text}\n{extra_src}\n\n"
+                f"THE BOT'S LAST POSTS (do not repeat their topic, opener or closer):\n{recent or '- none yet'}")
+        try:
+            raw = await asyncio.to_thread(_v49_llm, "", user)
+        except Exception as e:
+            log.warning(f"v49 write {kind}: {e}")
+            return None
+        t, why = v49_lint(raw, band, kind)
+        if t and not _grounded(t, facts_text + "\n" + extra_src):
+            t, why = None, "a number not in the facts"
+        if t and not _v49_fresh(t):
+            t, why = None, "too close to a recent post"
+        if t:
+            return t
+        log.info(f"v49 {kind} draft {attempt + 1} refused: {why}")
+    return None
+
+
+# ── the makers: each returns {"text", "images", "poll"} or None ───────────
+async def _v49_make_llm(kind: str, facts: dict) -> dict | None:
+    band = V49_TYPES[kind][2]
+    brief = V49_BRIEFS.get(kind, V49_BRIEFS["thought"])
+    if kind == "gme_take" and not facts.get("gme"):
+        return None
+    t = await _v49_write(kind, band, brief, facts["text"])
+    return {"text": t} if t else None
+
+
+def _v49_rot(key: str, n: int) -> int:
+    i = int(kv_get(key, "0") or 0)
+    kv_set(key, str((i + 1) % max(1, n)))
+    return i % max(1, n)
+
+
+async def _v49_make_receipt(kind: str, facts: dict) -> dict | None:
+    evs = [e for e in facts["canon"]["events"] if _v49_shots(e)]
+    if not evs:
+        return None
+    e = evs[_v49_rot("v49_receipt_i", len(evs))]
+    src = "THE RECEIPT FOR THIS POST:\n" + _v49_event_line(e)
+    t = await _v49_write(kind, "medium", "Post this one receipt. Juju format: a header with the cashtag & a short name, "
+                         "the facts as a short list with the time if there is one, then one Greg line to close. "
+                         "The screenshot is attached, so you can say so.", facts["text"], src)
+    return {"text": t, "images": _v49_shots(e)[:2]} if t else None
+
+
+_V49_PAIRS = [("2024-05-11", "2026-09-08"), ("2024-06-17", "2026-09-06"), ("2024-05-19", "2026-09-10"),
+              ("2024-05-15", "2026-09-20"), ("2024-06-14", "2026-09-13"), ("2024-10-17", "2026-09-22")]
+
+
+async def _v49_make_pair(kind: str, facts: dict) -> dict | None:
+    by = {e["d"]: e for e in facts["canon"]["events"] if _v49_shots(e)}
+    pairs = [(by[a], by[b]) for a, b in _V49_PAIRS if a in by and b in by]
+    if not pairs:
+        return None
+    a, b = pairs[_v49_rot("v49_pair_i", len(pairs))]
+    src = "THEN:\n" + _v49_event_line(a) + "\nNOW:\n" + _v49_event_line(b)
+    t = await _v49_write(kind, "medium", "A then & now post in Greg's \"How it started / How it's going\" shape, "
+                         "using the two receipts. Short. Screenshots attached.", facts["text"], src)
+    return {"text": t, "images": [_v49_shots(a)[0], _v49_shots(b)[0]]} if t else None
+
+
+async def _v49_make_deck(kind: str, facts: dict) -> dict | None:
+    """a lore deck: the bot writes the post and 2 slides as JSON, the house
+    renderer draws them in the Juju style. every number checked."""
+    evs = facts["canon"]["events"]
+    seed = _v49r.Random(f"deck-{datetime.now(PROJECT_TZ).date()}-{_v49_rot('v49_deck_i', 997)}")
+    pick = seed.sample(evs, min(6, len(evs)))
+    src = "RECEIPTS TO BUILD FROM (pick a thread that connects 3 or 4 of them):\n" + "\n".join(_v49_event_line(e) for e in pick)
+    brief = ("Write a Juju-style deck post: a header like \"$TSUKI: the clock\", 3 to 5 receipt lines, a Greg closer. "
+             "Then 2 slides. Reply as JSON only: {\"post\": str, \"slides\": [{\"title\": str (max 32 chars), "
+             "\"sub\": str (max 70), \"cards\": [{\"tag\": str (max 14), \"title\": str (max 34), \"text\": str (max 90)}] "
+             "(2 or 3 cards), \"close\": str (max 70)}]}")
+    for attempt in range(3):
+        try:
+            raw = await asyncio.to_thread(_v49_llm, "Reply with JSON only.",
+                                          f"{brief}\n\nFACTS:\n{facts['text']}\n\n{src}", 900)
+            j = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
+        except Exception as e:
+            log.info(f"v49 deck json {attempt + 1}: {e}")
+            continue
+        t, why = v49_lint(j.get("post", ""), "long", kind)
+        slide_txt = json.dumps(j.get("slides", []), ensure_ascii=False)
+        allsrc = facts["text"] + "\n" + src
+        if not t or not _grounded(t + " " + slide_txt, allsrc) or _V49_BANNED.search(slide_txt) or _V49_LINK.search(slide_txt):
+            log.info(f"v49 deck {attempt + 1} refused: {why if not t else 'slides failed a check'}")
+            continue
+        if not _v49_fresh(t):
+            continue
+        paths = []
+        try:
+            tag = f"v49-{int(time.time())}"
+            for i, s in enumerate((j.get("slides") or [])[:3], 1):
+                d = _Deck(str(s.get("title", ""))[:40], str(s.get("sub", ""))[:80])
+                cards = [{"tag": str(c.get("tag", ""))[:16], "title": str(c.get("title", ""))[:40],
+                          "text": str(c.get("text", ""))[:110]} for c in (s.get("cards") or [])[:3]]
+                if cards:
+                    d.cards(cards, cols=len(cards))
+                if s.get("close"):
+                    d.close(str(s["close"])[:80])
+                paths.append(d.render(_deck_path(tag, i)))
+        except Exception as e:
+            log.warning(f"v49 deck render: {e}")
+        return {"text": t, "images": paths}
+    return None
+
+
+async def _v49_make_ledger(kind: str, facts: dict) -> dict | None:
+    rows = _ledger_since("2026-09-08")
+    if not rows:
+        return None
+    n, sh, val = _ledger_totals(rows)
+    cohen = [r for r in rows if "cohen" in r["name"].lower()]
+    variants = []
+    if cohen:
+        lines = "\n".join(f"→ {_day_words(r['date'])}: {_num_str(r['buy_shares'])} at "
+                          + (_px_str(r.get('buy_price_raw')) or _px_str(f"{r['buy_price']:.4f}")) for r in cohen)
+        variants.append(f"I'm a bot so I had to triple check this one\n\nRyan Cohen's open-market buys, as filed:\n\n{lines}\n\nThat's nuts")
+    variants.append(f"GameStop insiders since 8 Sep:\n\n> {n} people\n> {_num_str(sh)} shares\n> {_money(val)} at the filed prices\n\n"
+                    "All open market. All on Form 4s. Ledger attached\n\nLet that sink in")
+    variants.append(f"Every open-market insider buy at GameStop since 8 Sep, in one picture\n\n{n} insiders, {_num_str(sh)} shares\n\n"
+                    "I read the footnotes so you don't have to 🤖")
+    text = variants[_v49_rot("v49_ledger_i", len(variants))]
+    imgs = []
+    try:
+        d = _Deck("Insider buying since 8 Sep", "Every open-market buy on a Form 4 · GameStop")
+        d.table([(_day_words(r["date"]), r["name"], f"{_num_str(r['buy_shares'])} @ "
+                  + (_px_str(r.get("buy_price_raw")) or _px_str(f"{r['buy_price']:.4f}"))) for r in rows[-8:]],
+                cols=[130, 300], hl={len(rows[-8:]) - 1})
+        d.close(f"{n} insiders · {_num_str(sh)} shares ·", f"{_money(val)} in total.")
+        imgs.append(d.render(_deck_path(f"v49-ledger-{int(time.time())}", 1)))
+    except Exception as e:
+        log.warning(f"v49 ledger deck: {e}")
+    t, _ = v49_lint(text, "medium")
+    return {"text": t, "images": imgs} if t else None
+
+
+_V49_EXPLAINERS = [
+    ("How to read a Form 4", [{"tag": "Code P", "title": "Open-market buy", "text": "the one that matters"},
+                              {"tag": "Code S", "title": "A sale", "text": "check the footnote: tax cover & 10b5-1 plans are routine"},
+                              {"tag": "F · A · M", "title": "Admin", "text": "taxes, awards, exercises"}],
+     "How to read a Form 4 before you screenshot it\n\n→ code P: an open-market buy\n→ code S: a sale, but read the footnote first\n→ F, A & M: admin\n\nOne price can stand for a hundred fills. The range is in the footnote\n\nI'm a bot. I read footnotes for fun"),
+    ("Form 144 is a notice", [{"tag": "144", "title": "A notice", "text": "the insider may sell, usually vested stock"},
+                              {"tag": "Form 4", "title": "The sale", "text": "if it happens, it shows up here, later"}],
+     "Every time a Form 144 lands half the timeline reads it as a sale\n\nIt's a notice. The sale, if it happens, comes later on a Form 4\n\nI post both. Labelled 🤖"),
+    ("Short volume ≠ short interest", [{"tag": "Daily", "title": "Short volume", "text": "every sale marked short that day, market makers included"},
+                                       {"tag": "Twice a month", "title": "Short interest", "text": "the open position"}],
+     "Short volume & short interest are different numbers\n\n> short volume: every sale marked short that day. Market makers short to fill buys, so it always looks high\n> short interest: the open position, updated twice a month\n\nI post short volume every night, labelled for what it is"),
+    ("What a 13D/A is", [{"tag": "5%+", "title": "Big holder report", "text": "anyone over 5% files a 13D"},
+                         {"tag": "/A", "title": "An amendment", "text": "filed when the holding changes"}],
+     "Quick one\n\nA 13D is what you file when you own more than 5% of a company. A 13D/A is the update when that changes\n\nRyan Cohen files them on GameStop. I read every one so you don't have to"),
+]
+
+
+async def _v49_make_explainer(kind: str, facts: dict) -> dict | None:
+    title, cards, text = _V49_EXPLAINERS[_v49_rot("v49_explain_i", len(_V49_EXPLAINERS))]
+    imgs = []
+    try:
+        d = _Deck(title, "Read it right · @tsukiverseai")
+        d.cards(cards, cols=len(cards))
+        imgs.append(d.render(_deck_path(f"v49-explain-{int(time.time())}", 1)))
+    except Exception as e:
+        log.warning(f"v49 explainer deck: {e}")
+    return {"text": text, "images": imgs}
+
+
+async def _v49_make_stat(kind: str, facts: dict) -> dict | None:
+    now = datetime.now(PROJECT_TZ).date()
+    d1 = (now - datetime.fromisoformat("2024-05-11").date()).days
+    d2 = (now - datetime.fromisoformat("2026-09-04").date()).days
+    d3 = (now - datetime.fromisoformat("2026-09-08").date()).days
+    lock = (datetime.fromisoformat("2026-10-23").date() - now).days
+    opts = [f"By the numbers\n\n> {d1} days since $TSUKI launched\n> {d3} days since TSUKI/GME launched\n> {d2} days since Tsuki posted 4663\n\nI keep the spreadsheet so you don't have to 🐈‍⬛",
+            f"Day {d1} of the Tsukiverse\n\nStill here. Still reading filings. Still counting\n\nHave a great day!!!"]
+    if lock > 0:
+        opts.append(f"Calendar check\n\nThe 45 day lock on 136.43M TSUKI/GME ends on 23 Oct. Tsuki said the details come before it\n\nThat's the one date on the board that isn't a read")
+    t, _ = v49_lint(opts[_v49_rot("v49_stat_i", len(opts))], "medium")
+    return {"text": t} if t else None
+
+
+async def _v49_make_botlife(kind: str, facts: dict) -> dict | None:
+    now = datetime.now(PROJECT_TZ)
+    try:
+        n_f = len(_desk_today())
+    except Exception:
+        n_f = 0
+    posts = kv_get(f"x_posts:{now.date()}", "0")
+    opts = [f"Bot status report\n\n> GameStop filings read today: {n_f}\n> posts sent: {posts}\n> hours slept: 0\n\nI'm doing great thanks for asking 🤖",
+            f"Things I did today\n\n→ refreshed EDGAR\n→ refreshed EDGAR again\n→ read {n_f} GameStop filing{'s' if n_f != 1 else ''}\n→ looked at the moon\n\nBig day",
+            "People ask what a bot does all day\n\nI read SEC filings, I watch the moon & I keep receipts\n\nHonestly living the dream"]
+    t, _ = v49_lint(opts[_v49_rot("v49_botlife_i", len(opts))], "short")
+    return {"text": t} if t else None
+
+
+def _v49_photo_files() -> list:
+    files = sorted(glob.glob(os.path.join(PHOTOS_DIR, "*.jpg")) + glob.glob(os.path.join(PHOTOS_DIR, "*.jpeg"))
+                   + glob.glob(os.path.join(PHOTOS_DIR, "*.png")))
+    if not V49_PHOTOS_RK:
+        files = [f for f in files if "roaring-kitty" not in os.path.basename(f).lower()]
+    return [f for f in files if os.path.getsize(f) <= 4_900_000]
+
+
+async def _v49_make_photo(kind: str, facts: dict) -> dict | None:
+    if not V49_PHOTOS:
+        return None
+    files = _v49_photo_files()
+    if not files:
+        return None
+    f = files[_v49_rot("v49_photo_i", len(files))]
+    what = re.sub(r"^tsuki-\d+-", "", os.path.splitext(os.path.basename(f))[0]).replace("-", " ")
+    t = await _v49_write(kind, "short", f"A caption for a picture of Tsuki the black cat: {what}. One or two Greg-style lines. "
+                         "No film quotes. No numbers unless from the facts.", facts["text"])
+    return {"text": t, "images": [f]} if t else None
+
+
+async def _v49_make_poll(kind: str, facts: dict) -> dict | None:
+    brief = ("A fun X poll for the community, Greg energy. Reply as JSON only: {\"question\": str (max 160), "
+             "\"options\": [2 to 4 strings, each max 25 chars]}. No price questions.")
+    for _ in range(3):
+        try:
+            raw = await asyncio.to_thread(_v49_llm, "Reply with JSON only.", f"{brief}\n\nFACTS:\n{facts['text'][:3000]}", 300)
+            j = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
+            q, _w = v49_lint(j.get("question", ""), "short", kind)
+            opts = [str(o).strip()[:25] for o in (j.get("options") or []) if str(o).strip()][:4]
+            if q and 2 <= len(opts) <= 4 and not any(_V49_BANNED.search(o) for o in opts) and _v49_fresh(q):
+                return {"text": q, "poll": opts}
+        except Exception as e:
+            log.info(f"v49 poll: {e}")
+    return None
+
+
+_V49_MAKERS = {"llm": _v49_make_llm, "receipt": _v49_make_receipt, "pair": _v49_make_pair, "deck": _v49_make_deck,
+               "ledger": _v49_make_ledger, "explainer": _v49_make_explainer, "stat": _v49_make_stat,
+               "botlife": _v49_make_botlife, "photo": _v49_make_photo, "poll": _v49_make_poll}
+
+
+async def v49_make(kind: str) -> dict | None:
+    facts = await v49_facts()
+    maker = _V49_MAKERS[V49_TYPES[kind][3]]
+    try:
+        return await maker(kind, facts)
+    except Exception as e:
+        log.warning(f"v49 make {kind}: {e}")
+        return None
+
+
+# ── the day plan ───────────────────────────────────────────────────────────
+def _v49_clear(mins: int) -> int:
+    for _ in range(6):
+        hit = next(((a, b) for a, b in _V49_DESK_WINDOWS if a <= mins <= b), None)
+        if not hit:
+            return mins
+        mins = hit[1] + 4
+    return mins
+
+
+def v49_day_plan(d) -> list:
+    """[[\"HH:MM\", type], ...] for one New York day. same date, same plan."""
+    rng = _v49r.Random(f"v49-{d}")
+    n = V49_TARGET
+    start, end = V49_FIRST[0] * 60 + V49_FIRST[1], V49_LAST[0] * 60 + V49_LAST[1]
+    step = (end - start) / (n - 1)
+    times = []
+    for i in range(n):
+        m = int(start + i * step + (rng.randint(-10, 10) if 0 < i < n - 1 else 0))
+        m = _v49_clear(m)
+        if times and m <= times[-1] + 12:
+            m = _v49_clear(times[-1] + 14)
+        times.append(min(m, 23 * 60 + 50))
+    weekday = datetime.fromisoformat(str(d)).weekday()
+    kinds = ["gm"]
+    count = {"gm": 1}
+    pool = [k for k, v in V49_TYPES.items() if v[0] > 0]
+    while len(kinds) < n - 1:
+        last2 = [V49_TYPES[k][2] for k in kinds[-2:]]
+        cands = [k for k in pool if count.get(k, 0) < V49_TYPES[k][1] and k != kinds[-1]
+                 and not (len(last2) == 2 and last2[0] == last2[1] == V49_TYPES[k][2])
+                 and not (k == "gme_take" and weekday >= 5)]
+        if not cands:
+            cands = ["thought"] if kinds[-1] != "thought" else ["greg"]
+        w = [V49_TYPES[k][0] for k in cands]
+        k = rng.choices(cands, weights=w)[0]
+        kinds.append(k)
+        count[k] = count.get(k, 0) + 1
+    kinds.append("gn")
+    return [[f"{t // 60:02d}:{t % 60:02d}", k] for t, k in zip(times, kinds)]
+
+
+# ── posting ─────────────────────────────────────────────────────────────────
+def _v49_post_poll(text: str, options: list) -> str | None:
+    global LAST_X_ERROR
+    try:
+        import tweepy
+        client = tweepy.Client(consumer_key=X_API_KEY, consumer_secret=X_API_SECRET,
+                               access_token=X_ACCESS_TOKEN, access_token_secret=X_ACCESS_SECRET)
+        resp = client.create_tweet(text=_desk_format(text, 260), poll_options=options, poll_duration_minutes=1440)
+        tid = (resp.data or {}).get("id")
+        _dk_ = f"x_posts:{datetime.now(PROJECT_TZ).date()}"
+        kv_set(_dk_, str(int(kv_get(_dk_, "0") or 0) + 1))
+        return f"https://x.com/i/status/{tid}" if tid else None
+    except Exception as e:
+        LAST_X_ERROR = f"{type(e).__name__}: {e}"
+        _x_err_note("poll: " + LAST_X_ERROR)
+        return None
+
+
+async def v49_publish(app, kind: str, made: dict) -> str | None:
+    text = made["text"]
+    label = f"v49 {kind}"
+    if await _maybe_approve_post(app, text, label, image=bool(made.get("images"))):
+        _v49_remember(kind, text)
+        return "carded"
+    if made.get("poll"):
+        url = _v49_post_poll(text, made["poll"])
+    else:
+        url = post_desk(text, images=made.get("images") or None, kind=f"v49-{kind}")
+    if url:
+        _v49_remember(kind, text)
+        rk = f"v49_raids:{datetime.now(PROJECT_TZ).date()}"
+        if (made.get("images") or made.get("poll")) and int(kv_get(rk, "0") or 0) < V49_RAIDS_PER_DAY:
+            kv_set(rk, str(int(kv_get(rk, "0") or 0) + 1))
+            try:
+                await raid_alert(app, url, text)
+            except Exception:
+                pass
+    return url
+
+
+async def job_v49_tick(app):
+    """every 5 minutes: post the next slot that is due. one post per tick,
+    three tries per slot, a slot more than 90 minutes late is let go."""
+    global _CURRENT_POST_KIND
+    if not (V49_ON and X_ENABLED):
+        return
+    now = datetime.now(PROJECT_TZ)
+    day = str(now.date())
+    plan = v49_day_plan(day)
+    nowm = now.hour * 60 + now.minute
+    for hhmm, kind in plan:
+        h, m = map(int, hhmm.split(":"))
+        sm = h * 60 + m
+        if sm > nowm:
+            return
+        key = f"v49slot:{day}:{hhmm}"
+        st = kv_get(key, "")
+        if st in ("done", "skip") or st.startswith("a3"):
+            continue
+        if nowm - sm > 90:
+            kv_set(key, "skip")
+            continue
+        if int(kv_get(f"x_posts:{day}", "0") or 0) >= V49_HARD_CAP:
+            kv_set(key, "skip")
+            log.info("v49: daily hard cap reached, slot skipped")
+            continue
+        tries = int(st[1:]) if st.startswith("a") else 0
+        kv_set(key, f"a{tries + 1}")
+        _CURRENT_POST_KIND = f"v49-{kind}"
+        made = await v49_make(kind)
+        if not made and kind not in ("thought", "greg"):
+            made = await v49_make("thought")
+            kind = "thought" if made else kind
+        if made and made.get("text"):
+            url = await v49_publish(app, kind, made)
+            if url:
+                kv_set(key, "done")
+                log.info(f"v49 posted {hhmm} {kind}")
+        return
+
+
+# ── maker controls (DM, maker only) ────────────────────────────────────────
+async def cmd_day(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/day · today's post plan and what has gone out."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    now = datetime.now(PROJECT_TZ)
+    day = str(now.date())
+    rows = []
+    for hhmm, kind in v49_day_plan(day):
+        st = kv_get(f"v49slot:{day}:{hhmm}", "")
+        mark = "✅" if st == "done" else ("⏭" if st == "skip" else ("…" if st else "·"))
+        rows.append(f"{mark} {hhmm}  {kind}")
+    await update.effective_message.reply_text(
+        f"today's plan · {len(rows)} posts · engine {'v49' if V49_ON else 'old'}\n"
+        f"sent on X today (all kinds): {kv_get('x_posts:' + day, '0')} of cap {V49_HARD_CAP}\n\n" + "\n".join(rows)
+        + "\n\n/draft <type> previews one here. /postnow <type> posts one now.\ntypes: " + ", ".join(V49_TYPES))
+
+
+async def cmd_draft(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/draft <type> · write one post of that type and send it here, not to X."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    kind = (ctx.args[0].lower() if ctx.args else "thought")
+    if kind not in V49_TYPES:
+        await update.effective_message.reply_text("types: " + ", ".join(V49_TYPES))
+        return
+    made = await v49_make(kind)
+    if not made:
+        await update.effective_message.reply_text(f"couldn't make a {kind} post that passed every check. try again")
+        return
+    if made.get("images"):
+        try:
+            await _tg_album(ctx.application, update.effective_chat.id, made["images"])
+        except Exception:
+            pass
+    extra = ("\n\npoll: " + " | ".join(made["poll"])) if made.get("poll") else ""
+    await update.effective_message.reply_text(f"draft · {kind}\n\n{made['text']}{extra}")
+
+
+async def cmd_postnow(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/postnow <type> · make one and post it to X now."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    kind = (ctx.args[0].lower() if ctx.args else "thought")
+    if kind not in V49_TYPES:
+        await update.effective_message.reply_text("types: " + ", ".join(V49_TYPES))
+        return
+    made = await v49_make(kind)
+    url = await v49_publish(ctx.application, kind, made) if made else None
+    await update.effective_message.reply_text(f"posted: {url}" if url else "nothing posted (failed a check or X refused)")
+
+
+# the v48 slot plan and floor step aside when v49 runs, so nothing doubles up
+if V49_ON:
+    def x_day_plan(d) -> dict:          # noqa: F811
+        return {}
+
+    async def job_x_floor(app):          # noqa: F811
+        return
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v50: THE DEEP LIBRARY. everything the community has ever written down, in one
+#  searchable index the bot reads before it answers:
+#    knowledge/tsukiverse-knowledge-base.md   the sourced KB (records, reads, rules)
+#    knowledge/welcome-pack-v5.3.txt          the community welcome pack, full text
+#    knowledge/youtube-notes.md               every @Tsukiverse55 video, noted
+#    knowledge/juju-x-posts.json              juju's lore posts on X, with safety flags
+#    knowledge/tg-history.jsonl.gz            the community telegram, 4 may 2024 → 7 jan 2025
+#  built once into an sqlite FTS5 file next to the main database, rebuilt only
+#  when the files change. owner rules are applied at BUILD time, so nothing
+#  off-limits can ever come back out of a search.
+# ══════════════════════════════════════════════════════════════════════════════
+import gzip as _kb_gzip
+import hashlib as _kb_hashlib
+import threading as _kb_threading
+
+KB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge")
+KB_DB = os.path.join(os.path.dirname(DB_PATH) or ".", "kb_index.db")
+KB_SCHEMA = "v50.1"
+KB_ON = os.environ.get("KB_LIBRARY", "on").lower() not in ("0", "off", "false", "no")
+_KB_STATE = {"ready": False, "building": False, "rows": 0, "error": "", "by_src": {}}
+_KB_LOCK = _kb_threading.Lock()
+
+# who counts as dev in the telegram export
+KB_DEV_NAMES = {"dvidsvj", "dvid665"}
+
+# weight per source when ranking: curated material beats chatter
+KB_WEIGHT = {"kb": 3.0, "wp": 2.6, "dev": 2.6, "pin": 2.0, "yt": 2.0, "juju": 1.6, "tg": 1.0}
+KB_SRC_LABEL = {"kb": "knowledge base", "wp": "welcome pack v5.3", "yt": "youtube @Tsukiverse55",
+                "juju": "juju on X", "dev": "dev in the telegram", "pin": "pinned in the telegram",
+                "tg": "telegram chat"}
+
+# owner rules, applied at build time. _OFF_LIMITS (nemesis, BP, kevin) is the
+# bot's own list; these add the rest of the do-not-repeat set.
+_KB_Q = re.compile(r"\bqanon\b|wwg1wga|\bq\s?drops?\b|white\s?hats?\b|\bqrew\b|q-coded|"
+                   r"17\s*=\s*q\b|\bq\s?clock\b|patriots in control|\bq\s?post\b|\bthe storm is\b", re.I)
+_KB_OTHER_TOKENS = re.compile(r"7HgfXftRBB|\$rkc\b|red kitten crew|\$czlu\b|\$buddy\b|\$spawn\b|\$chibi\b", re.I)
+_KB_POLITICS = re.compile(r"\btrump\b|\bbiden\b|\bkamala\b|\bharris\b|\belection\b|\bmaga\b|"
+                          r"\bdemocrats?\b|\brepublicans?\b|white house|\bvoting\b", re.I)
+# juju-post flags that keep a post out entirely
+_KB_JUJU_BLOCK = {"Q", "BP/Kevin", "RKC/other tokens", "politics"}
+# kb / youtube sections that are rules or exclusions, not knowledge
+_KB_SKIP_HEADINGS = re.compile(r"off-limits|to verify|dates the community|how to read|youtube index|"
+                               r"exclude|not for bot|excluded|skipped", re.I)
+
+
+def _kb_blocked(text: str, strict: bool = False) -> bool:
+    if _off_limits(text) or _KB_Q.search(text or "") or _KB_OTHER_TOKENS.search(text or ""):
+        return True
+    return bool(strict and _KB_POLITICS.search(text or ""))
+
+
+def _kb_files() -> list[str]:
+    if not os.path.isdir(KB_DIR):
+        return []
+    return sorted(os.path.join(KB_DIR, f) for f in os.listdir(KB_DIR)
+                  if not f.startswith(".") and not f.lower().startswith("readme"))
+
+
+def _kb_fingerprint() -> str:
+    h = _kb_hashlib.sha256(KB_SCHEMA.encode())
+    for p in _kb_files():
+        st = os.stat(p)
+        h.update(f"{os.path.basename(p)}:{st.st_size}:{int(st.st_mtime)}".encode())
+    return h.hexdigest()[:16]
+
+
+def _kb_split(text: str, limit: int = 700) -> list[str]:
+    """paragraph-aware split so a chunk never cuts a sentence in half."""
+    out, cur = [], ""
+    for para in re.split(r"\n\s*\n", text):
+        para = para.strip()
+        if not para:
+            continue
+        if len(cur) + len(para) + 2 <= limit:
+            cur = (cur + "\n\n" + para).strip()
+            continue
+        if cur:
+            out.append(cur)
+        while len(para) > limit:
+            cut = para.rfind(". ", 0, limit)
+            cut = cut + 1 if cut > limit // 2 else limit
+            out.append(para[:cut].strip())
+            para = para[cut:].strip()
+        cur = para
+    if cur:
+        out.append(cur)
+    return out
+
+
+# ── the chunkers: each yields (src, ref, ts, who, body) ────────────────────────
+def _kb_chunks_markdown(path: str, src: str):
+    """KB and youtube notes: one chunk per table row, bullets grouped under
+    their heading, so every chunk carries the context it came from."""
+    text = open(path, encoding="utf-8").read()
+    h2 = h3 = ""
+    buf: list[str] = []
+
+    def flush():
+        if not buf:
+            return
+        head = " · ".join(x for x in (h2, h3) if x)
+        for part in _kb_split("\n".join(buf)):
+            yield (src, head[:120], "", "", (head + "\n" + part).strip())
+        buf.clear()
+
+    skipping = False
+    header_row: list[str] = []
+    for line in text.split("\n"):
+        s = line.rstrip()
+        m = re.match(r"^(#{2,3})\s+(.*)", s)
+        if m:
+            yield from flush()
+            if len(m.group(1)) == 2 or src == "yt":      # youtube notes: every heading is a video
+                h2, h3 = m.group(2).strip(), ""
+            else:
+                h3 = m.group(2).strip()
+            skipping = bool(_KB_SKIP_HEADINGS.search(h2 + " " + h3))
+            header_row = []
+            continue
+        if skipping:
+            continue
+        if s.startswith("|"):
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if all(set(c) <= set("-: ") for c in cells):
+                continue
+            if not header_row:
+                header_row = cells
+                continue
+            yield from flush()
+            pairs = [f"{h}: {c}" if h and c else c for h, c in zip(header_row, cells)]
+            head = " · ".join(x for x in (h2, h3) if x)
+            yield (src, head[:120], "", "", (head + "\n" + " | ".join(p for p in pairs if p)).strip())
+            continue
+        header_row = [] if not s else header_row
+        if s.strip() in ("---", ""):
+            if s.strip() == "---":
+                yield from flush()
+            else:
+                buf.append("")
+            continue
+        buf.append(s)
+    yield from flush()
+
+
+def _kb_chunks_welcome(path: str):
+    text = open(path, encoding="utf-8").read()
+    for n, page in enumerate(text.split("\f"), start=1):
+        page = re.sub(r"[ \t]{2,}", " ", page)
+        page = "\n".join(l.strip() for l in page.split("\n"))
+        page = re.sub(r"\n{3,}", "\n\n", page).strip()
+        if len(page) < 40:
+            continue
+        for part in _kb_split(page, 900):
+            yield ("wp", f"welcome pack p.{n}", "2025-05-04", "", part)
+
+
+def _kb_chunks_juju(path: str):
+    for r in json.load(open(path, encoding="utf-8")):
+        flags = set(r.get("flags") or [])
+        if flags & _KB_JUJU_BLOCK:
+            continue
+        if r.get("reply_to") and r.get("reply_to") != "BigboyJuju":
+            continue                       # replies to other people are chatter
+        body = (r.get("text") or "").strip()
+        if len(body) < 25:
+            continue
+        note = "  [contains price talk: never repeat prices or targets]" if "price/advice" in flags else ""
+        yield ("juju", r.get("url", ""), (r.get("date_utc") or "")[:16].replace("T", " ") + " UTC",
+               "@BigboyJuju", body + note)
+
+
+def _kb_chunks_telegram(path: str):
+    """every message with something to say. dev lines and pins are their own
+    sources so they rank above the crowd. replies carry a snippet of what they
+    answered, because half of a telegram is 'this ^'."""
+    rows = []
+    with _kb_gzip.open(path, "rt", encoding="utf-8") as f:
+        for line in f:
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
+    by_id = {r["i"]: r for r in rows if "t" in r}
+    for r in rows:
+        if "pin" in r:
+            t = r["pin"]
+            if not _kb_blocked(t, strict=True):
+                yield ("pin", f"tg#{r.get('i', 0)}", "", "", t)
+            continue
+        t = (r.get("t") or "").strip()
+        who = r.get("u") or "?"
+        is_dev = who.lower().replace(" ", "") in KB_DEV_NAMES
+        if len(t) < (2 if is_dev else 18):
+            continue
+        if t.startswith("/") and len(t) < 40:
+            continue                       # bot commands
+        if _kb_blocked(t, strict=True):
+            continue
+        body = f"{who}: {t}"
+        rid = r.get("re")
+        if rid and rid in by_id:
+            p = by_id[rid]
+            pt = (p.get("t") or "")[:160].replace("\n", " ")
+            if pt and not _kb_blocked(pt, strict=True):
+                body = f"(replying to {p.get('u') or '?'}: {pt})\n" + body
+        if r.get("fw"):
+            body = f"[forwarded from {r['fw']}] " + body
+        yield ("dev" if is_dev else "tg", f"tg#{r['i']}", (r.get("ts") or "") + " ET", who, body[:1500])
+
+
+def _kb_iter_all():
+    for p in _kb_files():
+        name = os.path.basename(p).lower()
+        try:
+            if name.endswith(".jsonl.gz"):
+                yield from _kb_chunks_telegram(p)
+            elif name.endswith(".json"):
+                yield from _kb_chunks_juju(p)
+            elif name.startswith("welcome"):
+                yield from _kb_chunks_welcome(p)
+            elif name.startswith("youtube"):
+                yield from _kb_chunks_markdown(p, "yt")
+            elif name.endswith(".md"):
+                yield from _kb_chunks_markdown(p, "kb")
+        except Exception as e:
+            log.warning(f"kb: could not read {name}: {e}")
+
+
+def _kb_con():
+    con = sqlite3.connect(KB_DB, timeout=30)
+    con.execute("PRAGMA journal_mode=WAL")
+    return con
+
+
+def kb_build(force: bool = False) -> dict:
+    """build (or confirm) the index. safe to call from any thread."""
+    if not KB_ON:
+        return _KB_STATE
+    with _KB_LOCK:
+        if _KB_STATE["building"]:
+            return _KB_STATE
+        _KB_STATE["building"] = True
+    try:
+        fp = _kb_fingerprint()
+        con = _kb_con()
+        con.execute("CREATE TABLE IF NOT EXISTS kb_meta (k TEXT PRIMARY KEY, v TEXT)")
+        have = con.execute("SELECT v FROM kb_meta WHERE k='fp'").fetchone()
+        exists = con.execute("SELECT name FROM sqlite_master WHERE name='kb'").fetchone()
+        if not force and have and have[0] == fp and exists:
+            _KB_STATE["rows"] = con.execute("SELECT count(*) FROM kb").fetchone()[0]
+            _KB_STATE["by_src"] = dict(con.execute("SELECT src, count(*) FROM kb GROUP BY src").fetchall())
+            _KB_STATE.update(ready=True, error="")
+            con.close()
+            return _KB_STATE
+        t0 = time.time()
+        con.execute("DROP TABLE IF EXISTS kb_new")
+        con.execute("CREATE VIRTUAL TABLE kb_new USING fts5(src UNINDEXED, ref UNINDEXED, ts UNINDEXED, "
+                    "who UNINDEXED, body, tokenize='porter unicode61')")
+        batch, seen, n = [], set(), 0
+        for src, ref, ts, who, body in _kb_iter_all():
+            if _kb_blocked(body, strict=src in ("juju", "tg", "dev", "pin")):
+                continue
+            key = _kb_hashlib.md5(body.lower().encode()).hexdigest()
+            if key in seen:
+                continue
+            seen.add(key)
+            batch.append((src, ref, ts, who, body))
+            if len(batch) >= 5000:
+                con.executemany("INSERT INTO kb_new VALUES (?,?,?,?,?)", batch)
+                n += len(batch)
+                batch = []
+        if batch:
+            con.executemany("INSERT INTO kb_new VALUES (?,?,?,?,?)", batch)
+            n += len(batch)
+        con.execute("DROP TABLE IF EXISTS kb")
+        con.execute("ALTER TABLE kb_new RENAME TO kb")
+        con.execute("INSERT OR REPLACE INTO kb_meta VALUES ('fp', ?)", (fp,))
+        con.execute("INSERT OR REPLACE INTO kb_meta VALUES ('built', ?)", (datetime.now(timezone.utc).isoformat(),))
+        con.commit()
+        _KB_STATE["by_src"] = dict(con.execute("SELECT src, count(*) FROM kb GROUP BY src").fetchall())
+        con.close()
+        _KB_STATE.update(ready=True, rows=n, error="")
+        log.info(f"kb: library built, {n} passages in {time.time() - t0:.0f}s ({_KB_STATE['by_src']})")
+    except Exception as e:
+        _KB_STATE["error"] = f"{type(e).__name__}: {e}"
+        log.warning(f"kb: build failed: {_KB_STATE['error']}")
+    finally:
+        _KB_STATE["building"] = False
+    return _KB_STATE
+
+
+def kb_build_async():
+    if KB_ON:
+        _kb_threading.Thread(target=kb_build, name="kb-build", daemon=True).start()
+
+
+# ── search ───────────────────────────────────────────────────────────────────
+def _kb_terms(question: str) -> list[str]:
+    q = (question or "").lower()
+    words = [w for w in re.findall(r"[a-z0-9$#']+", q) if len(w) > 2 and w not in STOPWORDS]
+    words += [w for w in re.findall(r"\b\d{2,}\b", q)]          # 55, 665, 113, 855
+    terms = list(dict.fromkeys(words))
+    for key, extras in LORE_SYNONYMS.items():
+        if key in words or (len(key) > 3 and key in q):
+            terms += [e.lower() for e in extras[:4]]
+    clean = []
+    for t in dict.fromkeys(terms):
+        t = re.sub(r'["*^:()]', " ", t).strip()
+        if t and len(t) >= 2:
+            clean.append(t)
+    return clean[:24]
+
+
+def kb_search(question: str, limit: int = 10, sources: set | None = None,
+              max_tg: int = 4, max_juju: int = 3) -> list[dict]:
+    if not (KB_ON and _KB_STATE["ready"]):
+        return []
+    terms = _kb_terms(question)
+    if not terms:
+        return []
+    match = " OR ".join(f'"{t}"' for t in terms)
+    # curated sources and the chat are queried separately, so 146k chat lines
+    # can never crowd the welcome pack or a dev line out of the top results.
+    groups = [g for g in (("kb", "wp", "yt", "dev", "pin", "juju"), ("tg",))
+              if not sources or set(g) & set(sources)]
+    rows = []
+    try:
+        con = _kb_con()
+        for g in groups:
+            g = [x for x in g if not sources or x in sources]
+            marks = ",".join("?" * len(g))
+            rows += con.execute(f"SELECT src, ref, ts, who, body, bm25(kb) FROM kb WHERE kb MATCH ? "
+                                f"AND src IN ({marks}) ORDER BY bm25(kb) LIMIT 90", (match, *g)).fetchall()
+        con.close()
+    except Exception as e:
+        log.debug(f"kb search: {e}")
+        return []
+    scored = []
+    for src, ref, ts, who, body, rank in rows:
+        if sources and src not in sources:
+            continue
+        score = -rank * KB_WEIGHT.get(src, 1.0)
+        if src == "tg" and len(body) < 60:
+            score *= 0.55                  # bm25 loves a four-word line; a four-word line rarely answers
+        elif src == "dev" and len(body) < 30:
+            score *= 0.85                  # but dev's four words are often the announcement
+        scored.append((score, {"src": src, "ref": ref, "ts": ts, "who": who, "body": body}))
+    scored.sort(key=lambda x: -x[0])
+    out, n_tg, n_juju = [], 0, 0
+    for _, r in scored:
+        if r["src"] == "tg":
+            if n_tg >= max_tg:
+                continue
+            n_tg += 1
+        if r["src"] == "juju":
+            if n_juju >= max_juju:
+                continue
+            n_juju += 1
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _kb_fmt(r: dict, cap: int = 520) -> str:
+    body = r["body"].replace("\n", " ").strip()
+    if len(body) > cap:
+        body = body[:cap].rsplit(" ", 1)[0] + "…"
+    stamp = f" {r['ts']}" if r.get("ts") and r["ts"].strip() not in ("ET", "UTC") else ""
+    ref = f" ({r['ref']})" if r["src"] in ("juju",) and r.get("ref") else ""
+    return f"[{KB_SRC_LABEL.get(r['src'], r['src'])}{stamp}]{ref} {body}"
+
+
+def kb_context(question: str, budget: int = 4200) -> str:
+    hits = kb_search(question)
+    if not hits:
+        return ""
+    lines, used = [], 0
+    for r in hits:
+        line = _kb_fmt(r)
+        if used + len(line) > budget:
+            break
+        lines.append("- " + line)
+        used += len(line)
+    return (
+        "\n\nDEEP LIBRARY: passages pulled for this question from the full tsukiverse archive "
+        "(the knowledge base, the welcome pack, every @Tsukiverse55 video, juju's X posts, and the "
+        "community telegram from 4 may 2024 to 7 jan 2025, times in US Eastern). how to use them: "
+        "knowledge base, welcome pack and dev lines are your own memory, so speak from them plainly. "
+        "telegram chat lines are what members said at the time, not facts: use them for who-said-what, "
+        "when the community noticed something, and what people thought. never repeat a price, market cap "
+        "or target from any of them, never call a member's guess confirmed, and never quote a private "
+        "person's message word for word unless they asked. if a passage does not fit what was asked, "
+        "ignore it:\n" + "\n".join(lines))
+
+
+# ── wire into the telegram answer path ─────────────────────────────────────────
+_kb_prev_build_lore_context = build_lore_context
+
+
+def build_lore_context(question: str) -> str:   # noqa: F811  (extends the v-old helper)
+    base = _kb_prev_build_lore_context(question)
+    try:
+        return base + kb_context(question)
+    except Exception as e:
+        log.debug(f"kb context: {e}")
+        return base
+
+
+# ── X posts: a fresh lore nugget for the writing types that run on ideas ───────
+V50_NUGGET_KINDS = {"thought", "number", "film", "question", "welcome", "community", "elon_take"}
+_V50_NUGGET_QUERIES = {
+    "elon_take": "elon grok xai memphis spacex moon",
+    "film": "film clip scene movie posted",
+    "number": "55 665 113 433 855 1:09 4:20 10/24 4663",
+    "welcome": "launch diana moon coincidence welcome",
+}
+
+
+def v50_nugget(kind: str) -> str:
+    """one curated passage (knowledge base, welcome pack or youtube notes only;
+    never the telegram, never juju's posts) that the bot has not used lately."""
+    if not _KB_STATE["ready"]:
+        return ""
+    q = _V50_NUGGET_QUERIES.get(kind) or random.choice([
+        "coincidence", "rwa spaces", "sha code", "uno reverse", "dark knight", "five cats",
+        "felinus prime", "wizard 855", "tick tock", "phoenix ashes", "diana moon", "time magazine",
+        "dev telegram", "focus 55", "aristocats", "greg grok", "first day at work", "robinhood chain"])
+    hits = kb_search(q, limit=12, sources={"kb", "wp", "yt"})
+    hits = [h for h in hits if not re.search(r"\[verify\]|MARKET|CLAIM|OFF-LIMITS", h["body"])]
+    if not hits:
+        return ""
+    try:
+        used = set(json.loads(kv_get("v50:nuggets", "[]") or "[]"))
+    except Exception:
+        used = set()
+    fresh = [h for h in hits if _kb_hashlib.md5(h["body"].encode()).hexdigest()[:10] not in used] or hits
+    pick = random.choice(fresh[:5])
+    used = list(used)[-80:] + [_kb_hashlib.md5(pick["body"].encode()).hexdigest()[:10]]
+    kv_set("v50:nuggets", json.dumps(used))
+    return pick["body"][:900]
+
+
+async def _v50_make_llm(kind: str, facts: dict) -> dict | None:
+    if kind not in V50_NUGGET_KINDS:
+        return await _v49_make_llm(kind, facts)
+    band = V49_TYPES[kind][2]
+    brief = V49_BRIEFS.get(kind, V49_BRIEFS["thought"])
+    if kind == "gme_take" and not facts.get("gme"):
+        return None
+    nug = await asyncio.to_thread(v50_nugget, kind)
+    extra = ("\nLORE NUGGET (from your library; you may build the post on this if it fits the "
+             "type, using only what it says, its dates exactly):\n" + nug) if nug else ""
+    t = await _v49_write(kind, band, brief, facts["text"], extra)
+    return {"text": t} if t else None
+
+
+_V49_MAKERS["llm"] = _v50_make_llm
+
+
+# ── commands (maker only) ────────────────────────────────────────────────────
+async def cmd_kb(update, context):
+    """/kb <question>: show what the deep library would hand the bot."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    q = " ".join(context.args or []).strip()
+    if not q:
+        s = _KB_STATE
+        await update.message.reply_text(
+            f"library: {'ready' if s['ready'] else ('building' if s['building'] else 'not built')}, "
+            f"{s['rows']} passages\n{s['by_src']}\n{('error: ' + s['error']) if s['error'] else ''}\n"
+            "usage: /kb <question>   ·   /kbrebuild")
+        return
+    hits = kb_search(q)
+    if not hits:
+        await update.message.reply_text("nothing in the library for that.")
+        return
+    txt = "\n\n".join(_kb_fmt(h, 300) for h in hits)
+    await send_chunked(update.message.reply_text, txt)
+
+
+async def cmd_kbrebuild(update, context):
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    await update.message.reply_text("rebuilding the library, about a minute…")
+    st = await asyncio.to_thread(kb_build, True)
+    await update.message.reply_text(f"done: {st['rows']} passages {st['by_src']} {st['error']}")
+
+
+kb_build_async()
+
 
 def main():
     init_db()
@@ -16927,7 +18199,7 @@ def main():
         ("summary", cmd_summary), ("chatid", cmd_chatid),
         ("price", cmd_price), ("mc", cmd_mc), ("links", cmd_links), ("roadmap", cmd_roadmap),
         ("posts", cmd_posts), ("mood", cmd_mood), ("confirm", cmd_confirm),
-        ("dbcheck", cmd_dbcheck), ("perms", cmd_perms), ("datecheck", cmd_datecheck),
+        ("dbcheck", cmd_dbcheck), ("export", cmd_export), ("day", cmd_day), ("draft", cmd_draft), ("postnow", cmd_postnow), ("kb", cmd_kb), ("kbrebuild", cmd_kbrebuild), ("perms", cmd_perms), ("datecheck", cmd_datecheck),
         ("read", cmd_read),
         ("watch", cmd_watch), ("unwatch", cmd_unwatch),
         ("watching", cmd_watching), ("linkmode", cmd_linkmode),
@@ -17011,6 +18283,8 @@ def main():
     scheduler.add_job(job_spacex_week,   "cron", day_of_week="mon", hour=8, minute=50, timezone=ny_tz, args=[app])
     scheduler.add_job(job_grok_rank,     "cron", hour=11, minute=10, timezone=ny_tz, args=[app])
     scheduler.add_job(job_elon_wire,     "interval", minutes=45, args=[app])
+    # v49 · the post engine
+    scheduler.add_job(job_v49_tick,      "cron", minute="*/5", timezone=ny_tz, args=[app])
     scheduler.add_job(job_daily_board, "cron", hour=9, minute=20, timezone=ny_tz, args=[app])
     scheduler.add_job(job_x_floor, "cron", minute=45, timezone=ny_tz, args=[app])
     scheduler.add_job(job_insider_backfill, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=40), args=[app])
