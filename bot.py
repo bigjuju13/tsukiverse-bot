@@ -21292,4 +21292,8 @@ def main():
     scheduler.add_job(job_on_this_day,   "cron", hour=13, minute=3, timezone=ny_tz, args=[app])
     v55_register(app, scheduler, ny_tz)     # jinx: commands, buttons, his jobs (JINX=off: nothing)
     # scheduler.start() deliberately does NOT happen here. See on_startup().
+    log.info("Tsukiverse Bot running")
+    app.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
 
+if __name__ == "__main__":
+    main()
