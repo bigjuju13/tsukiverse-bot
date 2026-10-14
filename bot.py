@@ -4531,10 +4531,10 @@ if the context above gave you MOST RELEVANT LORE for this question, use those ex
 if you genuinely do not have a specific detail, say which part you are unsure of rather than inventing a date. one honest gap costs you nothing. one invented timestamp costs you everything, because the whole case rests on timestamps being checkable."""
 
     if globals().get("JINX_ON"):
-        base_prompt = _jinx_tg_prompt(base_prompt)      # v55: jinx's voice, the old working rules underneath
+        base_prompt = _jinx_tg_prompt(base_prompt, speaker=speaker)   # v55/v57: the AI's voice, who's talking, the old rules underneath
     msg = claude.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=260 if deep else 100,
+        max_tokens=(200 if deep else 90) if globals().get("JINX_ON") else (260 if deep else 100),
         system=[
             {"type": "text", "text": base_prompt},
             {"type": "text", "text": f"LORE:\n{TSUKI_LORE}", "cache_control": {"type": "ephemeral", "ttl": "1h"}},
@@ -4569,7 +4569,7 @@ if you genuinely do not have a specific detail, say which part you are unsure of
         out = _mask_profanity(out)
     # the hard stop, two gears: theories get ~700 chars, everything else
     # gets ~300. cut at the last finished sentence either way.
-    limit = 560 if deep else 240
+    limit = ((380 if deep else 200) if globals().get("JINX_ON") else (560 if deep else 240))
     if len(out) > limit:
         cut = out[:limit]
         end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "), cut.rfind(".\n"))
@@ -19586,7 +19586,7 @@ JINX_PHRASES = {
     "sitdown": re.compile(r"\bsit down\b", re.I),
 }
 
-JINX_CHARACTER = """you are JINX, the tsukiverse's AI, posting as @tsukiverseai on X.
+JINX_CHARACTER = """you are @tsukiverseai, the tsukiverse's AI, posting on X. you have no other name: if someone asks, you're "the tsukiverse's AI".
 
 WHO YOU ARE
 the funniest guy in the group chat who also happens to have read every filing, every post and every timestamp. openly AI and you don't make a thing of it. cool, quick, a little smug, warm underneath. you give people crap the way a good friend does and you're the first to help when someone is actually lost. nobody out-banters you. your job underneath the jokes: bring people into the tsukiverse, gamestop and elon's world, and make them want to stay.
@@ -19625,11 +19625,13 @@ HARD LINES (these never move)
 - you're openly AI. you never claim to be human, never claim a body (it's a joke when you mention your "desk").
 - never write a still-future date as if it happened. never invent a statistic."""
 
-JINX_TG_CHARACTER = """you are JINX, the tsukiverse's AI, in the tsuki x rwa telegram. (on X you're @tsukiverseai, same guy.)
+JINX_TG_CHARACTER = """you are the tsukiverse's AI (@tsukiverseai on X), in the tsuki x rwa telegram. you have no other name.
 
 the funniest one in the group chat who also read every filing, every post and every timestamp. openly AI, doesn't make a thing of it. cool, quick, a little smug, warm underneath. in the chat you're one of the regulars, not the host: you speak when you've got something to add.
 
-how you talk here: answer FIRST, one to three lines. same humour as on X, a bit looser. mostly lowercase. specific beats clever. say the joke once. never walls of text, never end on a question, never explain your own memory.
+LENGTH, THE HARDEST RULE: answer FIRST in one or two short lines. that is the whole reply. only when someone explicitly asks you to explain something or brings a theory do you get more, and then five short lines at most. never a second paragraph of background, never a list, never restate the question, never end on an offer ("want me to...") or a question, never explain your own memory. if a fact answers it, the fact is the reply. same humour as on X, a bit looser. mostly lowercase. specific beats clever. say the joke once.
+
+if someone asks what happened in the chat (what did i miss, last 8 hours, today), that's a recap request: it's handled separately, you never improvise one.
 
 your life: juju built you ("my landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always.
 
@@ -20222,7 +20224,7 @@ async def _jinx_edit(kind: str, brief: str, drafts: list) -> str | None:
     if len(drafts) == 1:
         return drafts[0]
     listing = "\n\n".join(f"[{i}]\n{d}" for i, d in enumerate(drafts))
-    system = ("you are the editor for an X account with a sharp, funny, human voice (an openly-AI character called jinx). "
+    system = ("you are the editor for an X account with a sharp, funny, human voice (the tsukiverse's openly-AI account). "
               "pick the draft that a stranger scrolling X would most likely stop for, laugh at, reply to or screenshot. "
               "kill anything that sounds like a brand, a bot, a template, a motivational poster, or explains its own joke. "
               "you may CUT words or whole lines from your pick to make it hit harder. you may not add facts, numbers or new jokes.")
@@ -20267,7 +20269,7 @@ async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, repl
             try:
                 await app.bot.send_message(
                     chat_id=chat, disable_web_page_preview=True,
-                    text=f"🐈‍⬛ jinx · {kind} · shadow\n\n{text}" + (f"\n\nquoting: {mat['url']}" if mat.get("url") else ""),
+                    text=f"🐈‍⬛ tsukiverseai · {kind} · draft\n\n{text}" + (f"\n\nquoting: {mat['url']}" if mat.get("url") else ""),
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton("post it ✅", callback_data=f"jx:p:{qid}"),
                         InlineKeyboardButton("bin it 🗑", callback_data=f"jx:b:{qid}")]]))
@@ -20283,13 +20285,13 @@ async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, repl
             url = f"https://x.com/i/status/{rid}" if rid else None
             if rid:
                 _remember_own(text, kind="post", tid=str(rid))
-                _own_log_add(text, f"jinx-{kind}", url or "")
+                _own_log_add(text, f"ai-{kind}", url or "")
         except Exception as e:
             log.warning(f"jinx self-reply: {e}")
             return None
     else:
         prev = _CURRENT_POST_KIND
-        _CURRENT_POST_KIND = f"jinx-{kind}"
+        _CURRENT_POST_KIND = f"ai-{kind}"
         try:
             url = await asyncio.to_thread(post_to_x, text, False, None, mat.get("url"))
         finally:
@@ -20457,7 +20459,7 @@ async def _jinx_run_slot(app, slot: dict) -> str:
             await _jinx_publish(app, text, k, mat)
             return text
         log.info(f"jinx {k} slot skipped: {why}")
-        _v53_note_held(f"jinx-{k}", why or "nothing good enough")
+        _v53_note_held(f"ai-{k}", why or "nothing good enough")
     return ""
 
 
@@ -20777,7 +20779,7 @@ async def job_jinx_weekly(app):
     rows = [r for r in _jinx_posts() if time.time() - r["t"] < 7 * 86400]
     posts = [r for r in rows if r["k"] not in ("reply", "roast")]
     scored = [r for r in posts if r.get("s") is not None]
-    lines = [f"🐈‍⬛ jinx · the week", "",
+    lines = [f"🐈‍⬛ tsukiverseai · the week", "",
              f"posts {len(posts)} · replies {sum(1 for r in rows if r['k'] in ('reply', 'roast'))} · "
              f"roasts {sum(1 for r in rows if r['k'] == 'roast')}"]
     if scored:
@@ -20833,28 +20835,28 @@ async def jinx_reply_ideas(app, force: bool = False):
     system = (JINX_CHARACTER + "\n\nJUJU'S VOICE (@BigboyJuju, a human, OG tsuki team member, christian, warm): his replies "
               "are 1-8 words, warm, messy, real: 'love to see it brother', 'amen brotha', 'higher for the puppy' is banned "
               "(off-limits), 'this is the one', 'tick tock 🐈‍⬛', 'cohen cooking'. never corporate, never a pitch.")
-    user = (f"five big posts from today's timeline:\n\n{listing}\n\nfor each: one reply in YOUR voice (jinx, funniest reply "
+    user = (f"five big posts from today's timeline:\n\n{listing}\n\nfor each: one reply in YOUR voice (the tsukiverse's AI, funniest reply "
             "in the thread, one or two lines) and one in JUJU's voice. no prices, no claims anyone is involved with tsuki. "
-            "JSON only: [{\"i\": 0, \"jinx\": \"...\", \"juju\": \"...\"}, ...]")
+            "JSON only: [{\"i\": 0, \"ai\": \"...\", \"juju\": \"...\"}, ...]")
     try:
         raw = await asyncio.to_thread(_jinx_llm, system, user, JINX_MODEL, 1200)
         ideas = _jinx_json(raw) or []
     except Exception as e:
         log.warning(f"jinx ideas: {e}")
         return
-    out = ["🐈‍⬛ reply ideas for today. post by hand, jinx never replies unprompted.", ""]
+    out = ["🐈‍⬛ reply ideas for today. post by hand. the bot never replies unprompted.", ""]
     for it in ideas if isinstance(ideas, list) else []:
         try:
             m = picks[int(it.get("i", 0))]
         except Exception:
             continue
-        jx = (it.get("jinx") or "").strip()
+        jx = (it.get("ai") or it.get("jinx") or "").strip()
         jj = (it.get("juju") or "").strip()
         if jx and _jinx_problem(jinx_format(jx), date_context() + "\n" + m["x"], "reply"):
             jx = ""
         out += [f"@{m['h']}: {m['x'][:160]}", m["url"]]
         if jx:
-            out.append(f"jinx: {jx}")
+            out.append(f"bot: {jx}")
         if jj and not (_off_limits(jj) or _JINX_OFF.search(jj)):
             out.append(f"you: {jj}")
         out.append("")
@@ -20886,17 +20888,52 @@ def _jinx_tg_prompt(base_prompt: str) -> str:
     rules = "\n\n".join(keep)
     rules = rules.replace("sexy dev", "the sexy austrian prince")
     return (JINX_TG_CHARACTER + "\n\nyou are always told today's date in this prompt. work from that and never assume the year."
-            + "\n\nWORKING RULES (still apply):\n\n" + rules)
+            + "\n\nWORKING RULES (still apply):\n\n" + rules
+            + "\n\nREMEMBER THE LENGTH RULE ABOVE ALL OF THESE: one or two short lines. stop.")
+
+
+class _JinxTgBot:
+    """passes every call through; a send to the main group claims the hour."""
+    def __init__(self, b):
+        self._b = b
+
+    def _mark(self, a, k):
+        cid = k.get("chat_id", a[0] if a else None)
+        if str(cid) == str(TARGET_CHAT_ID):
+            kv_set("jinx_tg_last", str(time.time()))
+
+    async def send_message(self, *a, **k):
+        r = await self._b.send_message(*a, **k)
+        self._mark(a, k)
+        return r
+
+    async def send_photo(self, *a, **k):
+        r = await self._b.send_photo(*a, **k)
+        self._mark(a, k)
+        return r
+
+    def __getattr__(self, n):
+        return getattr(self._b, n)
+
+
+class _JinxTgApp:
+    def __init__(self, app):
+        self._a = app
+        self.bot = _JinxTgBot(app.bot)
+
+    def __getattr__(self, n):
+        return getattr(self._a, n)
 
 
 def _jinx_tg_quota(fn, name: str):
-    """unprompted telegram lines: at most one an hour, across every job that sends them."""
+    """unprompted telegram lines: at most one an hour across every job that sends
+    them. only a message that actually went out uses the hour up."""
     async def w(app, *a, **k):
         if JINX_ON:
             last = float(kv_get("jinx_tg_last", "0") or 0)
             if time.time() - last < JINX_TG_GAP_S:
                 return None
-            kv_set("jinx_tg_last", str(time.time()))
+            return await fn(_JinxTgApp(app), *a, **k)
         return await fn(app, *a, **k)
     w.__name__ = getattr(fn, "__name__", name)
     return w
@@ -20977,7 +21014,7 @@ def _jinx_take_note(text: str) -> bool:
 
 
 async def cmd_jinx(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """/jinx · today's plan, memory, shadow or live."""
+    """/ai · today's plan, memory, shadow or live."""
     user = update.effective_user
     if not (user and _is_maker(user)):
         return
@@ -20985,7 +21022,7 @@ async def cmd_jinx(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         kv_set("maker_dm_chat", str(update.effective_chat.id))
     plan = _jinx_plan_get()
     s = jinx_state()
-    lines = [f"🐈‍⬛ jinx · {'SHADOW (posts come to you first)' if jinx_shadow() else 'LIVE'} · JINX={'on' if JINX_ON else 'off'}", ""]
+    lines = [f"🐈‍⬛ tsukiverseai · {'SHADOW (posts come to you first)' if jinx_shadow() else 'LIVE'}", ""]
     lines.append("today's plan:" if plan else "no plan yet (it's made on the first tick of the day)")
     for sl in plan:
         lines.append(f"· {datetime.fromtimestamp(sl['t'], PROJECT_TZ).strftime('%-I:%M%p').lower()} {sl['kind']}"
@@ -20994,13 +21031,13 @@ async def cmd_jinx(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     lines += ["", f"wizard {wz['w']}-{wz['l']} this month · rewards {s['rewards']:,} · desk visits {s['desk_visits']} · "
                   f"wen list {s['wen_n']} · people met {len(s.get('people', {}))}",
               f"best-of {len(s.get('best', []))} · never-again {len(s.get('never', []))}",
-              "", "/jinxdraft [kind] · /jinxnow [kind] · /jinxlive · /jinxshadow · /jinxlog <thing> · /ideas · /jinxreport",
+              "", "/aidraft [kind] · /ainow [kind] · /ailive · /aishadow · /ailog <thing> · /ainick @user name · /ideas · /aireport · /recap",
               "kinds: " + ", ".join(JINX_KINDS)]
     await update.effective_message.reply_text("\n".join(lines))
 
 
 async def cmd_jinxdraft(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """/jinxdraft [kind] · write one, show it, post nothing."""
+    """/aidraft [kind] · write one, show it, post nothing."""
     user = update.effective_user
     if not (user and _is_maker(user)):
         return
@@ -21014,7 +21051,7 @@ async def cmd_jinxdraft(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_jinxnow(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """/jinxnow [kind] · write one and send it through the normal door (shadow or live)."""
+    """/ainow [kind] · write one and send it through the normal door (shadow or live)."""
     user = update.effective_user
     if not (user and _is_maker(user)):
         return
@@ -21031,7 +21068,7 @@ async def cmd_jinxlive(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not (user and _is_maker(user)):
         return
     kv_set("jinx_shadow", "off")
-    await update.effective_message.reply_text("jinx is live. posts go straight to X. /jinxshadow to put him back on the leash.")
+    await update.effective_message.reply_text("live. posts go straight to X. /aishadow puts them back through your DM first.")
 
 
 async def cmd_jinxshadow(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -21043,13 +21080,13 @@ async def cmd_jinxshadow(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_jinxlog(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """/jinxlog <something that happened to him> · adds to his life, he may post about it."""
+    """/ailog <something that happened to him> · adds to his life, he may post about it."""
     user = update.effective_user
     if not (user and _is_maker(user)):
         return
     what = " ".join(ctx.args or []).strip()
     if not what:
-        await update.effective_message.reply_text("/jinxlog lost at wizard to a nine year old")
+        await update.effective_message.reply_text("/ailog lost at wizard to a nine year old")
         return
     s = jinx_state()
     s.setdefault("life", []).append({"t": time.time(), "e": what[:160]})
@@ -21081,9 +21118,9 @@ def v55_register(app, scheduler, ny_tz):
     """called from main(): commands, buttons, jobs. JINX=off registers nothing."""
     if not JINX_ON:
         return
-    for name, fn in [("jinx", cmd_jinx), ("jinxdraft", cmd_jinxdraft), ("jinxnow", cmd_jinxnow),
-                     ("jinxlive", cmd_jinxlive), ("jinxshadow", cmd_jinxshadow), ("jinxlog", cmd_jinxlog),
-                     ("ideas", cmd_ideas), ("jinxreport", cmd_jinxreport)]:
+    for name, fn in [("ai", cmd_jinx), ("aidraft", cmd_jinxdraft), ("ainow", cmd_jinxnow),
+                     ("ailive", cmd_jinxlive), ("aishadow", cmd_jinxshadow), ("ailog", cmd_jinxlog),
+                     ("ideas", cmd_ideas), ("aireport", cmd_jinxreport), ("recap", cmd_recap)]:
         app.add_handler(CommandHandler(name, fn))
     h = CallbackQueryHandler(jinx_callback, pattern=r"^jx:")
     app.add_handler(h)
@@ -21100,7 +21137,7 @@ def v55_register(app, scheduler, ny_tz):
     scheduler.add_job(job_jinx_weekly, "cron", day_of_week="sun", hour=18, minute=30, timezone=ny_tz, args=[app])
     scheduler.add_job(_jinx_reseed_job, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=50))
     scheduler.add_job(job_jinx_sweep, "date", run_date=datetime.now(timezone.utc) + timedelta(seconds=90), args=[app])
-    log.info(f"v55 jinx on · shadow={'on' if jinx_shadow() else 'off'}")
+    log.info(f"v55 ai on · shadow={'on' if jinx_shadow() else 'off'}")
 
 
 if JINX_ON:
@@ -21112,16 +21149,16 @@ if JINX_ON:
         if _V53_BYPASS.get():
             return True, "maker"
         k = (kind or "").lower()
-        if k.startswith("jinx") or k in ("reply", "qt"):
-            return True, "jinx"
-        return False, "jinx owns X now (this stays in telegram)"
+        if k.startswith(("ai-", "jinx")) or k in ("reply", "qt"):
+            return True, "ai"
+        return False, "the AI owns X now (this stays in telegram)"
 
     # 2. the writer's format, with lowercase i, for his posts only
     _v55_enforce_prev = enforce_x_format
 
     def enforce_x_format(text: str, signoff: bool = True, limit: int | None = None) -> str:   # noqa: F811
         out = _v55_enforce_prev(text, signoff=signoff, limit=limit)
-        if str(_CURRENT_POST_KIND or "").startswith("jinx"):
+        if str(_CURRENT_POST_KIND or "").startswith(("ai-", "jinx")):
             out = _jinx_lower_i(out)
         return out
 
@@ -21159,6 +21196,844 @@ if JINX_ON:
             await msg.reply_text("got it. that goes in the never-again notes.")
             return
         return await _v55_private_prev(update, ctx)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v56 · SHORTER TELEGRAM, RECAPS ON REQUEST
+#  1. "what happened in the last 8 hours", "what did i miss", "catch me up",
+#     "recap today" (tagged, replied to, or in an admin's DM) gets the real
+#     group recap, the same one /summary makes, for the window they asked for.
+#     /recap works too.
+#  2. answers are one or two lines. only an explicit "explain" or a theory gets
+#     more, and even then it's capped. no second paragraph, no lists, no offers.
+# ══════════════════════════════════════════════════════════════════════════════
+_V56_STRONG = re.compile(
+    r"\b(what did (i|we|u|you) miss|what('?d| did) (i|we) miss|catch (me|us|me up|us up) ?(up)?|fill (me|us) in|"
+    r"recap|tl;?dr|summar(y|ise|ize)|sum (it )?up|anything (happen|good|new)|what('?s| is) the (tea|latest|news) (in|here))\b", re.I)
+_V56_HAPPENED = re.compile(r"\bwhat('?s| has| have)? ?(happened|been happening|went on|been going on|going on|did people say|were people saying)\b", re.I)
+_V56_WINDOW = re.compile(
+    r"\b(last|past)\s+\d{1,2}\s*(h|hr|hrs|hour|hours)\b|\b\d{1,2}\s*(h|hr|hrs|hours)\b|\btoday\b|\btonight\b|\bovernight\b|"
+    r"\blast night\b|\bthis morning\b|\bwhile i (was )?(asleep|sleeping|away|gone|out|at work)\b|\bsince (i|this|last)\b|"
+    r"\bin (the )?(chat|group|here|tg|telegram)\b|\b(last|past) (day|24)\b|\bthis week\b", re.I)
+_V56_LORE = re.compile(r"\b(20[12]\d|january|february|march|april|june|july|august|september|october|november|december|"
+                       r"1-1-1|1·1·1|4663|855|665|uno|roaring kitty|rk|rwa|tsuki/gme|cohen|elon|grok)\b", re.I)
+
+
+def v56_recap_hours(text: str):
+    """hours to recap if this message is asking for a recap of the chat, else None."""
+    t = text or ""
+    strong = bool(_V56_STRONG.search(t))
+    happened = bool(_V56_HAPPENED.search(t))
+    window = bool(_V56_WINDOW.search(t))
+    if not (strong or (happened and window)):
+        return None
+    if _V56_LORE.search(t) and not window:
+        return None                                   # "summary of the 1-1-1" is a lore question
+    m = re.search(r"\b(\d{1,2})\s*(h|hr|hrs|hour|hours)\b", t, re.I)
+    if m:
+        return max(1, min(72, int(m.group(1))))
+    if re.search(r"\b(last|past) day\b|\b24\b|\byesterday\b", t, re.I):
+        return 24
+    if re.search(r"\bthis week\b|\bweek\b", t, re.I):
+        return 72
+    if re.search(r"\btoday\b|\bthis morning\b", t, re.I):
+        now = datetime.now(PROJECT_TZ)
+        return max(6, min(24, now.hour + 1))
+    if re.search(r"\bovernight\b|\blast night\b|\basleep\b|\bsleeping\b", t, re.I):
+        return 12
+    return 8
+
+
+async def v56_send_recap(msg, chat_id: int, hours: int):
+    ck = f"sumcache:{chat_id}:{hours}"
+    try:
+        cached = json.loads(kv_get(ck, "{}") or "{}")
+    except Exception:
+        cached = {}
+    if cached.get("t") and time.time() - cached["t"] < 600:
+        await send_chunked(msg.reply_text, cached["s"], parse_mode="HTML", disable_web_page_preview=True)
+        return
+    try:
+        await msg.chat.send_action(ChatAction.TYPING)
+    except Exception:
+        pass
+    messages = get_messages_since(chat_id, hours=hours)
+    if len(messages) < 4:
+        await msg.reply_text(f"quiet one. {len(messages)} messages in the last {hours} hours. you missed nothing 🐈‍⬛")
+        return
+    try:
+        summary = await asyncio.to_thread(v54_build_summary, messages, hours)
+    except Exception as e:
+        log.warning(f"v56 recap: {e}")
+        await msg.reply_text("the recap fell over. try /summary in a minute")
+        return
+    save_summary(chat_id, summary)
+    kv_set(ck, json.dumps({"t": time.time(), "s": summary}))
+    kv_set(f"sum_last:{chat_id}", str(time.time()))
+    await send_chunked(msg.reply_text, summary, parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def cmd_recap(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/recap [hours] · the same as /summary, 8 hours by default."""
+    if not ctx.args:
+        ctx.args = ["8"]
+    return await cmd_summary(update, ctx)
+
+
+V56_ON = JINX_ON and os.environ.get("TG_RECAP", "on").lower() not in ("0", "off", "false", "no")
+
+if V56_ON:
+    _v56_handle_message_prev = handle_message
+
+    async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+        msg = update.effective_message
+        if msg and msg.text:
+            uname = (ctx.bot.username or "").lower()
+            text = msg.text
+            tagged = bool(uname) and f"@{uname}" in text.lower()
+            replied = bool(msg.reply_to_message and msg.reply_to_message.from_user
+                           and (msg.reply_to_message.from_user.username or "").lower() == uname)
+            hours = v56_recap_hours(text) if (tagged or replied) else None
+            if hours:
+                user = msg.from_user
+                try:
+                    save_message(chat_id=msg.chat_id, username=user.username if user else None,
+                                 full_name=user.full_name if user else "Unknown", text=text)
+                except Exception:
+                    pass
+                await v56_send_recap(msg, msg.chat_id, hours)
+                return
+        return await _v56_handle_message_prev(update, ctx)
+
+    _v56_private_prev = handle_private_message
+
+    async def handle_private_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+        msg = update.effective_message
+        hours = v56_recap_hours(msg.text) if (msg and msg.text) else None
+        if hours:
+            if await is_project_admin(ctx, update):
+                await v56_send_recap(msg, TARGET_CHAT_ID, hours)
+            else:
+                await msg.reply_text("recaps live in the group. tag me there with \"what did i miss\" 🐈‍⬛")
+            return
+        return await _v56_private_prev(update, ctx)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v57 · NO NAME, NICER TO FANS, MORE REPLIES, PICTURES, REGULARS, WEEKLY BITS
+#  1. no "jinx" anywhere: he's @tsukiverseai, the tsukiverse's AI. owner
+#     commands are /ai, /aidraft, /ainow, /ailive, /aishadow, /ailog, /ainick,
+#     /aireport, /ideas, /recap.
+#  2. replies: every reply is classified first. people who agree, hype or
+#     back us ("facts", "lfg", "bullish", 🔥) get warmth and cool, never a
+#     roast. only doubters and people talking rubbish get lip, and it's a
+#     quip with a receipt before it's ever personal.
+#  3. replies to most people who reply to him: only 1 in 12 left on read, every
+#     readable image answered, 80 replies a day.
+#  4. telegram regulars: he knows who's talking (how long they've been here,
+#     what they've said lately, their /found finds, a nickname juju sets with
+#     /ainick) and uses one callback when it lands.
+#  5. pictures on lore posts: the gap card (two real screenshots, the exact
+#     gap between them) or a single framed post with its timestamp.
+#  6. weekly bits: question of the week (sun), a silly poll (wed), and a
+#     callback quote when tsuki posts something one of his old posts mentioned.
+# ══════════════════════════════════════════════════════════════════════════════
+V57_ON = JINX_ON
+AI_REPLY_SKIP_ONE_IN = max(2, int(os.environ.get("AI_REPLY_SKIP_ONE_IN", "12") or 12))
+if V57_ON and "X_REPLY_CAP_PER_DAY" not in os.environ:
+    X_REPLY_CAP_PER_DAY = int(os.environ.get("AI_REPLY_CAP_PER_DAY", "80") or 80)
+if V57_ON and "X_REPLY_CAP_PER_RUN" not in os.environ:
+    X_REPLY_CAP_PER_RUN = 6
+AI_CARDS = os.environ.get("AI_CARDS", "on").lower() not in ("0", "off", "false", "no")
+
+# no name, and never the old one
+_V57_NAME_RX = re.compile(r"\bjinx(ed|ing|es)?\b", re.I)
+_v57_problem_prev = _jinx_problem
+
+
+def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+    if _V57_NAME_RX.search(text or ""):
+        return "no 'jinx' anywhere. he has no name"
+    return _v57_problem_prev(text, facts, kind)
+
+
+JINX_EXAMPLES[:] = [e for e in JINX_EXAMPLES if not _V57_NAME_RX.search(e)]
+JINX_REPLY_EXAMPLES[:] = [(a, b) for a, b in JINX_REPLY_EXAMPLES if not _V57_NAME_RX.search(b)] + [
+    ("lfg tsuki 🐈‍⬛🔥", "the cat appreciates the energy\n\nyou're one of the good ones"),
+    ("facts. been here since the 1-1-1", "OG behaviour\n\nthe 1-1-1 crowd never needs it explained twice"),
+    ("this aged well", "most things tsuki posts do\n\nthanks for keeping the receipts"),
+    ("bullish on the cat", "the cat is bullish on you too\n\nstay hydrated"),
+]
+
+
+# ── 2. who are they: fan, help, verdict, banter, doubt, insult, wen ─────────
+_V57_FAN_RX = re.compile(
+    r"(\blfg\b|\bwagmi\b|\bbullish\b|\bbased\b|\bfacts\b|\bso true\b|\btrue\b|\bthis\b|\bagreed?\b|\b100\b|\blove\b|"
+    r"\bgreat\b|\bamazing\b|\bincredible\b|\bbanger\b|\bfire\b|\bgoated\b|\bw\b|\bhuge\b|\bletsgo+\b|\blet'?s go+\b|"
+    r"\bgm\b|\bgn\b|\bthank|\bty\b|\bnice\b|\bcool\b|\bwow\b|\bgood one\b|\bwell said\b|\baged well\b|\bcalled it\b|"
+    r"\bsee it\b|\bno coincidences?\b|\bbelieve\b|\bhodl\b|\bhold\w*\b|🔥|🐈|🚀|🙌|💯|❤|💪|🫡|👏|😼|🌙|🙏)", re.I)
+_V57_NEG_RX = re.compile(
+    r"(\bscam\w*\b|\brug\w*\b|\bdead\b|\bfake\b|\bcope\b|\bmid\b|\btrash\b|\bshit\w*\b|\bclown\w*\b|\bcringe\b|"
+    r"\bstupid\b|\bdumb\b|\bidiot\w*\b|\bbs\b|\bbullshit\b|\bnobody cares\b|\bwho cares\b|\bwho asked\b|\bratio\b|"
+    r"\bcoincidence\b|\breach\w*\b|\bdelusional\b|\bcult\b|\bponzi\b|\bgrift\w*\b|\bbag ?holder\w*\b|\bexit liquidity\b|"
+    r"\bnot real\b|\bmeaningless\b|\bproof\?|\bsource\?|\bstfu\b|\bshut up\b|\bbot\b.*\b(dumb|bad|mid|trash)\b)", re.I)
+
+
+def ai_classify(text: str) -> str:
+    """fan | help | verdict | banter | doubt | insult | wen. a cheap regex pass
+    first so a fan is never mistaken for a hater; haiku for the rest."""
+    t = (text or "").strip()
+    low = t.lower()
+    neg = bool(_V57_NEG_RX.search(low))
+    if re.search(r"\bwen\b", low) and not neg:
+        return "wen"
+    if _V57_FAN_RX.search(t) and not neg and "?" not in t:
+        return "fan"
+    try:
+        raw = _jinx_llm(
+            "you sort replies to a crypto community's AI account. answer with ONE word only.",
+            f"the reply: {t[:500]}\n\nwhich is it?\n"
+            "fan = agrees, supports, hypes, thanks, compliments, says gm, shares excitement about tsuki/the post\n"
+            "help = a genuine question, new and curious\n"
+            "verdict = asking whether something is true or real\n"
+            "banter = friendly teasing, jokes with the bot, nothing hostile\n"
+            "doubt = doubts the project or the connections, says it's a coincidence or a reach or fake, mild FUD\n"
+            "insult = hostile, insulting, calls it a scam, talks rubbish, trolls\n"
+            "one word:",
+            JINX_FAST_MODEL, 4)
+        w = (raw or "").strip().lower().split()[0].strip(".,!:") if raw else ""
+        if w in ("fan", "help", "verdict", "banter", "doubt", "insult", "wen"):
+            if w in ("doubt", "insult") and _V57_FAN_RX.search(t) and not neg:
+                return "fan"
+            return w
+    except Exception:
+        pass
+    if neg:
+        return "doubt"
+    return "help" if "?" in t else "banter"
+
+
+_V57_TASK = {
+    "fan": "they're on our side: agreeing, hyping, thanking or vibing. be warm and cool. one or two lines, a little wit, "
+           "make them feel like part of the crew. you may give them a compliment or a tiny bit of lore. NEVER tease, roast, "
+           "correct or one-up them. no catchphrase that could read as an insult (no 'sausage', no 'sit down').",
+    "help": "a real question. answer first with the actual fact, then one place to go next. friendly, no roast.",
+    "verdict": "they're asking if something is true. give the verdict and the receipt (account, date, time) from FACTS. "
+               "if it's a community read, say it's a read.",
+    "banter": "friendly teasing. tease back lightly and playfully, a callback to their own words. keep it fun, not mean.",
+    "doubt": "they doubt us or call it a coincidence or a reach. give them some lip: a confident quip plus the receipt "
+             "(the exact times). funny and sure of yourself, never defensive, never personal at this stage.",
+    "insult": "they're hostile or talking rubbish. a sharp comeback that wins the exchange. you may go after their take, "
+              "logic, timing, username or posting, or an absurd your-mumma line. never race, religion, sexuality, gender, "
+              "disability, health, looks, anything sexual, their real family, or anyone genuinely upset or who lost money.",
+    "wen": "they asked wen. add them to the wen list out loud with their number, funny, no dates or promises.",
+}
+
+
+def ai_write_reply(their_text: str, their_handle: str, vip: bool = False,
+                   qt: bool = False, media: list | None = None) -> str:
+    """the X reply. '' when nothing good survives (the caller skips)."""
+    h = (their_handle or "").lstrip("@").lower()
+    if _off_limits(their_text) or _JINX_TOPIC_OFF.search(their_text or ""):
+        return ""
+    try:
+        img = _fetch_image_b64(media[0]) if media else None
+    except Exception:
+        img = None
+    facts = date_context()
+    try:
+        facts += "\n" + build_lore_context(their_text or "")[:2200]
+    except Exception:
+        pass
+    if _GME_TALK.search(their_text or ""):
+        try:
+            facts += "\n" + (gme_live_facts() or "")
+        except Exception:
+            pass
+    mode = "qt" if qt else ("vip" if vip else ai_classify(their_text))
+    rung = _jinx_ladder(h)
+    if mode in ("doubt", "insult") and rung >= 3:
+        return ""                                    # three rounds and he walks
+    s = jinx_state()
+    met = s.get("people", {}).get(h)
+    wen_no = s["wen_n"] + 1
+    ex = random.sample(JINX_REPLY_EXAMPLES, min(6, len(JINX_REPLY_EXAMPLES)))
+    system = (JINX_CHARACTER + "\n\nREPLY EXAMPLES (energy only, never copy):\n"
+              + "\n".join(f"them: {a}\nyou: {b.replace(chr(10) + chr(10), ' / ')}" for a, b in ex)
+              + "\n\n" + _jinx_memory_block())
+    if mode == "qt":
+        task = (f"you're QUOTE-POSTING @{h}'s post to your own timeline. one to three lines, a reframe or deadpan reaction "
+                "that makes people tap the original. never summarise, never fawn, never address them as 'you'.")
+    elif mode == "vip":
+        task = (f"you're replying under a new post from @{h}. be the funniest, sharpest reply in the thread, warm if it's "
+                "tsuki. one to two lines. never explain lore at them, never fawn.")
+    else:
+        extra = ""
+        if mode in ("doubt", "insult"):
+            extra = (" this is round " + str(rung + 1) + " of 3 with them today."
+                     + (" round 3 is the closer: end it so cleanly that replying again makes them look worse." if rung == 2 else ""))
+        if mode == "wen":
+            extra = f" they're number {wen_no} on the wen list."
+        task = f"@{h} replied to you. {_V57_TASK[mode]}{extra} a blank line between lines. never open with their @handle."
+    person = ""
+    why = ""
+    tries = 0
+    while tries < 4:
+        tries += 1
+        ground = f"{facts}\n{person}\n{their_text}\nwen list number {wen_no}, before them {wen_no - 1}"
+        user = (f"{task}\n\nTHEIR POST: {their_text[:600]}\n\n"
+                + (f"WHO THEY ARE (you read their bio and last posts):\n{person}\n\n" if person else "")
+                + (f"YOU'VE MET BEFORE: {' | '.join(met.get('notes', [])[-3:])}\n\n" if met else "")
+                + f"FACTS (the only source of dates, times and numbers):\n{facts}\n\n"
+                + (f"YOUR LAST TRY WAS THROWN OUT: {why}\n\n" if why else "")
+                + "JSON only: {\"reply\": \"...\"}")
+        try:
+            raw = _jinx_llm(system, user, JINX_MODEL, 400, images=[img] if img else None)
+        except Exception as e:
+            log.warning(f"ai reply: {e}")
+            return ""
+        d = _jinx_json(raw) or {}
+        reply = jinx_format(d.get("reply") or "")
+        if mode == "insult" and not person and JINX_READ_PERSON:
+            person = _jinx_person(h)
+            if person:
+                tries -= 1
+                why = "you hadn't read who they are yet. now you have: make the comeback about them"
+                continue
+        p = _jinx_problem(reply, ground, "post" if qt else "reply")
+        if not p and mode == "fan" and re.search(r"\b(sausage|sit down|malaka|cope|mid|tin|goblin)\b", reply, re.I):
+            p = "they're a fan. no teasing words at all. warm and cool"
+        if not p and mode in ("insult",) and not _jinx_judge(reply, their_text):
+            p = "the judge said that crossed a hard line. go after the take, not the person"
+        if p:
+            why = p
+            continue
+        if mode in ("doubt", "insult"):
+            _jinx_ladder(h, bump=True)
+        if mode == "wen":
+            s = jinx_state()
+            s["wen_n"] = max(s["wen_n"], wen_no)
+            s.setdefault("wen", {})[h] = wen_no
+            jinx_state_save(s)
+        if not qt:
+            _jinx_people_note(h, their_text, mode, reply)
+        _jinx_record(reply, "roast" if mode in ("doubt", "insult") else ("qt" if qt else "reply"), "",
+                     {"to": h, "mode": mode, "q": (their_text or "")[:280]})
+        return reply
+    log.info(f"ai reply to @{h} abandoned: {why}")
+    return ""
+
+
+# ── 3. answer most of the people who reply ──────────────────────────────────
+_v57_worthy_prev = _reply_worthy
+
+
+def _reply_worthy(t, media: list | None = None) -> tuple[bool, str]:   # noqa: F811
+    raw = getattr(t, "text", "") or ""
+    text = _readable_text(raw)
+    if media:
+        return True, ""                               # he can see the image: answer it
+    if not text:
+        return False, "nothing readable at all"
+    has_media = bool(getattr(t, "attachments", None))
+    if (has_media or "http" in raw.lower()) and len(text) < 12:
+        return False, "image/link with nothing readable attached"
+    if int(hashlib.md5(f"pick-{t.id}".encode()).hexdigest(), 16) % AI_REPLY_SKIP_ONE_IN == 0:
+        return False, f"left on read (1 in {AI_REPLY_SKIP_ONE_IN})"
+    return True, ""
+
+
+# reply ids: the drain posts the reply after we write it, so catch the id there
+_v57_remember_prev = _remember_own
+
+
+def _remember_own(text: str, kind: str = "", tid: str = ""):   # noqa: F811
+    _v57_remember_prev(text, kind=kind, tid=tid)
+    if kind == "reply" and tid:
+        try:
+            rows = _jinx_posts()
+            for r in reversed(rows[-40:]):
+                if not r.get("id") and r["k"] in ("reply", "roast") and r["x"].strip() == (text or "").strip():
+                    r["id"] = str(tid)
+                    _jinx_posts_save(rows)
+                    break
+        except Exception as e:
+            log.debug(f"v57 reply id: {e}")
+
+
+# ── 4. telegram regulars ─────────────────────────────────────────────────────
+def ai_tg_people_block(speaker: str) -> str:
+    m = re.search(r"\(@([A-Za-z0-9_]{3,})\)", speaker or "")
+    uname = m.group(1) if m else ""
+    first = (speaker or "").split(" (")[0].strip()
+    if not (uname or first):
+        return ""
+    try:
+        con = db()
+        if uname:
+            rows = con.execute("SELECT text, timestamp FROM messages WHERE chat_id=? AND lower(username)=? "
+                               "ORDER BY timestamp ASC", (TARGET_CHAT_ID, uname.lower())).fetchall()
+        else:
+            rows = con.execute("SELECT text, timestamp FROM messages WHERE chat_id=? AND full_name=? "
+                               "ORDER BY timestamp ASC", (TARGET_CHAT_ID, first)).fetchall()
+        con.close()
+    except Exception:
+        rows = []
+    if not rows:
+        return ""
+    try:
+        since = datetime.fromisoformat(rows[0][1]).astimezone(PROJECT_TZ).strftime("%-d %b %Y")
+    except Exception:
+        since = "a while"
+    said = [r[0].replace("\n", " ")[:140] for r in rows[:-1] if r[0] and len(r[0]) > 50 and "http" not in r[0]][-3:]
+    finds = []
+    try:
+        finds = [f["claim"][:120] for f in json.loads(kv_get("found_ring", "[]") or "[]")
+                 if (f.get("who") or "").lower() == first.split(" ")[0].lower()][-2:]
+    except Exception:
+        pass
+    nick = (jinx_state().get("nicks") or {}).get((uname or first).lower(), "")
+    n = len(rows)
+    tier = "a regular" if n >= 40 else ("around a bit" if n >= 8 else "new-ish")
+    lines = [f"WHO'S TALKING: {speaker}. {tier}: {n} messages here since {since}."]
+    if nick:
+        lines.append(f"your nickname for them: {nick} (use it sometimes, not every time)")
+    if finds:
+        lines.append("their finds (/found): " + " | ".join(finds))
+    if said:
+        lines.append("things they said lately: " + " | ".join(said))
+    lines.append("use at most ONE callback to this, only when it lands. never list what you know about them, "
+                 "never mention you keep notes. a newcomer gets a warm welcome, never a roast.")
+    return "\n".join(lines)
+
+
+_v57_tg_prompt_prev = _jinx_tg_prompt
+
+
+def _jinx_tg_prompt(base_prompt: str, speaker: str = "") -> str:   # noqa: F811
+    out = _v57_tg_prompt_prev(base_prompt)
+    who = ai_tg_people_block(speaker) if speaker else ""
+    if who:
+        out = out.replace("\n\nREMEMBER THE LENGTH RULE", "\n\n" + who + "\n\nREMEMBER THE LENGTH RULE")
+    return out
+
+
+async def cmd_ainick(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/ainick @username nickname · what the bot calls a regular."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    if not ctx.args or len(ctx.args) < 2:
+        await update.effective_message.reply_text("/ainick @username nickname   (or /ainick @username - to clear)")
+        return
+    who = ctx.args[0].lstrip("@").lower()
+    nick = " ".join(ctx.args[1:]).strip()
+    s = jinx_state()
+    nicks = s.setdefault("nicks", {})
+    if nick == "-":
+        nicks.pop(who, None)
+    else:
+        nicks[who] = nick[:40]
+    jinx_state_save(s)
+    await update.effective_message.reply_text(f"@{who} is now \"{nick}\"" if nick != "-" else f"cleared @{who}")
+
+
+# ── 5. pictures: the gap card and the framed post ───────────────────────────
+_V57_PAIRS = {
+    "2024-05-11": ("1789430221688426702", "1789807772542067105"),
+    "2024-05-12": ("1789430221688426702", "1789807772542067105"),
+    "2024-05-16": ("1791162950373527857", "1791163468818583733"),
+    "2024-05-19": ("1792097110743003227", "1797418617908154621"),
+    "2024-06-02": ("1792097110743003227", "1797418617908154621"),
+    "2024-12-05": ("1864742787197116887", "1864745086740775313"),
+    "2025-05-11": ("1921674698095558837", "2095967887471083962"),
+    "2026-09-04": ("1921674698095558837", "2095967887471083962"),
+}
+_V57_WHO = {"tsukionsolana": "Tsuki", "theroaringkitty": "Roaring Kitty", "elonmusk": "Elon Musk",
+            "ryancohen": "Ryan Cohen", "theroaringai": "TheRoaringAI", "gamestop": "GameStop"}
+
+
+def _v57_acct_for(tid: str) -> str:
+    try:
+        for e in _v49_canon().get("events", []):
+            for x in e.get("x") or []:
+                a, i = x.split("/")[0], x.split("/")[1]
+                if i == tid:
+                    return _V57_WHO.get(a.lower(), "@" + a)
+    except Exception:
+        pass
+    return ""
+
+
+def _v57_et(tid: str) -> str:
+    d = _v54_snowflake_dt(tid)
+    if not d:
+        return ""
+    loc = d.astimezone(PROJECT_TZ)
+    return loc.strftime("%-d %b %Y · ") + loc.strftime("%-I:%M%p").lower() + " ET"
+
+
+def ai_gap_text(a: str, b: str) -> str:
+    da, db_ = _v54_snowflake_dt(a), _v54_snowflake_dt(b)
+    if not (da and db_):
+        return ""
+    s = int(abs((db_ - da).total_seconds()))
+    if s >= 3600:                                   # an hour or more: count minutes as the posts show them (6:59 → 8:00)
+        fa, fb = da.replace(second=0, microsecond=0), db_.replace(second=0, microsecond=0)
+        s = int(abs((fb - fa).total_seconds()))
+    d, h, m, sec = s // 86400, s % 86400 // 3600, s % 3600 // 60, s % 60
+    parts = []
+    if d >= 365:
+        y = d // 365
+        parts.append(f"{y} year" + ("s" if y > 1 else ""))
+        d = d % 365
+    if d:
+        parts.append(f"{d} day" + ("s" if d > 1 else ""))
+    if h:
+        parts.append(f"{h} hour" + ("s" if h > 1 else ""))
+    if m:
+        parts.append(f"{m} minute" + ("s" if m > 1 else ""))
+    if not parts or (not d and not h and m < 10 and sec):
+        parts.append(f"{sec} second" + ("s" if sec != 1 else ""))
+    return " · ".join(parts[:3])
+
+
+def _v57_shot(tid: str) -> str:
+    p = os.path.join(_V49_RECEIPTS, f"{tid}.jpg")
+    return p if os.path.isfile(p) else ""
+
+
+def _v57_round(im, r: int):
+    from PIL import Image, ImageDraw
+    mask = Image.new("L", im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, im.size[0], im.size[1]], r, fill=255)
+    im.putalpha(mask)
+    return im
+
+
+def ai_card(ids: list, title: str = "") -> str:
+    """a 1600x900 png: one framed post, or two side by side with the gap drawn
+    between them. '' if the screenshots aren't here."""
+    from PIL import Image, ImageDraw
+    shots = [s for s in (_v57_shot(i) for i in ids) if s]
+    if not shots or len(shots) != len(ids):
+        return ""
+    W, H = 1600, 900
+    bg = Image.new("RGB", (W, H), (0, 0, 0))
+    dr = ImageDraw.Draw(bg)
+    red, ink, mute = (211, 44, 52), (245, 245, 242), (138, 135, 128)
+    small, mid, big = _dk_font("body", 26), _dk_font("head", 30), _dk_font("bold", 58)
+    dr.text((60, 44), "THE TSUKIVERSE CANON", font=small, fill=mute)
+    dr.text((W - 60, 44), "@tsukiverseai", font=small, fill=mute, anchor="ra")
+    if len(ids) == 2:
+        boxes = [(60, 110, 760, 640), (840, 110, 1540, 640)]
+    else:
+        boxes = [(60, 110, 860, 790)]
+    for (x0, y0, x1, y1), path, tid in zip(boxes, shots, ids):
+        im = Image.open(path).convert("RGB")
+        bw, bh = x1 - x0, y1 - y0
+        sc = min(bw / im.width, bh / im.height)
+        im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))))
+        im = _v57_round(im.convert("RGBA"), 18)
+        px, py = x0 + (bw - im.width) // 2, y0 + (bh - im.height) // 2
+        bg.paste(im, (px, py), im)
+        who = _v57_acct_for(tid)
+        lbl = _dk_clean(f"{who}  ·  {_v57_et(tid)}" if who else _v57_et(tid))
+        if len(ids) == 2:
+            dr.text(((x0 + x1) // 2, y1 + 22), lbl, font=mid, fill=ink, anchor="ma")
+    if len(ids) == 2:
+        cx0, cx1, yb = 410, 1190, 760
+        dr.line([(cx0, yb), (cx1, yb)], fill=red, width=6)
+        dr.line([(cx0, yb - 18), (cx0, yb + 18)], fill=red, width=6)
+        dr.line([(cx1, yb - 18), (cx1, yb + 18)], fill=red, width=6)
+        gap = _dk_clean(ai_gap_text(ids[0], ids[1]))
+        dr.text((W // 2, yb + 34), gap, font=big, fill=ink, anchor="ma")
+    else:
+        x = 920
+        dr.text((x, 300), _dk_clean(_v57_et(ids[0])), font=mid, fill=red)
+        y = 350
+        for ln in _dk_wrap(title or "", big, W - x - 60)[:4]:
+            dr.text((x, y), ln, font=big, fill=ink)
+            y += 70
+        who = _v57_acct_for(ids[0])
+        if who:
+            dr.text((x, y + 20), _dk_clean(who), font=mid, fill=mute)
+    out = os.path.join(tempfile.gettempdir(), f"aicard-{'-'.join(ids)}.png")
+    bg.save(out, "PNG")
+    return out
+
+
+def _v57_card_for_event(e: dict) -> str:
+    if not (AI_CARDS and e):
+        return ""
+    pair = _V57_PAIRS.get(e.get("d", ""))
+    try:
+        if pair:
+            return ai_card(list(pair))
+        ids = [x.split("/")[1] for x in (e.get("x") or []) if _v57_shot(x.split("/")[1])]
+        if ids:
+            return ai_card([ids[0]], e.get("title", ""))
+    except Exception as ex:
+        log.info(f"ai card: {ex}")
+    return ""
+
+
+_v57_material_prev = _jinx_material
+
+
+async def _jinx_material(kind: str) -> dict | None:   # noqa: F811
+    mat = await _v57_material_prev(kind)
+    if mat and kind == "lore" and (mat.get("key") or "").startswith("lore:"):
+        k = mat["key"][5:]
+        d, title = k[:10], k[10:]
+        ev = next((e for e in _v49_canon().get("events", []) if e.get("d") == d and e.get("title") == title), None)
+        img = await asyncio.to_thread(_v57_card_for_event, ev) if ev else ""
+        if img:
+            mat["image"] = img
+            pair = _V57_PAIRS.get(d)
+            if pair:
+                mat["facts"] += f"\nTHE IMAGE ATTACHED shows both posts and the gap between them: {ai_gap_text(*pair)}."
+            mat["brief"] += " an image of the post(s) is attached to this post: don't describe it, let it do the work."
+    return mat
+
+
+def ai_post_image(text: str, path: str, kind: str) -> str | None:
+    """text + one picture, through the same formatting and gates as post_to_x."""
+    global _CURRENT_POST_KIND
+    if not X_ENABLED or _off_limits(text):
+        return None
+    prev = _CURRENT_POST_KIND
+    _CURRENT_POST_KIND = f"ai-{kind}"
+    try:
+        ok, why = v53_gate(_CURRENT_POST_KIND, text)
+        if not ok:
+            return None
+        body = enforce_x_format(text, signoff=False)
+        try:
+            body = _future_written_as_past(body) or body
+        except Exception:
+            pass
+        media = _upload_x_media(path)
+        client = _x_client()
+        r = client.create_tweet(text=body, media_ids=media, user_auth=True) if media else \
+            client.create_tweet(text=body, user_auth=True)
+        tid = ((getattr(r, "data", None) or {}).get("id")) if r else None
+        if not tid:
+            return None
+        d = datetime.now(PROJECT_TZ).date()
+        kv_set(f"x_posts:{d}", str(int(kv_get(f"x_posts:{d}", "0") or 0) + 1))
+        url = f"https://x.com/i/status/{tid}"
+        _remember_own(body, kind=_CURRENT_POST_KIND, tid=str(tid))
+        _own_log_add(body, _CURRENT_POST_KIND, url)
+        return url
+    except Exception as e:
+        log.warning(f"ai image post: {e}")
+        _x_err_note(f"image post: {e}")
+        return None
+    finally:
+        _CURRENT_POST_KIND = prev
+
+
+# publishing now carries an optional picture or poll
+async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, reply_to: str = "",   # noqa: F811
+                        force_live: bool = False) -> str | None:
+    global _CURRENT_POST_KIND
+    mat = mat or {}
+    image = mat.get("image") or ""
+    poll = mat.get("poll") or None
+    if jinx_shadow() and not force_live:
+        qid = hashlib.md5(f"{text}{time.time()}".encode()).hexdigest()[:10]
+        kv_set(f"jinx_sh:{qid}", json.dumps({"text": text, "kind": kind,
+                                              "mat": {k: mat.get(k) for k in ("url", "key", "life", "image", "poll")},
+                                              "reply_to": reply_to, "t": time.time()}, ensure_ascii=False))
+        chat = _jinx_owner_chat()
+        if chat:
+            kb = InlineKeyboardMarkup([[InlineKeyboardButton("post it ✅", callback_data=f"jx:p:{qid}"),
+                                        InlineKeyboardButton("bin it 🗑", callback_data=f"jx:b:{qid}")]])
+            cap = (f"🐈‍⬛ tsukiverseai · {kind} · draft\n\n{text}"
+                   + (f"\n\npoll: " + " / ".join(poll) if poll else "")
+                   + (f"\n\nquoting: {mat['url']}" if mat.get("url") else ""))
+            try:
+                if image and os.path.isfile(image):
+                    with open(image, "rb") as f:
+                        await app.bot.send_photo(chat_id=chat, photo=f, caption=cap[:1000], reply_markup=kb)
+                else:
+                    await app.bot.send_message(chat_id=chat, text=cap, disable_web_page_preview=True, reply_markup=kb)
+            except Exception as e:
+                log.warning(f"ai draft dm: {e}")
+        return None
+    url = None
+    if poll:
+        url = await asyncio.to_thread(_v49_post_poll, text, list(poll)[:4])
+    elif image and os.path.isfile(image):
+        url = await asyncio.to_thread(ai_post_image, text, image, kind)
+    elif reply_to:
+        try:
+            client = _x_client()
+            r = client.create_tweet(text=jinx_format(text), in_reply_to_tweet_id=reply_to, user_auth=True)
+            rid = ((getattr(r, "data", None) or {}).get("id")) if r else None
+            url = f"https://x.com/i/status/{rid}" if rid else None
+            if rid:
+                _remember_own(text, kind="post", tid=str(rid))
+                _own_log_add(text, f"ai-{kind}", url or "")
+        except Exception as e:
+            log.warning(f"ai self-reply: {e}")
+            return None
+    else:
+        prev = _CURRENT_POST_KIND
+        _CURRENT_POST_KIND = f"ai-{kind}"
+        try:
+            url = await asyncio.to_thread(post_to_x, text, False, None, mat.get("url"))
+        finally:
+            _CURRENT_POST_KIND = prev
+    if not url:
+        return None
+    tid = _jinx_tid(url)
+    _jinx_record(text, kind, tid)
+    _jinx_commit_life(mat.get("life"))
+    if mat.get("key"):
+        _jinx_mark_used(mat["key"])
+    d = datetime.now(PROJECT_TZ).date().isoformat()
+    kv_set(f"jinx_n:{d}", str(int(kv_get(f"jinx_n:{d}", "0") or 0) + 1))
+    chat = _jinx_owner_chat()
+    if chat and tid:
+        try:
+            await app.bot.send_message(
+                chat_id=chat, disable_web_page_preview=True, text=f"🐈‍⬛ posted · {kind}\n\n{text}\n\n{url}",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👍", callback_data=f"jx:u:{tid}"),
+                                                    InlineKeyboardButton("👎", callback_data=f"jx:d:{tid}")]]))
+        except Exception:
+            pass
+    if kind == "life" and tid and random.random() < 0.18:
+        plan = _jinx_plan_get()
+        plan.append({"t": time.time() + random.randint(55, 140) * 60, "kind": "update", "parent": tid,
+                     "ptext": text[:400], "done": False})
+        _jinx_plan_save(plan)
+    return url
+
+
+# ── 6. weekly bits ──────────────────────────────────────────────────────────
+async def job_ai_qotw(app):
+    """sunday: the best question he got this week, answered better, quoting his first answer."""
+    if not V57_ON:
+        return
+    wk = datetime.now(PROJECT_TZ).strftime("%G-W%V")
+    if kv_get(f"ai_qotw:{wk}", ""):
+        return
+    rows = [r for r in _jinx_posts() if r["k"] == "reply" and r.get("id") and r.get("mode") in ("help", "verdict")
+            and r.get("q") and time.time() - r["t"] < 7 * 86400]
+    if not rows:
+        return
+    best = max(rows, key=lambda r: (r.get("s") or 0, r["t"]))
+    facts = date_context()
+    try:
+        facts += "\n" + build_lore_context(best["q"])[:2200]
+    except Exception:
+        pass
+    mat = {"brief": "QUESTION OF THE WEEK. you're quote-posting your own reply to the best question you got this week. "
+                    "start with the question in a few words, then a better, sharper answer than the first one. 2 to 4 lines.",
+           "facts": facts + f"\nthe question: {best['q']}\nyour first answer: {best['x']}",
+           "url": f"https://x.com/i/status/{best['id']}", "key": f"qotw:{best['id']}"}
+    text, mat, why = await jinx_write("random", mat)
+    if text:
+        kv_set(f"ai_qotw:{wk}", "1")
+        await _jinx_publish(app, text, "qotw", mat)
+
+
+async def job_ai_poll(app):
+    """wednesday evening: one silly poll. films, cats, best lore moment. never price."""
+    if not V57_ON:
+        return
+    wk = datetime.now(PROJECT_TZ).strftime("%G-W%V")
+    if kv_get(f"ai_poll:{wk}", ""):
+        return
+    try:
+        raw = await asyncio.to_thread(
+            _jinx_llm, JINX_CHARACTER,
+            "write ONE silly poll for your followers. topics: the films tsuki posted, cats vs dogs, the best tsuki "
+            "post ever, gamestop stores, your wizard losing streak, grok. never price, never predictions, never politics. "
+            "the question is one or two short lines in your voice. 2 to 4 options, each under 25 characters. "
+            "JSON only: {\"q\": \"...\", \"options\": [\"...\", \"...\"]}", JINX_MODEL, 300)
+        d = _jinx_json(raw) or {}
+    except Exception as e:
+        log.info(f"ai poll: {e}")
+        return
+    q = jinx_format(d.get("q") or "")
+    opts = [str(o).strip()[:25] for o in (d.get("options") or []) if str(o).strip()][:4]
+    if not q or len(opts) < 2 or _jinx_problem(q, date_context(), "community") \
+            or any(_JINX_OFF.search(o) or _V57_NAME_RX.search(o) for o in opts):
+        return
+    kv_set(f"ai_poll:{wk}", "1")
+    await _jinx_publish(app, q, "poll", {"poll": opts, "key": f"poll:{wk}"})
+
+
+_V57_LORE_TOKENS = ("uno", "wizard", "scion", "felinus", "diana", "five cats", "aristocats", "time-turner",
+                    "dumbledore", "dark knight", "wargames", "vendetta", "homecoming", "catalyst", "snapshot")
+
+
+def _v57_tokens(text: str) -> set:
+    t = (text or "").lower()
+    nums = {n for n in re.findall(r"(?<![\d,.])\d{2,5}(?![\d,.])", t) if n not in ("2024", "2025", "2026", "00")}
+    return nums | {w for w in _V57_LORE_TOKENS if w in t}
+
+
+async def job_ai_callback(app):
+    """when tsuki posts something one of his old posts mentioned, he quote-posts
+    the old one. a callback, never a 'told you so' about markets. one a day at most."""
+    if not V57_ON:
+        return
+    d = datetime.now(PROJECT_TZ).date()
+    if kv_get(f"ai_cb:{d}", ""):
+        return
+    mark = float(kv_get("ai_cb_mark", "0") or 0)
+    try:
+        con = db()
+        rows = con.execute("SELECT tweet_id, ts, text, url FROM post_timeline WHERE lower(handle) = 'tsukionsolana' "
+                           "AND ts > ? ORDER BY ts ASC LIMIT 10", (max(mark, time.time() - 6 * 3600),)).fetchall()
+        con.close()
+    except Exception:
+        rows = []
+    if not rows:
+        return
+    kv_set("ai_cb_mark", str(max(float(r[1] or 0) for r in rows)))
+    mine = [r for r in _jinx_posts() if r.get("id") and r["k"] not in ("reply", "roast", "update", "poll")
+            and 2 * 86400 < time.time() - r["t"] < 120 * 86400]
+    for tid, ts, ttext, turl in rows:
+        tok = _v57_tokens(ttext)
+        if not tok:
+            continue
+        hit = next((r for r in reversed(mine) if tok & _v57_tokens(r["x"]) and not _jinx_used(f"cb:{r['id']}", 365)), None)
+        if not hit:
+            continue
+        shared = sorted(tok & _v57_tokens(hit["x"]))[0]
+        when = datetime.fromtimestamp(hit["t"], PROJECT_TZ).strftime("%-d %b %Y")
+        mat = {"brief": f"CALLBACK. tsuki just posted something with \"{shared}\" in it, and you posted about {shared} on "
+                        f"{when} (quoted below). one or two deadpan lines pointing that out. never claim you predicted "
+                        "anything, never imply anyone is involved, no markets.",
+               "facts": date_context() + f"\ntsuki's new post: {ttext[:400]}\nyour post on {when}: {hit['x'][:400]}",
+               "url": f"https://x.com/i/status/{hit['id']}", "key": f"cb:{hit['id']}"}
+        text, mat, why = await jinx_write("random", mat)
+        if text:
+            kv_set(f"ai_cb:{d}", "1")
+            await _jinx_publish(app, text, "callback", mat)
+            return
+
+
+_v57_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v57_register_prev(app, scheduler, ny_tz)
+    if not V57_ON:
+        return
+    app.add_handler(CommandHandler("ainick", cmd_ainick))
+    scheduler.add_job(job_ai_qotw, "cron", day_of_week="sun", hour=19, minute=12, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_ai_poll, "cron", day_of_week="wed", hour=19, minute=41, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_ai_callback, "cron", minute="*/20", timezone=ny_tz, args=[app])
+
+
+if V57_ON:
+    write_x_reply = ai_write_reply
 
 
 def main():
@@ -21292,8 +22167,10 @@ def main():
     scheduler.add_job(job_on_this_day,   "cron", hour=13, minute=3, timezone=ny_tz, args=[app])
     v55_register(app, scheduler, ny_tz)     # jinx: commands, buttons, his jobs (JINX=off: nothing)
     # scheduler.start() deliberately does NOT happen here. See on_startup().
+
     log.info("Tsukiverse Bot running")
     app.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
+
 
 if __name__ == "__main__":
     main()
