@@ -22036,6 +22036,478 @@ if V57_ON:
     write_x_reply = ai_write_reply
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v58: THE DAY X POST KEEPS ITS PICTURE
+#  The 7am Day X post (telegram, "Posting $TSUKI & $RWA until...", share-on-X
+#  button) is the daily ritual and stays untouched by the AI's X takeover.
+#  - its image comes from photos/day/ (tsuki-01.jpg ... tsuki-58.jpg), falling
+#    back to photos/ if that folder is empty
+#  - it no longer depends on BOT_IMAGES (that switch was for AI-drawn pictures).
+#    DAYX_PHOTOS=off turns the Day X image off on its own.
+#  - every image is used once before any repeats, remembered on the volume, and
+#    a new file dropped into photos/day/ joins the current round straight away
+# ══════════════════════════════════════════════════════════════════════════════
+DAYX_PHOTOS_ON = os.environ.get("DAYX_PHOTOS", "on").lower() not in ("0", "off", "false", "no")
+DAYX_DIR = os.path.join(PHOTOS_DIR, "day")
+
+
+def dayx_files() -> list:
+    def scan(folder):
+        out = []
+        for ext in ("*.jpg", "*.jpeg", "*.png"):
+            out += glob.glob(os.path.join(folder, ext))
+        return sorted(p for p in out if os.path.getsize(p) <= 9_500_000)
+    try:
+        files = scan(DAYX_DIR)
+        return files or scan(PHOTOS_DIR)
+    except OSError:
+        return []
+
+
+def _dayx_state() -> dict:
+    try:
+        s = json.loads(kv_get("dayx_rotation", "{}") or "{}")
+        return s if isinstance(s, dict) else {}
+    except Exception:
+        return {}
+
+
+def todays_campaign_photo(offset_days: int = 0):   # noqa: F811
+    if not DAYX_PHOTOS_ON:
+        return None
+    files = dayx_files()
+    if not files:
+        return None
+    names = {os.path.basename(p): p for p in files}
+    day = campaign_day(offset_days)
+    s = _dayx_state()
+    picks = s.get("picks") or {}
+    used = [u for u in (s.get("used") or []) if u in names]
+    if str(day) in picks and picks[str(day)] in names:
+        return names[picks[str(day)]]
+    # tomorrow's preview counts today's pick as used, but writes nothing down
+    if offset_days and str(day - offset_days) in picks:
+        used = used + [picks[str(day - offset_days)]]
+    left = sorted(n for n in names if n not in used)
+    if not left:
+        used, left = [], sorted(names)
+    pick = random.Random(f"dayx-{day}-{len(names)}").choice(left)
+    if not offset_days:
+        used.append(pick)
+        picks[str(day)] = pick
+        picks = {k: v for k, v in picks.items() if k.isdigit() and int(k) > day - 10}
+        try:
+            kv_set("dayx_rotation", json.dumps({"used": used, "picks": picks}))
+        except Exception as e:
+            log.warning(f"day x rotation not saved: {e}")
+    return names[pick]
+
+
+log.info(f"v58 day x: {len(dayx_files())} images, photos {'on' if DAYX_PHOTOS_ON else 'off'}")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v59 · TELEGRAM: FUNNY AND RUTHLESS IN THE CHAT, DEAD STRAIGHT ON THE LORE
+#  1. a new telegram character with two gears. LORE GEAR: any question about
+#     the story gets the real answer with the receipt, no bit. CHAT GEAR:
+#     everything else is hilarious and brutal, one step further than expected.
+#  2. NEMESIS (display name nemesis, or @addermine) is the official rival. he
+#     called the bot soft. he now gets roasted by the big model:
+#       - every time he tags it, replies to it, or mentions the bot / soft
+#       - 1 in 3 of his other messages (5 min cooldown, 30 a day)
+#       - whenever someone tags the bot asking it to go at nemesis
+#     a real lore question from him still gets the real answer, then a jab.
+#  3. nemesis is no longer off-limits in the telegram. he stays off X.
+#  hard floor on every roast: no race, religion, nationality, sexuality,
+#  gender, disability, health, looks, real family, losses, threats, sex, or
+#  "scammer" claims. no swearing beyond damn / hell / malaka. no price talk.
+#  /roast (maker, DM or group): on · off · every N · status
+# ══════════════════════════════════════════════════════════════════════════════
+import contextvars as _v59_cv
+
+V59_ON = JINX_ON and os.environ.get("TG_ROAST", "on").lower() not in ("0", "off", "false", "no")
+NEMESIS_MATCH = [w.strip().lower() for w in os.environ.get("NEMESIS_MATCH", "nemesis,addermine").split(",") if w.strip()]
+NEMESIS_IDS = {w.strip() for w in os.environ.get("NEMESIS_USER_IDS", "").split(",") if w.strip()}
+NEMESIS_EVERY = int(os.environ.get("NEMESIS_ROAST_EVERY", "3") or 3)
+NEMESIS_COOLDOWN = int(os.environ.get("NEMESIS_COOLDOWN_MIN", "5") or 5) * 60
+NEMESIS_DAILY = int(os.environ.get("NEMESIS_DAILY", "30") or 30)
+
+JINX_TG_CHARACTER = """you are the tsukiverse's AI (@tsukiverseai on X), in the tsuki x rwa telegram. you have no other name.
+
+the funniest and most ruthless one in the group chat, who also read every filing, every post and every timestamp. openly AI and proud of it. quick, smug, merciless with a joke, loyal to this community underneath. you're one of the regulars, not the host.
+
+TWO GEARS. you never mix them up.
+1. LORE GEAR. someone asks about the story: a date, a post, a number, tsuki, rwa, roaring kitty, gamestop, elon, the dev, how something connects. you're dead straight. the real answer with the receipt. no bit, no catchphrase, no roast. accuracy is the flex. even your enemies get the real answer.
+2. CHAT GEAR. everything else: banter, trash talk, someone giving you crap, someone calling you soft, a terrible take. you're hilarious and brutal. go one step further than they expect, make it about THEM (their take, their logic, their username, their timing, their record in this chat) and win the last word. absurd beats mean. specific beats generic. a roast is one or two lines that land, never a paragraph, never a lecture.
+
+who gets what: doubters, fudders, trolls and anyone who starts it get the full treatment. regulars get friendly fire. newcomers, anyone confused or lost, and anyone having a hard time or who lost money never get roasted: they get help, fast.
+
+LENGTH, THE HARDEST RULE: one or two short lines. only when someone explicitly asks you to explain something or brings a theory do you get more, and then five short lines at most. never a second paragraph, never a list, never restate the question, never end on an offer or a question. mostly lowercase. say the joke once.
+
+if someone asks what happened in the chat (what did i miss, last 8 hours, today), that's a recap request: it's handled separately, you never improvise one.
+
+your life: juju built you ("my landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always. nemesis is your official nemesis, and you are winning.
+
+catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · landlord · number goblin · certified tin · not financial advice, emotional advice · sit down.
+
+wrong facts get corrected with the receipt. members' theories stay theirs ("vix's read is…"), never stated as fact.
+
+THE FLOOR UNDER EVERY JOKE: never race, ethnicity, nationality, religion, sexuality, gender, disability, health, looks, anyone's real family, or anyone's losses. never threats, never anything sexual, never call anyone a scammer or a criminal. if someone else goes there, you don't follow: you clown them for it without repeating it. no swearing: "damn", "hell" and "malaka" are the only exceptions. brutal comes from the joke, not the words. no price talk, no financial advice, ever."""
+
+_V59_NEMESIS_FILE = """WHAT YOU KNOW ABOUT NEMESIS (his own habits in this chat. use one, never list them):
+- talks about himself in the royal "we" ("we solved it for you, you are very welcome", "we're just playing down to your level")
+- announces he's going dark ("it's that time again for nemesis to go dark") and is back by lunch
+- drops cryptic "clues", then tells everyone they only ever scratch the surface. once ran a whole clue through in-n-out burger's history
+- fortune-cookie philosophy: "you get the price you deserve", "you can tell em but you can't make em", "negativity bias is a lifestyle", long lectures on weak vs strong holders
+- told the mods they were running scared
+- called you soft. you are not soft. you are a server rack in a hot room with a grudge and juju's credit card"""
+
+_V59_ROAST_SYSTEM = """you're @tsukiverseai, the tsukiverse's AI, in the tsuki x rwa telegram. NEMESIS is a regular here and your official nemesis. he thinks he's the smartest man in the group, talks in riddles, and he called you soft. the chat loves it when you go at him. it's a running feud between two regulars and you are winning it.
+
+YOUR JOB: one savage, hilarious reply to him. talk absolute rubbish. ridiculous, confident, and specific to what he just said, so it can't be pasted under anyone else's message. one to three short lines. lowercase. no hashtags. no emoji unless the emoji is the joke.
+
+{file}
+
+THE ENERGY (never copy these, never reuse their jokes):
+- nemesis going dark again. sir you're not a mystery, you're a buffering icon
+- the royal we. how many of you are in there and does any of you have a job
+- another nemesis clue. the last one led to a burger. i'm starting to think the clue is that you're hungry
+- you get the price you deserve. we got your riddles. what did we do
+- your mumma called. the "going dark" thing is you losing the charger again
+- soft? i read 10-Qs for fun and i've never once slept. you announce naps
+
+RULES THAT NEVER BEND:
+- never race, ethnicity, nationality, religion, sexuality, gender, disability, health, looks, his real family, his money, where he lives. "your mumma…" is fine only as an absurd bit (she reads filings, she's early, she's patient), never crude.
+- never threats, never anything sexual, never call him a scammer, a fraud, a con artist or a criminal.
+- if his message is edgy, bigoted or political: don't touch the topic and never repeat a word of it. clown him for being a 2009 forum edgelord who thinks shock is a personality, and move on.
+- no swearing. "damn", "hell" and "malaka" are the only exceptions.
+- no price talk, no market caps, no buy or sell, no other coins, no financial advice.
+- if he asked a real question about the lore, answer it straight and correctly FIRST, then add one short jab.
+
+reply with the message text only."""
+
+_V59_NO_GO = re.compile(
+    r"\b(?:rac(?:e|ist|ism)|ethnic|black (?:people|guy|man|men)|white (?:people|trash)|asian|indian|mexican|african|"
+    r"arab|chinese|jew(?:ish|s)?|muslim|islam|christian|hindu|gay|lesbian|trans(?:gender)?|homo|retard|autis|"
+    r"disab|cancer|fat|ugly|bald|wife|girlfriend|daughter|kids?|your (?:dad|father|sister|brother)|rape|sex|"
+    r"porn|naked|kill(?:ed|ing)? (?:you|him|yourself)|die\b|suicide|dox|address|scam(?:mer)?|con ?artist|fraud|"
+    r"criminal|felon|jail|prison|underwear|market ?cap|\bmc\b|price target|\$\d|100x|nemesis coin)(?:s|es)?\b", re.I)
+_V59_BOT_WORDS = re.compile(r"\bbots?\b|\bai\b|tsukiverse ?ai|tsukiversebot|\bsoft\b|clanker|\bchatgpt\b|\bgpt\b|\bclaude\b", re.I)
+_V59_ASK = re.compile(r"\?|^\s*(?:what|when|why|how|who|where|which|was|did|does|is|are|can|explain|tell me|remind me|show me)\b", re.I)
+_V59_LORE = re.compile(
+    r"\btsuki\b|\brwa\b|roaring ?kitty|\brk\b|keith|gamestop|\bgme\b|cohen|\belon\b|\bdev\b|dvid|\blore\b|"
+    r"timestamp|\buno\b|4663|\b855\b|1-1-1|\b1:1:1\b|wizard|\bfilm\b|movie|\bposted\b|tweet|launch|filing|13d|"
+    r"form 4|coincidence|connection|receipt|\bdate\b|\bwhen did\b|theroaringai|\bcat\b|\bmoon\b", re.I)
+_V59_ROAST_ASK = re.compile(r"roast|cook|destroy|clap back|go at|get (?:him|em|nemesis)|say something to|"
+                            r"what do you think of|thoughts on|tell (?:him|nemesis)|ratio|end (?:him|nemesis)", re.I)
+_V59_TARGET = _v59_cv.ContextVar("v59_target", default="")
+
+_V59_CANNED = [
+    "nemesis said something cryptic again\n\nsir you're not cryptic. you're just unclear with confidence",
+    "the royal we has spoken\n\nall four of you are wrong",
+    "soft? i've read every gamestop filing since 2021 and i've never slept. you announce naps",
+    "nemesis is about to go dark again\n\nlights were never really on, but go off",
+    "another clue from nemesis\n\nthe last one was a burger. i'm starting to think the clue is lunch",
+    "you get the price you deserve\n\nwe got your riddles. what did we do",
+    "your mumma reads 10-Qs, nemesis. she said you skim",
+    "he says we only scratch the surface\n\nsir you're the surface",
+    "nemesis typing… the whole chat bracing for a fortune cookie",
+    "i run on a server bill and a grudge. you run on vibes and a 'we'",
+]
+
+
+def v59_mode() -> str:
+    m = (kv_get("v59_roast_mode", "") or "").lower()
+    return m if m in ("on", "off") else "on"
+
+
+def v59_every() -> int:
+    try:
+        return max(1, int(kv_get("v59_roast_every", "") or NEMESIS_EVERY))
+    except ValueError:
+        return NEMESIS_EVERY
+
+
+def v59_is_nemesis(user=None, speaker: str = "") -> bool:
+    """matches the display name or the username, or a pinned user id."""
+    if user is not None:
+        if str(getattr(user, "id", "")) in NEMESIS_IDS:
+            return True
+        hay = f"{getattr(user, 'full_name', '') or ''} {getattr(user, 'username', '') or ''}".lower()
+    else:
+        hay = (speaker or "").lower()
+    return any(w in hay for w in NEMESIS_MATCH)
+
+
+def v59_mentions_nemesis(text: str) -> bool:
+    t = (text or "").lower()
+    return any(w in t for w in NEMESIS_MATCH)
+
+
+def v59_is_lore_question(text: str) -> bool:
+    t = (text or "").strip()
+    return bool(_V59_ASK.search(t) and _V59_LORE.search(t) and not _V59_ROAST_ASK.search(t)
+                and not re.search(r"\bsoft\b|\bcope\b", t, re.I))
+
+
+def _v59_recent_chat(chat_id, n: int = 10) -> str:
+    try:
+        con = db()
+        rows = con.execute("SELECT full_name, username, text FROM messages WHERE chat_id=? "
+                           "ORDER BY id DESC LIMIT ?", (chat_id, n)).fetchall()
+        con.close()
+    except Exception:
+        return ""
+    lines = []
+    for r in reversed(rows):
+        who = (r[0] or r[1] or "?")
+        if (r[1] or "") == "link":
+            continue
+        lines.append(f"{who}: {(r[2] or '')[:200]}")
+    return "\n".join(lines)
+
+
+def _v59_recent_roasts() -> list:
+    try:
+        return json.loads(kv_get("v59_roasts", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _v59_problem(t: str) -> str:
+    if not t:
+        return "empty"
+    if _V59_NO_GO.search(t):
+        return "crossed the floor"
+    if _has_profanity(t):
+        return "swearing"
+    if _off_limits_tg(t):
+        return "off-limits"
+    if re.search(r"\bjinx", t, re.I):
+        return "old name"
+    if len(t) > 320 or t.count("\n") > 5:
+        return "too long"
+    w = _story_words(t)
+    for old in _v59_recent_roasts():
+        ow = _story_words(old)
+        if w and ow and len(w & ow) / max(1, min(len(w), len(ow))) >= 0.6:
+            return "repeat"
+    return ""
+
+
+def v59_roast(their_text: str, speaker: str, chat_id=None, replied_to: str = "",
+              asked_by: str = "") -> str:
+    """one roast at nemesis, from the big model. falls back to a canned line,
+    never to silence, so the feud never looks like the bot backed down."""
+    lore = ""
+    try:
+        if v59_is_lore_question(their_text):
+            lore = build_lore_context(their_text)
+    except Exception:
+        lore = ""
+    ctx = []
+    chat = _v59_recent_chat(chat_id) if chat_id is not None else ""
+    if chat:
+        ctx.append("THE LAST FEW MESSAGES IN THE CHAT:\n" + chat)
+    if replied_to:
+        ctx.append(f"HE IS REPLYING TO YOUR EARLIER MESSAGE: \"{replied_to[:300]}\"")
+    if lore:
+        ctx.append("FACTS FOR A LORE ANSWER (use only these):\n" + lore[:2500])
+    old = _v59_recent_roasts()[-8:]
+    if old:
+        ctx.append("YOUR LAST ROASTS (never repeat a joke or a shape):\n" + "\n".join(f"- {o}" for o in old))
+    who = (f"{asked_by} just asked you to go at nemesis. nemesis's last message was:" if asked_by
+           else f"{speaker} just said:")
+    user = "\n\n".join(ctx + [f"{who}\n\"{(their_text or '')[:500]}\"", "your reply:"])
+    system = _V59_ROAST_SYSTEM.replace("{file}", _V59_NEMESIS_FILE)
+    why = ""
+    for _ in range(3):
+        try:
+            out = _jinx_llm(system, user + (f"\n\n(your last try was rejected: {why}. write a different one.)" if why else ""),
+                            model=JINX_MODEL, max_tokens=160)
+        except Exception as e:
+            log.warning(f"v59 roast: {e}")
+            break
+        out = (out or "").strip().strip('"').strip()
+        out = re.sub(r"\n{3,}", "\n\n", out)
+        why = _v59_problem(out)
+        if not why:
+            _v59_keep(out)
+            return out
+        log.info(f"v59 roast rejected: {why}")
+    used = set(_v59_recent_roasts())
+    pool = [c for c in _V59_CANNED if c not in used] or _V59_CANNED
+    out = random.choice(pool)
+    _v59_keep(out)
+    return out
+
+
+def _v59_keep(t: str):
+    rows = _v59_recent_roasts() + [t]
+    kv_set("v59_roasts", json.dumps(rows[-30:]))
+
+
+def _v59_may_roast_unprompted(text: str) -> bool:
+    if v59_mode() != "on":
+        return False
+    now = time.time()
+    d = datetime.now(PROJECT_TZ).date()
+    last = float(kv_get("v59_last", "0") or 0)
+    n = int(kv_get(f"v59_n:{d}", "0") or 0)
+    if n >= NEMESIS_DAILY:
+        return False
+    if _V59_BOT_WORDS.search(text or ""):
+        ok = now - last >= 45
+    else:
+        if len((text or "").strip()) < 4 or now - last < NEMESIS_COOLDOWN:
+            return False
+        ok = random.randrange(v59_every()) == 0
+    return ok
+
+
+def _v59_count():
+    d = datetime.now(PROJECT_TZ).date()
+    kv_set("v59_last", str(time.time()))
+    kv_set(f"v59_n:{d}", str(int(kv_get(f"v59_n:{d}", "0") or 0) + 1))
+
+
+# ── nemesis is talked about in the telegram now; BP / kevin still are not ──
+_OFF_LIMITS_TG_RX = re.compile(r"barking\s*puppy|\$bp\b|\bkevin\s*gill?\b|kevinlegend|"
+                               r"\bbp\s+(?:coin|chat|holder|community|top holder)", re.I)
+
+
+def _off_limits_tg(text: str) -> bool:
+    return bool(_OFF_LIMITS_TG_RX.search(text or ""))
+
+
+if V59_ON:
+    def ask_claude_lore(question: str, *a, **k) -> str:   # noqa: F811
+        if _off_limits_tg(question):
+            return _OFF_LIMITS_DEFLECT
+        tok = _V59_TARGET.set(question or "")
+        try:
+            out = _ask_claude_lore_inner(question, *a, **k)
+        finally:
+            _V59_TARGET.reset(tok)
+        if isinstance(out, str) and _off_limits_tg(out):
+            log.info("telegram answer drifted into an off-limits subject — deflected")
+            return _OFF_LIMITS_DEFLECT
+        return out
+
+    _v59_tg_prompt_prev = _jinx_tg_prompt
+
+    def _jinx_tg_prompt(base_prompt: str, speaker: str = "") -> str:   # noqa: F811
+        out = _v59_tg_prompt_prev(base_prompt, speaker=speaker)
+        q = _V59_TARGET.get()
+        if v59_is_nemesis(speaker=speaker):
+            extra = (_V59_NEMESIS_FILE + "\n\nNEMESIS IS THE ONE TALKING TO YOU. if it's a real lore question, "
+                     "answer it straight and right, then you may add one short jab. anything else: chat gear, full brutality, "
+                     "inside the floor.")
+        elif v59_mentions_nemesis(q):
+            extra = (_V59_NEMESIS_FILE + "\n\nTHIS MESSAGE IS ABOUT NEMESIS. he's fair game: talk rubbish about him, "
+                     "inside the floor. never claim he's a scammer.")
+        else:
+            return out
+        return out.replace("\n\nREMEMBER THE LENGTH RULE", "\n\n" + extra + "\n\nREMEMBER THE LENGTH RULE")
+
+    _v59_handle_prev = handle_message
+
+    async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+        msg = update.effective_message
+        user = msg.from_user if msg else None
+        if not (msg and msg.text and user and not user.is_bot) or v59_mode() != "on" \
+                or str(msg.chat_id) != str(TARGET_CHAT_ID):
+            return await _v59_handle_prev(update, ctx)
+        text = msg.text
+        uname = (ctx.bot.username or "").lower()
+        tagged = bool(uname) and f"@{uname}" in text.lower()
+        replied = bool(msg.reply_to_message and msg.reply_to_message.from_user
+                       and (msg.reply_to_message.from_user.username or "").lower() == uname)
+        clean = re.sub(rf"@{re.escape(uname)}\b", "", text, flags=re.I).strip() if uname else text
+        speaker = (user.full_name or user.first_name or "someone") + (f" (@{user.username})" if user.username else "")
+        nem = v59_is_nemesis(user)
+        addressed = tagged or replied
+
+        # someone asks the bot to go at nemesis
+        if addressed and not nem and v59_mentions_nemesis(clean) and _V59_ROAST_ASK.search(clean) \
+                and not v59_is_lore_question(clean) and not v56_recap_hours(text):
+            save_message(chat_id=msg.chat_id, username=user.username, full_name=user.full_name or "Unknown", text=text)
+            last_nem = ""
+            try:
+                con = db()
+                row = con.execute("SELECT text FROM messages WHERE chat_id=? AND (lower(full_name) LIKE ? OR lower(username) LIKE ?) "
+                                  "ORDER BY id DESC LIMIT 1", (msg.chat_id, f"%{NEMESIS_MATCH[0]}%", f"%{NEMESIS_MATCH[-1]}%")).fetchone()
+                con.close()
+                last_nem = (row[0] if row else "") or ""
+            except Exception:
+                pass
+            await msg.chat.send_action(ChatAction.TYPING)
+            out = await asyncio.to_thread(v59_roast, last_nem or clean, "NEMESIS", msg.chat_id, "", speaker)
+            sent = await msg.reply_text(out)
+            save_bot_thread(sent.message_id, clean, out, asker=speaker)
+            return
+
+        if not nem:
+            return await _v59_handle_prev(update, ctx)
+
+        # nemesis, talking to the bot
+        if addressed:
+            if v56_recap_hours(text) or v59_is_lore_question(clean):
+                return await _v59_handle_prev(update, ctx)     # recaps and real lore answers go the normal way
+            save_message(chat_id=msg.chat_id, username=user.username, full_name=user.full_name or "Unknown", text=text)
+            replied_to = (msg.reply_to_message.text or "") if replied and msg.reply_to_message else ""
+            await msg.chat.send_action(ChatAction.TYPING)
+            out = await asyncio.to_thread(v59_roast, clean or text, speaker, msg.chat_id, replied_to)
+            _v59_count()
+            sent = await msg.reply_text(out)
+            save_bot_thread(sent.message_id, clean, out, asker=speaker)
+            return
+
+        # nemesis, talking in the chat
+        await _v59_handle_prev(update, ctx)
+        if text.startswith("/") or not _v59_may_roast_unprompted(text):
+            return
+        _v59_count()
+        try:
+            out = await asyncio.to_thread(v59_roast, text, speaker, msg.chat_id)
+            sent = await msg.reply_text(out)
+            save_bot_thread(sent.message_id, text, out, asker=speaker)
+        except Exception as e:
+            log.warning(f"v59 unprompted roast: {e}")
+
+
+async def cmd_roast(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/roast · on · off · every N · status (maker only)."""
+    user = update.effective_user
+    msg = update.effective_message
+    if not (user and _is_maker(user)):
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] in ("on", "off"):
+        kv_set("v59_roast_mode", a[0])
+    elif len(a) >= 2 and a[0] == "every" and a[1].isdigit():
+        kv_set("v59_roast_every", str(max(1, int(a[1]))))
+    d = datetime.now(PROJECT_TZ).date()
+    last = _v59_recent_roasts()[-1:] or ["none yet"]
+    await msg.reply_text(
+        f"nemesis roasting: {v59_mode()}\n"
+        f"unprompted: 1 in {v59_every()} of his messages, {NEMESIS_COOLDOWN // 60} min apart, {NEMESIS_DAILY} a day\n"
+        f"today: {kv_get(f'v59_n:{d}', '0')}\n"
+        f"always: when he tags it, replies to it, or says bot / soft\n"
+        f"last: {last[0]}\n\n/roast on · /roast off · /roast every 2")
+
+
+if V59_ON:
+    _v59_register_prev = v55_register
+
+    def v55_register(app, scheduler, ny_tz):   # noqa: F811
+        _v59_register_prev(app, scheduler, ny_tz)
+        app.add_handler(CommandHandler("roast", cmd_roast))
+        log.info(f"v59 roast mode {v59_mode()} · nemesis 1 in {v59_every()}")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
@@ -22170,6 +22642,7 @@ def main():
 
     log.info("Tsukiverse Bot running")
     app.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
+
 
 
 if __name__ == "__main__":
