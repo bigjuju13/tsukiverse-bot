@@ -22508,6 +22508,342 @@ if V59_ON:
         log.info(f"v59 roast mode {v59_mode()} · nemesis 1 in {v59_every()}")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v60 · THE BOT STOPS FREEZING ITSELF
+#  The cause of "no replies, no Day X, no filings": since v55 the AI's X work
+#  (replies, the 5-minute tick, sweeps, judges) makes long blocking model calls
+#  INSIDE telegram's event loop. v57 raised replies to 6 a run, every minute.
+#  While those calls run, nothing else can: telegram messages wait, and any
+#  scheduled job held up past its 5-minute grace window is skipped, which is
+#  what happened to the 7am Day X post. Railway saw a healthy process the whole
+#  time (its ping server is a separate thread).
+#  1. heavy jobs now run in worker threads. telegram's loop stays free. their
+#     telegram sends are handed back to the main loop safely.
+#  2. the Day X post: 6-hour grace, a done-flag, and a catch-up check every
+#     10 minutes until 10pm. the pinned message is checked first, so it never
+#     posts the same day twice.
+#  3. GameStop filings, the close recap and the weekly go back on X (the same
+#     rules as before v55: material filings only, the recap on notable days).
+#  4. if the group was upgraded and its id changed, the bot follows the new id.
+#  5. /health (maker): scheduler, loop lag, last Day X, missed or crashed jobs,
+#     whether the bot can reach the group.
+# ══════════════════════════════════════════════════════════════════════════════
+import concurrent.futures as _v60_cf
+import contextvars as _v60_ctx
+import threading as _v60_th
+
+V60_ON = os.environ.get("V60_OFFLOAD", "on").lower() not in ("0", "off", "false", "no")
+V60_DESK_TO_X = {k.strip() for k in os.environ.get(
+    "X_DESK_ON_X", "filing,gme-recap,gme-weekly").split(",") if k.strip()}
+_V60_X_POOL = _v60_cf.ThreadPoolExecutor(max_workers=1, thread_name_prefix="x-work")
+_V60_TG_POOL = _v60_cf.ThreadPoolExecutor(max_workers=2, thread_name_prefix="tg-work")
+_V60 = {"boot": time.time(), "dayx_running": False, "lag_last": 0.0, "lag_max": 0.0,
+        "lag_max_at": 0.0, "chat": "", "chat_err": ""}
+
+
+class _V60Bot:
+    """the telegram bot, seen from a worker thread: every call is run on the
+    main loop (where the bot's connection lives) and awaited from here."""
+    def __init__(self, b, loop):
+        self._b, self._loop = b, loop
+
+    def __getattr__(self, n):
+        attr = getattr(self._b, n)
+        if n.startswith("_") or not callable(attr):
+            return attr
+        loop = self._loop
+
+        def call(*a, **k):
+            r = attr(*a, **k)
+            if asyncio.iscoroutine(r):
+                return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(r, loop))
+            return r
+        return call
+
+
+class _V60App:
+    def __init__(self, app, loop):
+        self._a = app
+        self.bot = _V60Bot(app.bot, loop)
+
+    def __getattr__(self, n):
+        return getattr(self._a, n)
+
+
+def v60_offload(fn, pool):
+    if getattr(fn, "_v60", False):
+        return fn
+
+    async def w(app, *a, **k):
+        if not V60_ON or isinstance(app, _V60App) or _v60_th.current_thread().name.startswith(("x-work", "tg-work")):
+            return await fn(app, *a, **k)
+        loop = asyncio.get_running_loop()
+        proxy = _V60App(app, loop)
+        ctx = _v60_ctx.copy_context()
+        return await loop.run_in_executor(pool, ctx.run, lambda: asyncio.run(fn(proxy, *a, **k)))
+    w.__name__ = getattr(fn, "__name__", "job")
+    w.__qualname__ = getattr(fn, "__qualname__", w.__name__)
+    w._v60 = True
+    return w
+
+
+class _V60Lock:
+    """an asyncio-style lock that works across threads and loops."""
+    def __init__(self):
+        self._l = _v60_th.Lock()
+
+    def locked(self):
+        return self._l.locked()
+
+    async def __aenter__(self):
+        while not self._l.acquire(blocking=False):
+            await asyncio.sleep(0.2)
+        return self
+
+    async def __aexit__(self, *a):
+        self._l.release()
+
+
+# the jobs that make model calls or post to X: X-posting ones share one thread
+# so they never interleave; the telegram-writing ones get their own two.
+_V60_X_JOBS = ["job_x_mentions", "job_jinx_tick", "job_jinx_sweep", "job_jinx_ideas", "job_jinx_score",
+               "job_jinx_review", "job_jinx_weekly", "job_ai_qotw", "job_ai_poll", "job_ai_callback",
+               "job_edgar_watch_v46", "job_insider_rebuild_v46", "job_insider_backfill", "job_gme_open",
+               "job_gme_close", "job_gme_shortvol", "job_gme_chatter", "job_gme_weekly", "job_daily_board",
+               "job_tsla_close", "job_tesla_filings", "job_moon_desk", "job_spacex_desk", "job_spacex_week",
+               "job_grok_rank", "job_elon_wire", "job_x_scoreboard"]
+_V60_TG_JOBS = ["job_summary", "job_whisper", "job_dead_chat", "job_post", "job_grok_pulse",
+                "job_weekly_recap", "job_mindshare", "job_build_knowledge", "job_x_followers",
+                "job_x_snapshots", "job_silence_daily"]
+
+if V60_ON:
+    _JINX_TICK_LOCK = _V60Lock()
+    for _n in _V60_X_JOBS:
+        if callable(globals().get(_n)):
+            globals()[_n] = v60_offload(globals()[_n], _V60_X_POOL)
+    for _n in _V60_TG_JOBS:
+        if callable(globals().get(_n)):
+            globals()[_n] = v60_offload(globals()[_n], _V60_TG_POOL)
+
+
+# ── 2. the Day X post never quietly misses a day ──────────────────────────────
+_v60_dayx_prev = job_daily_campaign
+
+
+def _v60_today():
+    return datetime.now(CAMPAIGN_TZ).date()
+
+
+async def job_daily_campaign(app) -> str:   # noqa: F811
+    if _V60["dayx_running"]:
+        return "already running"
+    _V60["dayx_running"] = True
+    try:
+        status = await _v60_dayx_prev(app)
+    except Exception as e:
+        status = f"day post FAILED: {type(e).__name__}: {e}"
+    finally:
+        _V60["dayx_running"] = False
+    d = _v60_today()
+    kv_set("dayx_last", json.dumps({"date": str(d), "day": campaign_day(), "t": time.time(), "status": status}))
+    if "day post sent" in status:
+        kv_set(f"dayx_done:{d}", "1")
+    else:
+        log.error(f"DAY X FAILED: {status}")
+        await _v60_tell_maker(app, f"⚠️ the Day {campaign_day()} post didn't go out: {status}\n\n/gmpost tries again")
+    return status
+
+
+async def _v60_tell_maker(app, text: str):
+    for cid in {c for c in (str(MAKER_TG_ID or ""), str(ADMIN_CHAT_ID or "")) if c and c != "0"}:
+        try:
+            await app.bot.send_message(chat_id=int(cid), text=text[:3500], disable_web_page_preview=True)
+            return
+        except Exception:
+            continue
+
+
+async def _v60_dayx_pinned(app) -> bool:
+    try:
+        chat = await app.bot.get_chat(TARGET_CHAT_ID)
+        pin = getattr(chat, "pinned_message", None)
+        txt = (getattr(pin, "text", "") or "") if pin else ""
+        return txt.startswith(f"Day {campaign_day()}:")
+    except Exception:
+        return False
+
+
+async def job_v60_dayx_catchup(app):
+    """every 10 minutes from 7:15am to 10pm New York: if today's Day X post
+    hasn't gone out, it goes out now."""
+    now = datetime.now(CAMPAIGN_TZ)
+    d = now.date()
+    if kv_get(f"dayx_done:{d}") or now.hour * 60 + now.minute < 7 * 60 + 15 or now.hour >= 22:
+        return
+    if await _v60_dayx_pinned(app):
+        kv_set(f"dayx_done:{d}", "1")
+        return
+    seven = now.replace(hour=7, minute=0, second=0, microsecond=0).timestamp()
+    if _V60["boot"] > seven and not kv_get(f"dayx_missed:{d}"):
+        return      # this process wasn't up at 7am and nothing says it missed: /gmpost is the manual way
+    tries = int(kv_get(f"dayx_tries:{d}", "0") or 0)
+    if tries >= 3:
+        return
+    kv_set(f"dayx_tries:{d}", str(tries + 1))
+    log.warning(f"day x catch-up: today's post hadn't gone out, sending it now (try {tries + 1})")
+    await job_daily_campaign(app)
+
+
+# ── 3. GameStop desk posts go back on X ───────────────────────────────────────
+if JINX_ON and V60_ON:
+    _v60_gate_prev = v53_gate
+
+    def v53_gate(kind: str, text: str) -> tuple[bool, str]:   # noqa: F811
+        k = (kind or "").lower()
+        if k in V60_DESK_TO_X and not _V53_BYPASS.get():
+            ok, why = _v55_gate_prev(kind, text)          # the pre-v55 desk rules
+            if not ok and k == "filing" and why.endswith("lane full today") and _V53_MATERIAL.search(text or ""):
+                return True, "material filing"
+            return ok, why
+        return _v60_gate_prev(kind, text)
+
+
+# ── 4 & 5. reaching the group, the scheduler, the loop ───────────────────────
+def _v60_apply_chat_override():
+    global TARGET_CHAT_ID
+    try:
+        o = json.loads(kv_get("target_chat_override", "{}") or "{}")
+    except Exception:
+        o = {}
+    if o.get("from") and str(o["from"]) == str(TARGET_CHAT_ID) and o.get("to"):
+        log.warning(f"group id {TARGET_CHAT_ID} was upgraded: using {o['to']}")
+        TARGET_CHAT_ID = int(o["to"])
+
+
+async def _v60_check_chat(app):
+    global TARGET_CHAT_ID
+    try:
+        chat = await app.bot.get_chat(TARGET_CHAT_ID)
+        _V60["chat"], _V60["chat_err"] = (getattr(chat, "title", "") or str(TARGET_CHAT_ID)), ""
+        return
+    except Exception as e:
+        new = getattr(e, "new_chat_id", None)
+        if new:
+            kv_set("target_chat_override", json.dumps({"from": TARGET_CHAT_ID, "to": int(new)}))
+            old, TARGET_CHAT_ID = TARGET_CHAT_ID, int(new)
+            _V60["chat_err"] = f"group was upgraded: {old} → {new}. now posting to {new}"
+            log.error(_V60["chat_err"])
+            await _v60_tell_maker(app, f"⚠️ {_V60['chat_err']}. set TARGET_CHAT_ID={new} in railway when you can.")
+            return
+        _V60["chat_err"] = f"{type(e).__name__}: {e}"
+        log.error(f"CANNOT REACH THE GROUP {TARGET_CHAT_ID}: {_V60['chat_err']}")
+        await _v60_tell_maker(app, f"⚠️ i can't reach the group ({TARGET_CHAT_ID}): {_V60['chat_err']}")
+
+
+def _v60_events() -> list:
+    try:
+        return json.loads(kv_get("v60_events", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _v60_listener(ev):
+    try:
+        job = SCHEDULER.get_job(ev.job_id) if SCHEDULER else None
+        name = getattr(getattr(job, "func", None), "__name__", ev.job_id)
+        what = "missed" if getattr(ev, "exception", None) is None else f"crashed: {type(ev.exception).__name__}: {str(ev.exception)[:120]}"
+        rows = _v60_events() + [{"t": time.time(), "job": name, "what": what}]
+        kv_set("v60_events", json.dumps(rows[-30:]))
+        if name == "job_daily_campaign" and what == "missed":
+            kv_set(f"dayx_missed:{_v60_today()}", "1")
+        log.warning(f"job {name} {what}")
+    except Exception as e:
+        log.info(f"v60 listener: {e}")
+
+
+async def job_v60_lag(app):
+    """runs every 15s. if it runs late, the loop was blocked for that long."""
+    now = time.monotonic()
+    last = _V60["lag_last"]
+    _V60["lag_last"] = now
+    if not last:
+        return
+    lag = max(0.0, now - last - 15)
+    if lag > _V60["lag_max"] or time.time() - _V60["lag_max_at"] > 3600:
+        _V60["lag_max"], _V60["lag_max_at"] = lag, time.time()
+    if lag > 30:
+        log.warning(f"telegram loop was blocked for {lag:.0f}s")
+        rows = _v60_events() + [{"t": time.time(), "job": "event loop", "what": f"blocked {lag:.0f}s"}]
+        kv_set("v60_events", json.dumps(rows[-30:]))
+
+
+_v60_on_startup_prev = on_startup
+
+
+async def on_startup(app):   # noqa: F811
+    try:
+        from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_MISSED
+        if SCHEDULER is not None:
+            SCHEDULER.add_listener(_v60_listener, EVENT_JOB_ERROR | EVENT_JOB_MISSED)
+    except Exception as e:
+        log.warning(f"v60 listener not added: {e}")
+    await _v60_on_startup_prev(app)
+    await _v60_check_chat(app)
+
+
+async def cmd_health(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/health · is everything actually running (maker only)."""
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    sch = SCHEDULER
+    lines = ["🩺 bot health", ""]
+    lines.append(f"scheduler: {'running' if sch and sch.running else 'NOT RUNNING'} · {len(sch.get_jobs()) if sch else 0} jobs")
+    lines.append(f"heavy jobs off the telegram loop: {'yes' if V60_ON else 'no'}")
+    lines.append(f"worst loop stall this hour: {_V60['lag_max']:.0f}s")
+    lines.append(f"group: {_V60['chat'] or TARGET_CHAT_ID}" + (f" · ⚠️ {_V60['chat_err']}" if _V60["chat_err"] else " · reachable"))
+    try:
+        last = json.loads(kv_get("dayx_last", "{}") or "{}")
+    except Exception:
+        last = {}
+    nxt = ""
+    for j in (sch.get_jobs() if sch else []):
+        nrt = getattr(j, "next_run_time", None)
+        if getattr(j.func, "__name__", "") == "job_daily_campaign" and nrt:
+            nxt = nrt.astimezone(CAMPAIGN_TZ).strftime("%a %-d %b %-I:%M%p ET")
+    lines.append("")
+    lines.append(f"Day X today (day {campaign_day()}): {'✅ posted' if kv_get(f'dayx_done:{_v60_today()}') else 'not yet'}")
+    if last:
+        lines.append(f"last run: {last.get('date')} · {last.get('status', '')[:160]}")
+    if nxt:
+        lines.append(f"next: {nxt}")
+    lines.append(f"X shadow mode: {'on (AI posts come to you as drafts)' if jinx_shadow() else 'off (live)'}")
+    lines.append(f"GME desk on X: {', '.join(sorted(V60_DESK_TO_X)) or 'off'}")
+    lines.append(f"last X post: {kv_get('x_last_ok', 'none')} · last X error: {(LAST_X_ERROR or 'none')[:120]}")
+    ev = _v60_events()[-8:]
+    if ev:
+        lines += ["", "recent problems:"]
+        for r in ev:
+            lines.append(f"▪️ {datetime.fromtimestamp(r['t'], CAMPAIGN_TZ).strftime('%-d %b %H:%M')} {r['job']}: {r['what']}")
+    await update.effective_message.reply_text("\n".join(lines), disable_web_page_preview=True)
+
+
+_v60_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v60_apply_chat_override()
+    _v60_register_prev(app, scheduler, ny_tz)
+    for j in scheduler.get_jobs():
+        if getattr(j.func, "__name__", "") == "job_daily_campaign":
+            scheduler.modify_job(j.id, misfire_grace_time=6 * 3600)
+    scheduler.add_job(job_v60_dayx_catchup, "cron", minute="*/10", timezone=ny_tz, args=[app])
+    scheduler.add_job(job_v60_lag, "interval", seconds=15, args=[app])
+    app.add_handler(CommandHandler("health", cmd_health))
+    log.info(f"v60 · heavy jobs in worker threads={V60_ON} · desk to X: {sorted(V60_DESK_TO_X)}")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
@@ -22642,7 +22978,6 @@ def main():
 
     log.info("Tsukiverse Bot running")
     app.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
-
 
 
 if __name__ == "__main__":
