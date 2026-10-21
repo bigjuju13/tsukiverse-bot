@@ -24037,6 +24037,150 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
                  f"{len(v63_board())} dates on the board")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v64 · NOTHING FAILS SILENTLY
+#  the deep dive (21 oct): the real bot, run end to end against a fake
+#  telegram and a fake X on python 3.11 & 3.13, fires the 7am Day X post (photo,
+#  text, pin) and posts the AI's slot to X. so when production stays quiet, the
+#  cause is outside the code paths: the new version isn't the one running, the
+#  process is stopped or stuck, or telegram / X are refusing. this version makes
+#  every one of those visible in juju's DMs:
+#   1. a "✅ v64 is running" DM on every boot, with the scheduler, the group,
+#      Day X's next run, X live/drafts & the X allowance. no DM = not running.
+#   2. Day X never fails quietly: if it hasn't gone out by 7:20am ET, juju gets
+#      a DM saying why (and /gmpost sends it), including after a restart past 7am
+#   3. /health shows the version & when this process started
+#  plus one bug the dive found: the mantra (J01), the one-word drop (J02) & tick
+#  tock (J03) were always thrown out as "too close to juju's own post", because
+#  a mantra IS his post. they're exempt from that check now (repeats against the
+#  bot's own recent posts still apply).
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v64"
+_V64_BOOT = time.time()
+_V64_FIXED = {"J01", "J02", "J03"}
+
+if V61_ON:
+    _v64_problem_prev = _v61_problem
+
+    def _v61_problem(d: str, code: str, facts: str) -> str:   # noqa: F811
+        p = _v64_problem_prev(d, code, facts)
+        if p == "too close to juju's own post" and code in _V64_FIXED:
+            c = DECK_CODES.get(code) or {}
+            # run the rest of the checks without the copy check
+            saved = c.get("ex", "")
+            c["ex"] = ""
+            try:
+                return _v64_problem_prev(d, code, facts)
+            finally:
+                c["ex"] = saved
+        return p
+
+
+async def _v64_tell(app, text: str, key: str = "", every_s: int = 0):
+    if key and every_s:
+        last = float(kv_get(f"v64_told:{key}", "0") or 0)
+        if time.time() - last < every_s:
+            return
+        kv_set(f"v64_told:{key}", str(time.time()))
+    try:
+        await _v60_tell_maker(app, text)
+    except Exception as e:
+        log.warning(f"v64 dm: {e}")
+
+
+def _v64_dayx_next() -> str:
+    sch = SCHEDULER
+    for j in (sch.get_jobs() if sch else []):
+        nrt = getattr(j, "next_run_time", None)
+        if getattr(j.func, "__name__", "") == "job_daily_campaign" and nrt:
+            return nrt.astimezone(CAMPAIGN_TZ).strftime("%a %-I:%M%p ET")
+    return "not scheduled ⚠️"
+
+
+_v64_on_startup_prev = on_startup
+
+
+async def on_startup(app):   # noqa: F811
+    await _v64_on_startup_prev(app)
+    try:
+        sch = SCHEDULER
+        lines = [f"✅ {BOT_VERSION} is running",
+                 f"▪️ scheduler: {'running' if sch and sch.running else 'NOT RUNNING'} · {len(sch.get_jobs()) if sch else 0} jobs",
+                 f"▪️ group: " + (f"⚠️ {_V60['chat_err']}" if _V60.get("chat_err") else (_V60.get("chat") or str(TARGET_CHAT_ID))),
+                 f"▪️ Day X next: {_v64_dayx_next()}" + (" · today's is done" if kv_get(f"dayx_done:{_v60_today()}") else ""),
+                 f"▪️ X: {'OFF (keys missing)' if not X_ENABLED else ('drafts to your DMs' if jinx_shadow() else 'live')}"]
+        try:
+            lines.append("▪️ " + v61_budget_text().split("\n")[1])
+        except Exception:
+            pass
+        lines.append("/health any time")
+        await _v64_tell(app, "\n".join(lines), "boot", 20 * 60)
+    except Exception as e:
+        log.warning(f"v64 boot dm: {e}")
+    log.info(f"BOT VERSION {BOT_VERSION} running")
+
+
+async def job_v64_dayx_watch(app):
+    """7:20am & 8:30am ET: if today's Day X isn't out, say so, and why."""
+    now = datetime.now(CAMPAIGN_TZ)
+    d = now.date()
+    if kv_get(f"dayx_done:{d}") or await _v60_dayx_pinned(app):
+        kv_set(f"dayx_done:{d}", "1")
+        return
+    try:
+        last = json.loads(kv_get("dayx_last", "{}") or "{}")
+    except Exception:
+        last = {}
+    seven = now.replace(hour=7, minute=0, second=0, microsecond=0).timestamp()
+    if last.get("date") == str(d):
+        why = f"it ran and failed: {last.get('status', '')[:300]}"
+    elif _V64_BOOT > seven:
+        why = f"the bot restarted at {datetime.fromtimestamp(_V64_BOOT, CAMPAIGN_TZ).strftime('%-I:%M%p')} ET, after the 7am slot"
+    elif kv_get(f"dayx_missed:{d}"):
+        why = "the 7am job was missed (the bot was busy or stuck)"
+    else:
+        why = "the 7am job didn't run, and nothing recorded why"
+    await _v64_tell(app, f"⚠️ Day {campaign_day()} hasn't gone out in the group yet.\n\nwhy: {why}\n\n/gmpost sends it now.",
+                    f"dayx:{d}", 3 * 3600)
+
+
+if "cmd_health" in globals():
+    _v64_health_prev = cmd_health
+
+    class _V64Msg:
+        def __init__(self, m):
+            self._m = m
+
+        def __getattr__(self, n):
+            return getattr(self._m, n)
+
+        async def reply_text(self, t, **k):
+            up = datetime.fromtimestamp(_V64_BOOT, CAMPAIGN_TZ).strftime("%a %-d %b %-I:%M%p ET")
+            return await self._m.reply_text(f"version: {BOT_VERSION} · running since {up}\n\n" + t, **k)
+
+    class _V64Upd:
+        def __init__(self, u):
+            self._u = u
+            self.effective_message = _V64Msg(u.effective_message)
+
+        def __getattr__(self, n):
+            return getattr(self._u, n)
+
+    async def cmd_health(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+        return await _v64_health_prev(_V64Upd(update), ctx)
+
+
+_v64_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v64_register_prev(app, scheduler, ny_tz)
+    scheduler.add_job(job_v64_dayx_watch, "cron", hour=7, minute=20, timezone=ny_tz, args=[app])
+    scheduler.add_job(job_v64_dayx_watch, "cron", hour=8, minute=30, timezone=ny_tz, args=[app])
+    log.info(f"{BOT_VERSION}: boot DM, Day X watch at 7:20 & 8:30 ET")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
