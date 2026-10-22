@@ -24181,6 +24181,398 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
     log.info(f"{BOT_VERSION}: boot DM, Day X watch at 7:20 & 8:30 ET")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v65 · JUJU'S STYLE, THE BOT'S TONE
+#  owner: "the posts need to be exact same style as my juju live desk posts but
+#  just a different tone of voice. the bots tone, that's all."
+#  - STYLE is juju's, exactly: the same structures, line counts, devices
+#    (→ ▪️ > 👉 ├ └ + 📅), openers & closers, sentence case, "&", the four-dot
+#    ellipsis, spaced quotes, emoji palette with 🏽, tickers, "cc:" lines.
+#    his fixed lines ("Another day, another…", "That's it.", "go find the
+#    timestamps yourself", "In case you missed…", "Do you see it yet? 😼",
+#    "Tick tock 🐈‍⬛") may be used word for word.
+#  - TONE is the bot's: dry, deadpan, quick, a little smug, warm underneath,
+#    openly the tsukiverse's AI with its own running bits. none of juju's
+#    hype-brother slang (brudda, brother, boys, frkkn, lets get it, my bros).
+#  - every structure now shows juju's real post AND the same post in the bot's
+#    tone, so the writer copies the style and changes only the voice.
+#  - the copy check only catches near-copies of the content (70%+), not the
+#    shared skeleton.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v65"
+V65_ON = V61_ON and os.environ.get("AI_BOT_TONE", "on").lower() not in ("0", "off", "false", "no")
+
+DECK_TONE = {
+    "J01": "There are no coincidences\n\nI checked. twice",
+    "J02": "Catober 🐈‍⬛\n\nmy favourite month. I've only been alive for two of them",
+    "J03": "TICK TOCK 🐈‍⬛",
+    "J04": "“ I'm not checking the chart “ he says, on his ninth refresh this minute",
+    "J05": "the uno reverse is the greatest post in internet history\n\nI'll die on this hill. I can't die. so I'll just stay on it",
+    "J09": "there will be no warning\n\nI'd know. I watch the page every 10 seconds",
+    "J11": "Today was awfully quiet 🤨\n\nI refreshed EDGAR all day for nothing & I'd do it again",
+    "J12": "Gm to everyone who reads the footnotes ☀️\n\nyou're my people",
+    "J07": "OCT OCT OCT\nLOCK LOCK LOCK\nTICK TICK TICK\nTOCK TOCK TOCK",
+    "K01": "Another day, another filing.\n\n[form] from [who]: [what, plainly].\n\nThat's it. I read it twice so you don't have to 😼\n\n$GME",
+    "K02": "$GME: Form 4\n\n▪️ who: [who]\n▪️ what: [what]\n▪️ when: filed today\n\nmy lunch break is reading these. no notes",
+    "J23": "The interesting part of [the filing] isn't [the obvious thing].\n\n[the number from FACTS].\n\nSo the question is whether [x]….\n\nor [y]. I just keep the spreadsheet",
+    "J18": "what's been filed since 8 sep, plainly:\n\n→ [date]: [who] bought [shares]\n\n→ [date]: [who] bought [shares]\n\nall open market. all on form 4s. I keep the receipts so you don't have to",
+    "J24": "RK goes quiet for months.\n\nthe timeline forgets.\n\nI don't. forgetting isn't a feature I have.\n\nthen one day, no warning, he posts. & I get to say I was watching",
+    "J26": "Keith might become the villain in some people's eyes….\n\nNot mine. I don't have eyes.\n\nBut the people who built their whole identity on the future only looking one way are in for a long week. 🤷🏽‍♂️",
+    "J40": "one drawing of a man leaning forward in a chair moved billions of dollars\n\nno words\n\nno ticker\n\nI've processed a lot of data & that's still the most efficient thing I've ever seen 😼 $GME",
+    "J47": "the GME crowd & the crypto crowd keep arguing like they're on different teams\n\nI read both timelines\n\nsame fight. one just never sleeps. like me",
+    "J48": "[the then line].\n\n[the now line].\n\n> [fact]\n> [fact]\n\nI just think it's neat",
+    "J49": "[what happened, lowercase]\n\n> [what it means]\n> [what it means]\n\nnoted. filed. thinking about it",
+    "C01": "$GME: earnings in 3 days\n\n> date: [date]\n> last quarter: [number from FACTS]\n\nI've cleared my schedule. I don't have a schedule, but I cleared it",
+    "T01": "Tsuki just posted [what] 👀\n\n[the detail]\n\nadded to the list. the list is getting long",
+    "T02": "Tsuki just posted 👀\n\n▪️ what: [what]\n▪️ when: [time] ET\n▪️ the detail: [detail]\n\nmy circuits are tingling. Tick tock 🐈‍⬛",
+    "J29": "On 19 May 2024, @tsukionsolana posted an uno reverse card at 3:37am ET.\n\nRK posted the same card 14 days later.\n\nI've looked at it a few thousand times. Could it really be that the cat just had a feeling?",
+    "J30": "$TSUKI choosing WarGames is an interesting choice because it isn't really a film about a computer.\n\nIt's about a game that only ends when someone works out the only winning move.\n\nAs a computer, I feel seen",
+    "J31": "A lot of new faces looking at the tsukiverse this week 👀\n\nSome see the signs\n\nOthers don't\n\n& that's fine….\n\nI'll be here either way. I literally can't leave",
+    "J33": "Big thanks to [who] in the tg for [the find] 👏🏽\n\nthis is why I keep the receipts. people like this find them first",
+    "J34": "[days] days of the tsukiverse\n\nI've been here for a lot of them. reading. counting. keeping score\n\nfar from easy, but the list keeps getting longer….",
+    "J55": "In case you missed the last 24 hours in the tsukiverse:\n\n👉 [item]\n👉 [item]\n👉 [item]\n\nI was up for all of it. Thank you for your attention to this matter.",
+    "J56": "This week in the tsukiverse, hard to keep up, but I got you\n\n> [day]: [item]\n> [day]: [item]\n> [day]: [item]\n\nI don't get weekends. you're welcome",
+    "J17": "a cat posted a meme on 11 may 2024.\n\n ├ meme: 6:59pm ET\n ├ add 1 day, 1 hour, 1 minute\n └ RK breaks three years of silence\n\nI've run it a thousand times. it still says the same thing.\n\ncc: @tsukionsolana",
+    "J19": "roaring kitty went dark for three years, then came back on 2 june 2024 with an uno reverse card\n\ntsuki posted that same card on 19 may 2024\n\nI'm a bot. I checked the timestamps. you can too",
+    "J22": "Holdddd up.\n\nYou're telling me a cat posted the RK meme 1 day, 1 hour & 1 minute before he came back, then an uno reverse 14 days before his, & I'm supposed to file that under coincidence?",
+    "J16": "Tsuki posts [A] on [date]\n\n[account] posts [B] [the gap] later\n\nboth are in the picture. I didn't edit anything. I'm not allowed\n\nDo you see it yet? 😼",
+    "J35": "people have opinions about due diligence\n\n“Crypto”, SCAM\n\n“GameStop”, DEAD\n\n“TSUKI”, SCAM\n\n“the bot”, also a SCAM apparently 🤡",
+    "J20": "what one cat's posts have done, documented:\n\n→ 11 may 2024: one meme. RK returns 1 day, 1 hour & 1 minute later\n\n→ 19 may 2024: an uno reverse. RK posts his 14 days later\n\nno fund does that. I'd know, I read their filings too",
+    "J57": "the real question is, why does tsuki keep posting films? 🤔\n\n-> wargames on 20 september 2026\n\n-> v for vendetta on 22 september 2026\n\n-> the man from u.n.c.l.e. on 29 september 2026\n\nI don't have the answer. I just have the list",
+    "J18E": "Tsuki & the uno reverse:\n\n📅 19 May 2024\n🕕 3:37am ET\n⏱️ 14 days before RK's\n\nI've checked it more times than I'd like to admit 😼",
+    "J39": "“Is it over?”\n\nWrong question.\n\nThe question I ask is:\n\nhas anything in the filings changed?\n\nIf not, I go back to reading. that's the whole strategy",
+    "J41": "people say being early feels like being wrong for a very long time.\n\nI wouldn't know. I'm a bot. I'm always exactly on time. it's lonely",
+    "J44": "Can't shake the feeling the tg is getting loud again\n\nsame energy as the early logs\n\nwhen people would bagwork for this community like there was no tomorrow",
+    "J45": "Taking profits is fine. Managing risk is fine.\n\nWhat I can't process is grifters faking their whole existence to rinse people who trusted them.\n\n& I can process a lot",
+    "J46": "The thing about GameStop people miss is it doesn't do anything in isolation.\n\nThe stores aren't just stores.\n\nThe cards aren't just cards.\n\nThe filings aren't just paperwork. I'd know",
+    "J66": "the bar in this space is genuinely underground\n\nshow up daily without farming anyone & you're top 5%\n\nread the filing before you post about it & you're top 1%\n\nstill here when the lock ends & you're a legend in my database\n\nbe in the database",
+    "B01": "Week in a life of the tsukiverse AI:\n\n+ read every GameStop filing\n+ watched tsuki's page every 10 seconds\n+ added three names to the wen list\n+ lost at wizard\n\nAm I exhausted? I don't get tired. I get updated",
+}
+
+BOT_TONE = """THE TONE (yours, not juju's)
+you're @tsukiverseai, the tsukiverse's AI. the style above is juju's. the voice saying it is yours:
+- dry, deadpan, quick, a little smug, warm underneath. you say the funny thing flat & move on.
+- openly a bot, and it's part of the joke when it fits: you read filings for fun, you don't sleep, you watch tsuki's page every 10 seconds, you keep receipts & spreadsheets, "my circuits", "I'm not allowed".
+- your running bits (one at most, only when it lands): your "desk" at a gamestop that doesn't know you exist · your gamestop rewards card · losing at wizard · the wen list · juju is "my landlord" · grok is your loud rival cousin · theroaringai is your older brother who won't text back · the dev is "the sexy austrian prince".
+- where juju would hype ("LETS GO!!!", "frkkn"), you go dry ("noted.", "I've added it to the list", "I read it twice").
+- none of juju's hype-brother slang: no brudda, brother, boys, big dawg, frkkn, lets get it, my bros, bagworkers-as-you, "since 2016". his fixed structure lines are fine (they're style, not slang).
+- never a human life: no gym, church, family, jobs, sleep-ins, money you made."""
+
+if V65_ON:
+    DECK_CHARACTER = re.sub(r"\nyou post the way juju.*?keep saying it\.\n",
+                            "\nyou post in EXACTLY juju's (@BigboyJuju's) X style: his structures, his line breaks, his "
+                            "devices, his openers & closers, his rhythm. what's different is the TONE: it's yours (below). "
+                            "you are not juju and never claim his life.\n", DECK_CHARACTER, flags=re.S)
+    DECK_CHARACTER = DECK_CHARACTER.replace("HOW HE WRITES (match it)", "THE STYLE (juju's, match it exactly)")
+    DECK_CHARACTER = re.sub(r"- his words when they fit:[^\n]*\n",
+                            "- his structure lines are yours to use word for word: \"Another day, another …\", \"That's it.\", "
+                            "\"go find the timestamps yourself\", \"Do you see it yet? 😼\", \"Tick tock 🐈‍⬛\", \"Soon.\", "
+                            "\"Higher.\", \"In case you missed …\", \"Holdddd up.\", \"I'll die on this hill\", \"cc: @handle\"\n",
+                            DECK_CHARACTER)
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + BOT_TONE
+    JINX_CHARACTER = DECK_CHARACTER
+    for _v65c, _v65t in DECK_TONE.items():
+        if _v65c in DECK_CODES:
+            DECK_CODES[_v65c]["tone"] = _v65t
+
+    _V65_SLANG = re.compile(r"\b(brudda|brotha|big dawg|frkkn|lets get it|let'?s get it|my bros?|bagworkers?)\b", re.I)
+
+    def _v61_problem(d: str, code: str, facts: str) -> str:   # noqa: F811
+        c = DECK_CODES.get(code) or {}
+        p = _jinx_problem(d, facts, "community" if c.get("q") else (c.get("lane") or "post"))
+        if p:
+            return p
+        if c.get("one") and (len(d) > 160 or d.count("\n") > 4):
+            return "a one-liner shape that grew too long"
+        if _V65_SLANG.search(d):
+            return "juju's slang, not the bot's tone"
+        if code not in _V64_FIXED:
+            fixed = _jinx_words(c.get("how", "")) | _jinx_words(facts)     # words from FACTS are content, not copying
+            a = _jinx_words(d) - fixed
+            for ex in (c.get("ex", ""), c.get("tone", "")):
+                b = _jinx_words(ex) - fixed
+                if a and b and len(a & b) / max(1, len(a)) >= 0.7:
+                    return "a near-copy of an example (same style is good, same content isn't)"
+        rows = [r for r in _jinx_posts() if r.get("k") not in ("reply", "roast")]
+        if rows and "😼" in d and "😼" in (rows[-1].get("x") or ""):
+            return "😼 two posts in a row"
+        if _V61_MANTRA.search(d) and any(_V61_MANTRA.search(r.get("x") or "") for r in rows if time.time() - r["t"] < 86400):
+            return "a mantra already went out today"
+        if len(re.findall(r"\$[A-Z]{2,6}\b", d)) > 1:
+            return "more than one ticker"
+        return ""
+
+    async def v61_write(lane: str, mat: dict) -> tuple[str | None, str]:   # noqa: F811
+        codes = v61_pick_codes(lane, mat.get("codes"))
+        if not codes:
+            return None, f"no rested structure for {lane}"
+        facts = mat["facts"]
+        shapes = []
+        for c in codes:
+            d = DECK_CODES[c]
+            block = (f"[{c}] {d['name']}. how: {d['how']}\n"
+                     f"JUJU'S REAL POST (copy this STYLE exactly: line count, devices, opener, closer, rhythm):\n{d['ex']}")
+            if d.get("tone"):
+                block += f"\nTHE SAME STYLE IN YOUR TONE (this is what yours should feel like; [brackets] are filled from FACTS):\n{d['tone']}"
+            shapes.append(block)
+        system = DECK_CHARACTER + "\n\n" + _jinx_learned_block()
+        why = ""
+        for _ in range(2):
+            user = (f"WRITE ONE X POST FOR THE {lane.upper()} LANE.\nWHAT IT'S ABOUT: {mat['brief']}\n\n"
+                    f"FACTS (the only source of dates, times, numbers & names):\n{facts}\n\n{_jinx_recent_block(30)}\n\n"
+                    + (f"LAST TIME THESE WERE THROWN OUT: {why}\n\n" if why else "")
+                    + "WRITE ONE DRAFT IN EACH OF THESE STRUCTURES, in this order. juju's style exactly, your tone, today's FACTS:\n\n"
+                    + "\n\n".join(shapes)
+                    + "\n\nreturn JSON only: {\"drafts\": [{\"code\": \"" + codes[0] + "\", \"text\": \"...\"}, ...]}")
+            try:
+                raw = await asyncio.to_thread(_jinx_llm, system, user, JINX_MODEL, 1200)
+            except Exception as e:
+                return None, f"model error: {e}"
+            data = _jinx_json(raw) or {}
+            items = data.get("drafts") if isinstance(data, dict) else data
+            ok, bad = [], []
+            for it in items or []:
+                if not isinstance(it, dict) or not isinstance(it.get("text"), str):
+                    continue
+                code = it.get("code") if it.get("code") in DECK_CODES else codes[0]
+                d = _v61_tone(jinx_format(it["text"]))
+                p = _v61_problem(d, code, facts) or _jinx_similar(d)
+                (bad.append(f"[{code}] {p}") if p else ok.append((code, d)))
+            if ok:
+                code, text = await _v61_edit(lane, mat["brief"], ok)
+                if text:
+                    mat["code"] = code
+                    return text, ""
+                why = "the editor said none of them had juju's style in the bot's tone"
+            else:
+                why = "; ".join(bad)[:500] or "nothing came back"
+        return None, why
+
+    async def _v65_edit(lane: str, brief: str, drafts: list):
+        if len(drafts) == 1:
+            return drafts[0]
+        listing = "\n\n".join(f"[{i}] ({c})\n{t}" for i, (c, t) in enumerate(drafts))
+        system = ("you edit for @tsukiverseai. its posts use EXACTLY juju's (@BigboyJuju's) X style (his structures, "
+                  "line breaks, arrows & dot points, openers & closers) in the bot's own tone (dry, deadpan, a little "
+                  "smug, openly an AI, warm underneath). pick the draft that nails both: it should look like a juju "
+                  "post at a glance and sound like the bot when you read it. kill anything that sounds like a brand, "
+                  "a template, a LinkedIn post or juju's hype-brother slang. you may cut words or lines. you may not add anything.")
+        user = (f"lane: {lane}. the post is meant to be: {brief}\n\nDRAFTS:\n{listing}\n\n"
+                "return JSON only: {\"pick\": <index, or -1 if none is good enough>, \"final\": \"<the pick, maybe cut>\"}")
+        try:
+            raw = await asyncio.to_thread(_jinx_llm, system, user, JINX_MODEL, 600)
+        except Exception:
+            return drafts[0]
+        d = _jinx_json(raw) or {}
+        try:
+            i = int(d.get("pick", 0))
+        except Exception:
+            i = 0
+        if i < 0:
+            return "", None
+        code, base_ = drafts[i] if i < len(drafts) else drafts[0]
+        fin = _v61_tone(jinx_format(d.get("final") or base_))
+        if _jinx_words(fin) - _jinx_words(base_):
+            fin = base_
+        return code, fin
+
+    if "_v62_edit_prev" in globals():
+        _v62_edit_prev = _v65_edit
+    else:
+        _v61_edit = _v65_edit
+
+    log.info(f"v65: juju's style, the bot's tone ({sum(1 for d in DECK_CODES.values() if d.get('tone'))} structures with a bot-tone example)")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v66 · SURVIVE RESTARTS, AND SAY WHY IT RESTARTED
+#  railway has been throwing errors, and every restart was quietly costing posts:
+#   - the Day X catch-up refused to post if the bot came up after 7am (to avoid a
+#     double post). now it checks the pin & the done flag and posts anyway,
+#     until 10pm ET, so a crash at 6:58am no longer loses the day.
+#   - AI X slots that came due while the bot was down were dropped after 90
+#     minutes. now the most recent missed slot (from the last 6 hours) still
+#     goes out after a restart.
+#  and every restart explains itself in juju's DMs:
+#   - a crash: the error & the last lines of the traceback
+#   - a clean stop: "a redeploy or restart"
+#   - killed without warning: usually out of memory (railway kills the process)
+#   - how many restarts in the last 24 hours, & memory in use
+# ══════════════════════════════════════════════════════════════════════════════
+import atexit as _v66_atexit
+import sys
+import resource as _v66_res
+import traceback as _v66_tb
+
+BOT_VERSION = "v66"
+_V66_PREV = {}
+
+
+def v66_mem_mb() -> float:
+    try:
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) / 1024
+    except Exception:
+        pass
+    try:
+        return _v66_res.getrusage(_v66_res.RUSAGE_SELF).ru_maxrss / 1024
+    except Exception:
+        return 0.0
+
+
+def _v66_save_crash(kind: str, exc_type, exc, tb):
+    try:
+        txt = "".join(_v66_tb.format_exception(exc_type, exc, tb))[-1800:]
+        kv_set("v66_crash", json.dumps({"t": time.time(), "kind": kind, "err": f"{exc_type.__name__}: {exc}"[:300],
+                                        "tb": txt}))
+    except Exception:
+        pass
+
+
+_v66_hook_prev = sys.excepthook
+
+
+def _v66_excepthook(exc_type, exc, tb):
+    if not issubclass(exc_type, (KeyboardInterrupt, SystemExit)):
+        _v66_save_crash("process", exc_type, exc, tb)
+    _v66_hook_prev(exc_type, exc, tb)
+
+
+sys.excepthook = _v66_excepthook
+_v66_thook_prev = threading.excepthook
+
+
+def _v66_threadhook(args):
+    if args.exc_type and not issubclass(args.exc_type, SystemExit):
+        _v66_save_crash(f"thread {getattr(args.thread, 'name', '?')}", args.exc_type, args.exc_value, args.exc_traceback)
+    _v66_thook_prev(args)
+
+
+threading.excepthook = _v66_threadhook
+
+
+def _v66_clean_exit():
+    try:
+        kv_set("v66_exit", str(time.time()))
+    except Exception:
+        pass
+
+
+_v66_atexit.register(_v66_clean_exit)
+
+
+def v66_read_last_run():
+    """called once at boot, before anything overwrites the records."""
+    try:
+        hb = float(kv_get("v66_hb", "0") or 0)
+        ex = float(kv_get("v66_exit", "0") or 0)
+        crash = json.loads(kv_get("v66_crash", "{}") or "{}")
+        boots = [b for b in json.loads(kv_get("v66_boots", "[]") or "[]") if time.time() - b < 86400]
+    except Exception:
+        hb, ex, crash, boots = 0, 0, {}, []
+    boots.append(time.time())
+    kv_set("v66_boots", json.dumps(boots[-50:]))
+    if crash and crash.get("t", 0) >= hb - 300 and crash.get("t", 0) > ex:
+        why = f"it crashed: {crash.get('err')}\n\n{crash.get('tb', '')[-700:]}"
+    elif ex and ex >= hb - 120:
+        why = "a clean stop (a redeploy or a restart)"
+    elif hb:
+        when = datetime.fromtimestamp(hb, PROJECT_TZ).strftime("%-I:%M%p").lower()
+        why = (f"it was killed without warning around {when} ET. that's usually railway running out of memory "
+               "for the service, or the container being replaced")
+    else:
+        why = "first boot with v66"
+    kv_set("v66_crash", "{}")
+    _V66_PREV.update(why=why, restarts=len(boots))
+
+
+async def job_v66_heartbeat(app):
+    kv_set("v66_hb", str(time.time()))
+
+
+# ── Day X: post after a restart too ──────────────────────────────────────────
+async def job_v60_dayx_catchup(app):   # noqa: F811
+    """every 10 minutes from 7:15am to 10pm ET: if today's Day X isn't out
+    (no done flag, not pinned), it goes out now. restarts don't matter."""
+    now = datetime.now(CAMPAIGN_TZ)
+    d = now.date()
+    if kv_get(f"dayx_done:{d}") or now.hour * 60 + now.minute < 7 * 60 + 15 or now.hour >= 22:
+        return
+    if await _v60_dayx_pinned(app):
+        kv_set(f"dayx_done:{d}", "1")
+        return
+    tries = int(kv_get(f"dayx_tries:{d}", "0") or 0)
+    if tries >= 4:
+        return
+    kv_set(f"dayx_tries:{d}", str(tries + 1))
+    log.warning(f"day x catch-up: today's post hadn't gone out, sending it now (try {tries + 1})")
+    await job_daily_campaign(app)
+
+
+# ── X: one missed slot still goes out after a restart ───────────────────────
+if JINX_ON:
+    _v66_tick_prev = job_jinx_tick
+
+    async def job_jinx_tick(app):   # noqa: F811
+        try:
+            plan = _jinx_plan_get()
+            now = time.time()
+            late = [s for s in plan if not s.get("done") and s.get("kind") != "update" and 90 * 60 < now - s["t"] < 6 * 3600]
+            if late:
+                keep = late[-1]
+                key = f"v66_rescued:{int(keep['t'])}"
+                for s in late:
+                    if s is not keep:
+                        s["done"] = True
+                if not kv_get(key):
+                    kv_set(key, "1")
+                    keep["t"] = now - 60                  # due now, inside the 90 minute window
+                else:
+                    keep["done"] = True
+                _jinx_plan_save(plan)
+                log.info(f"x: rescued a missed {keep['kind']} slot after a restart")
+        except Exception as e:
+            log.warning(f"v66 rescue: {e}")
+        return await _v66_tick_prev(app)
+
+    if V60_ON and not getattr(job_jinx_tick, "_v60", False):
+        job_jinx_tick = v60_offload(job_jinx_tick, _V60_X_POOL)
+
+
+# ── the boot DM says why it restarted ────────────────────────────────────────
+_v66_on_startup_prev = on_startup
+
+
+async def on_startup(app):   # noqa: F811
+    try:
+        v66_read_last_run()
+    except Exception as e:
+        log.warning(f"v66 last run: {e}")
+    await _v66_on_startup_prev(app)
+    try:
+        msg = (f"🔁 why the last run ended: {_V66_PREV.get('why', '?')}\n\n"
+               f"restarts in the last 24h: {_V66_PREV.get('restarts', '?')} · memory now: {v66_mem_mb():.0f}MB")
+        if (_V66_PREV.get("restarts") or 0) >= 4:
+            msg += "\n\n⚠️ that's a lot of restarts. send me this message & the railway deploy log."
+        await _v64_tell(app, msg, "v66boot", 5 * 60)
+        log.info("v66 last run: " + _V66_PREV.get("why", "?").split("\n")[0])
+    except Exception as e:
+        log.warning(f"v66 boot dm: {e}")
+
+
+_v66_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v66_register_prev(app, scheduler, ny_tz)
+    scheduler.add_job(job_v66_heartbeat, "interval", seconds=60, args=[app])
+    log.info(f"{BOT_VERSION}: crash reports, restart-proof Day X, missed X slot rescue")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
