@@ -24573,6 +24573,127 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
     log.info(f"{BOT_VERSION}: crash reports, restart-proof Day X, missed X slot rescue")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v67 · A PROPER WELCOME
+#  the old welcome was one line ("Welcome to the Tsukiverse, X / There are no
+#  coincidences."). three fuller, cleaner versions, all under telegram's 1024
+#  character caption limit so they still ride on the welcome clip:
+#    1 · the briefing   what tsuki is, where to start, how to stay safe
+#    2 · short & sharp  three numbered steps
+#    3 · story-led      opens on 11 may 2024, 6:59pm ET
+#  /welcome (admins): previews all three here · /welcome 2 picks one
+#  the buttons: 📖 The story · 🔗 Links · 🌐 The record (if WELCOME_SITE_URL is set)
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v67"
+WELCOME_SITE_URL = os.environ.get("WELCOME_SITE_URL", "").strip()
+
+
+def _v67_bot_handle() -> str:
+    return "@" + (kv_get("bot_username", "") or "tsukiversebot")
+
+
+def welcome_text(style: str, name: str) -> str:
+    n, bot = html.escape(name or "fren"), _v67_bot_handle()
+    if style == "2":
+        return (f"🐈‍⬛ <b>Welcome to the Tsukiverse, {n}!</b>\n\n"
+                "Home of $TSUKI and $RWA, and the black cat's story, told timestamp by timestamp.\n\n"
+                "<b>1.</b> Start with the story below. Ten minutes, and everything here clicks.\n"
+                f"<b>2.</b> Curious about anything? Tag {bot} and ask.\n"
+                "<b>3.</b> Stay safe: admins never DM first, and contracts only come from Links.\n\n"
+                "Glad you're here. There are no coincidences 🌙")
+    if style == "3":
+        return (f"🌙 <b>{n}, welcome to the Tsukiverse.</b>\n\n"
+                "On 11 May 2024 at 6:59pm ET, a black cat called Tsuki posted a Roaring Kitty meme. Keith Gill came "
+                "back to X one day, one hour and one minute later. That was the first entry on the record. "
+                "There are dozens more.\n\n"
+                "This chat is where the community follows the story as it unfolds: Tsuki, TheRoaringAI ($RWA), "
+                "GameStop, and the timestamps in between.\n\n"
+                "<b>Where to begin</b>\n"
+                "▪️ <b>The story:</b> the full welcome pack, start to finish\n"
+                "▪️ <b>Links:</b> the website, the X accounts and the only official contracts\n"
+                f"▪️ <b>Questions:</b> tag {bot} any time\n\n"
+                "Admins will never message you first. Welcome aboard. 🐈‍⬛")
+    return (f"🐈‍⬛ <b>Welcome to the Tsukiverse, {n}</b>\n\n"
+            "Tsuki is a black cat on Solana, launched on 11 May 2024. Since then this community has been documenting "
+            "a run of public, timestamped posts that keep landing just before Roaring Kitty, GameStop and others. "
+            "We keep the record. You decide what it means.\n\n"
+            "<b>Start here</b>\n"
+            "▪️ <b>The story:</b> the welcome pack covers everything in one read\n"
+            "▪️ <b>The family:</b> $TSUKI, and $RWA (TheRoaringAI)\n"
+            f"▪️ <b>Questions:</b> tag {bot} and it answers from the record\n\n"
+            "<b>Stay safe</b>\n"
+            "▪️ Admins will never DM you first. Anyone who does is not us.\n"
+            "▪️ Contract addresses only from the Links button.\n\n"
+            "There are no coincidences. 🌙")
+
+
+def welcome_style() -> str:
+    s = (kv_get("welcome_style", "") or os.environ.get("WELCOME_STYLE", "2")).strip()
+    return s if s in ("1", "2", "3") else "1"
+
+
+def _welcome_caption(name: str) -> str:   # noqa: F811
+    return welcome_text(welcome_style(), name)
+
+
+def _welcome_markup() -> InlineKeyboardMarkup:   # noqa: F811
+    row = [InlineKeyboardButton("📖 The story", url=WELCOME_STORY_URL),
+           InlineKeyboardButton("🔗 Links", url=WELCOME_LINKS_URL)]
+    rows = [row]
+    if WELCOME_SITE_URL:
+        rows.append([InlineKeyboardButton("🌐 The record", url=WELCOME_SITE_URL)])
+    return InlineKeyboardMarkup(rows)
+
+
+_V67_NAMES = {"1": "the briefing", "2": "short & sharp", "3": "story-led"}
+
+
+async def cmd_welcome(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/welcome · preview all three · /welcome 2 · use that one for new members."""
+    msg = update.effective_message
+    user = update.effective_user
+    if not (user and (_is_maker(user) or await is_project_admin(ctx, update))):
+        await msg.reply_text("admins only 🐈‍⬛")
+        return
+    name = user.first_name or "fren"
+    if ctx.args and ctx.args[0] in ("1", "2", "3"):
+        kv_set("welcome_style", ctx.args[0])
+        await msg.reply_text(f"✅ new members now get option {ctx.args[0]} ({_V67_NAMES[ctx.args[0]]}). "
+                             "here's exactly what they'll see:")
+        await msg.reply_text(welcome_text(ctx.args[0], name), parse_mode="HTML", reply_markup=_welcome_markup(),
+                             disable_web_page_preview=True)
+        return
+    cur = welcome_style()
+    await msg.reply_text(f"three welcome options. new members get option {cur} right now.\n"
+                         "pick with /welcome 1, /welcome 2 or /welcome 3")
+    for k in ("1", "2", "3"):
+        await msg.reply_text(f"— option {k} · {_V67_NAMES[k]}{' (current)' if k == cur else ''} —\n\n" + welcome_text(k, name),
+                             parse_mode="HTML", reply_markup=_welcome_markup(), disable_web_page_preview=True)
+
+
+_v67_on_startup_prev = on_startup
+
+
+async def on_startup(app):   # noqa: F811
+    try:
+        me = await app.bot.get_me()
+        if me and me.username:
+            kv_set("bot_username", me.username)
+    except Exception:
+        pass
+    await _v67_on_startup_prev(app)
+
+
+_v67_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v67_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("welcome", cmd_welcome))
+    log.info(f"{BOT_VERSION}: welcome option {welcome_style()} ({_V67_NAMES[welcome_style()]})")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
