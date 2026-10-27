@@ -26120,6 +26120,1623 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
     log.info(f"{BOT_VERSION}: juju's live desk voice ({len(V72_LIVEDESK)} reference posts) · {len(V72_DRAFTS)} /train samples")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v73 · THE VIRAL DESK + ASK TSUKI
+#  five things anyone on X can summon by tagging @tsukiverseai. each one
+#  answers with something worth sharing, and every card carries the way back.
+#    · "call it: …"          → a stamped receipt card, filed on the Kitty Codex.
+#                              when it lands: a "CALLED IT" quote post
+#    · "which cat am I"      → reads their public posts, sends their cat card
+#    · "my day"              → finds their first $TSUKI post, sends their Day card
+#    · "11 May 2024" / "on this day" → what the record shows on that date
+#    · "is this true?" / "explain this" under any post → Ask Tsuki: Grok reads
+#      the post, searches X & the web, answers in the bot's voice (Claude if no
+#      XAI_API_KEY)
+#  event calls only: no prices, no targets. nobody is ever "behind" anything.
+#  /card previews any card in telegram. /viral shows today's counts, on/off.
+#  /calls lists open receipts · /calledit N · /missed N · /askx tests Ask Tsuki.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v73"
+import html as _v73_html
+_V73_OFFS = ("0", "off", "false", "no")
+V73_ON = V61_ON and os.environ.get("VIRAL_MODE", "on").lower() not in _V73_OFFS
+XAI_CHAT_MODEL = os.environ.get("XAI_CHAT_MODEL", "grok-4.5")
+V73_ENGINE = os.environ.get("ASK_ENGINE", "grok").lower()                       # grok | claude
+V73_KINDS = ("call", "cat", "day", "date", "ask")
+V73_ENV = {"call": "VIRAL_CALLS", "cat": "VIRAL_CATS", "day": "VIRAL_DAYS", "date": "VIRAL_DATES", "ask": "ASK_TSUKI"}
+V73_CAP = {"call": int(os.environ.get("CALLS_PER_DAY", "40") or 40),
+           "cat": int(os.environ.get("CATS_PER_DAY", "30") or 30),
+           "day": int(os.environ.get("DAYS_PER_DAY", "30") or 30),
+           "date": int(os.environ.get("DATES_PER_DAY", "30") or 30),
+           "ask": int(os.environ.get("ASKS_PER_DAY", "60") or 60)}
+V73_PER_USER = int(os.environ.get("VIRAL_PER_USER_DAY", "4") or 4)
+V73_TSUKI_START = date(2024, 5, 11)                       # $TSUKI's first day. nobody's first post is earlier
+V73_CARD_DIR = os.path.join(_HERE, "assets", "cards")
+_V73_EPOCH = 1288834974657                                 # X's snowflake epoch, ms
+
+INK, ICE, ICE2, RECEIPT = (15, 20, 24), (216, 233, 240), (232, 241, 245), (252, 251, 247)
+RED, RED_DEEP, SKY, MUTE, GREEN = (211, 44, 52), (165, 30, 37), (157, 200, 221), (70, 85, 95), (26, 127, 69)
+MINT, LAV, SUN, CONCRETE = (205, 235, 216), (220, 214, 245), (248, 227, 163), (221, 229, 234)
+
+
+def _v73_enabled(kind: str) -> bool:
+    if not V73_ON or kv_get("v73_off") == "1":
+        return False
+    if os.environ.get(V73_ENV[kind], "on").lower() in _V73_OFFS:
+        return False
+    return kv_get(f"v73_off:{kind}") != "1"
+
+
+def _v73_today() -> str:
+    return datetime.now(PROJECT_TZ).date().isoformat()
+
+
+def _v73_count(kind: str) -> int:
+    return int(kv_get(f"v73_n:{kind}:{_v73_today()}", "0") or 0)
+
+
+def _v73_bump(kind: str, handle: str):
+    d = _v73_today()
+    kv_set(f"v73_n:{kind}:{d}", str(_v73_count(kind) + 1))
+    k = f"v73_u:{(handle or '').lower()}:{d}"
+    kv_set(k, str(int(kv_get(k, "0") or 0) + 1))
+
+
+def _v73_room(kind: str, handle: str) -> str:
+    """'' when there's room, else why not."""
+    if _v73_count(kind) >= V73_CAP[kind]:
+        return f"{kind} cap reached today ({V73_CAP[kind]})"
+    if int(kv_get(f"v73_u:{(handle or '').lower()}:{_v73_today()}", "0") or 0) >= V73_PER_USER:
+        return f"@{handle} had {V73_PER_USER} today"
+    return ""
+
+
+def v73_snow_time(tid) -> datetime | None:
+    try:
+        return datetime.fromtimestamp(((int(tid) >> 22) + _V73_EPOCH) / 1000, timezone.utc)
+    except Exception:
+        return None
+
+
+def v73_when(dt: datetime, year: bool | None = None) -> str:
+    """his way: "Tue 27 Oct, 2:14pm ET" (the year only when it isn't this year)."""
+    t = dt.astimezone(PROJECT_TZ)
+    show_year = (t.year != datetime.now(PROJECT_TZ).year) if year is None else year
+    return t.strftime("%a %-d %b") + (t.strftime(" %Y") if show_year else "") + ", " + t.strftime("%-I:%M%p").lower() + " ET"
+
+
+def v73_day_str(d: date) -> str:
+    return d.strftime("%a %-d %b %Y")
+
+
+# ── what did they ask for? ───────────────────────────────────────────────────
+_V73_CALL = re.compile(r"\b(?:i\s+)?call(?:ing)?\s+it\b|\bstamp\s+(?:this|it)\b|\bmy\s+call\s*:", re.I)
+_V73_CAT = re.compile(r"\b(?:which|what)\s+(?:kind\s+of\s+)?(?:tsuki(?:verse)?\s+)?cat\s+am\s+i\b|\bmy\s+cat\s+card\b|\bcat\s+card\s+(?:me|pls|please)\b", re.I)
+_V73_DAY = re.compile(r"\bmy\s+day(?:\s*(?:x|count|card|number))?\b|\bwhat\s+day\s+am\s+i\b|\bmy\s+tsuki\s+day\b", re.I)
+_V73_DATE = re.compile(r"\bwhat\s+happened\s+on\b|\bon\s+this\s+day\b|\bthis\s+day\s+in\s+tsuki|\b(?:the\s+)?record\s+(?:for|on)\b|\btimestamps?\s+(?:for|on)\b", re.I)
+_V73_ASK = re.compile(
+    r"\bis\s+(?:this|that|it)\s+(?:true|real|legit|accurate|right|confirmed|cap)\b|\bexplain\b|\beli5\b|\bfact[\s-]?check\b"
+    r"|\bcontext\s*\?|\btl;?dr\b|\bwhat\s+(?:does|is)\s+(?:this|that)\s+(?:mean|about)\b|\bwhat'?s\s+(?:this|that)\s+about\b"
+    r"|\bsummari[sz]e\b|\bbreak\s+(?:this|it)\s+down\b|\bask\s+tsuki\b|\btrue\s+or\s+(?:false|cap)\b", re.I)
+_V73_MONTHS = {m: i for i, ms in enumerate(
+    [("jan", "january"), ("feb", "february"), ("mar", "march"), ("apr", "april"), ("may",), ("jun", "june"),
+     ("jul", "july"), ("aug", "august"), ("sep", "sept", "september"), ("oct", "october"), ("nov", "november"),
+     ("dec", "december")], 1) for m in ms}
+_V73_MON = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+
+
+def _v73_body(text: str) -> str:
+    """the words they wrote: no leading @handles, no links."""
+    t = re.sub(r"^(?:\s*@\w{1,15})+", "", text or "")
+    t = re.sub(r"https?://\S+", "", t)
+    return re.sub(r"[ \t]+", " ", t).strip()
+
+
+def v73_parse_date(text: str) -> tuple[date | None, bool]:
+    """(date, year_given). "11 May 2024", "May 11, 2024", "2024-05-11", "5/11/24" (US order),
+    "11 may" (any year). "today" / "on this day" → today, any year."""
+    t = (text or "").lower()
+    t = re.sub(r"(\d)(st|nd|rd|th)\b", r"\1", t)
+    m = re.search(r"\b(20\d{2}|19\d{2})-(\d{1,2})-(\d{1,2})\b", t)
+    try:
+        if m:
+            return date(int(m.group(1)), int(m.group(2)), int(m.group(3))), True
+        m = re.search(r"\b(\d{1,2})\s+" + _V73_MON + r"\.?,?\s*(\d{4})?\b", t)
+        if m:
+            mon = _V73_MONTHS[m.group(2)[:4] if m.group(2)[:4] in _V73_MONTHS else m.group(2)[:3]]
+            yr = int(m.group(3)) if m.group(3) else 2000
+            return date(yr, mon, int(m.group(1))), bool(m.group(3))
+        m = re.search(r"\b" + _V73_MON + r"\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?\b", t)
+        if m:
+            mon = _V73_MONTHS[m.group(1)[:4] if m.group(1)[:4] in _V73_MONTHS else m.group(1)[:3]]
+            yr = int(m.group(3)) if m.group(3) else 2000
+            return date(yr, mon, int(m.group(2))), bool(m.group(3))
+        m = re.search(r"\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b", t)
+        if m:
+            yr = int(m.group(3))
+            yr = yr + 2000 if yr < 100 else yr
+            return date(yr, int(m.group(1)), int(m.group(2))), True
+    except ValueError:
+        return None, False
+    if re.search(r"\bon\s+this\s+day\b|\btoday\b", t):
+        return datetime.now(PROJECT_TZ).date(), False
+    return None, False
+
+
+def v73_kind(text: str, me: str = "") -> str:
+    """which of the five they want, or '' (then the normal reply brain answers)."""
+    me = (me or kv_get("x_me_handle") or "tsukiverseai").lower()
+    if not re.search(rf"@{re.escape(me)}\b", text or "", re.I):
+        return ""
+    body = _v73_body(text)
+    body_wo_me = re.sub(rf"@{re.escape(me)}\b", "", body, flags=re.I).strip()
+    if _V73_CALL.search(body):
+        return "call"
+    if _V73_CAT.search(body):
+        return "cat"
+    if _V73_DATE.search(body):
+        return "date"
+    if _V73_DAY.search(body):
+        return "day"
+    d, _ = v73_parse_date(body_wo_me)
+    if d and len(re.sub(r"[\d/,.\-]|\b" + _V73_MON + r"\b|\b(?:st|nd|rd|th|on|what|happened|the|pls|please)\b", "",
+                        body_wo_me.lower()).strip(" ?!")) < 12:
+        return "date"
+    if _V73_ASK.search(body):
+        return "ask"
+    return ""
+
+
+# ── guards ───────────────────────────────────────────────────────────────────
+_V73_PRICE = re.compile(
+    r"\$\s?\d|\d\s?%|\b\d+(?:\.\d+)?\s?[kmb]\b|\b\d+x\b|\bprice\w*|\bmarket\s*cap|\bmcap\b|\bmc\b|\bath\b|\ball[- ]time\s+high"
+    r"|\bpump\w*|\bdump\w*|\bmoon(?:s|ing)?\b|\bflip(?:s|ped|ping)?\b|\bmillion\b|\bbillion\b|\btarget\w*|\bsqueez\w*"
+    r"|\bpt\b|\bto\s+\d|\bgo(?:es|ing)?\s+(?:up|down)\b|\bcandle|\bpar(?:ity)?\b|\bbuy\b|\bsell\b|\bworth\b", re.I)
+_V73_PRICE_Q = re.compile(
+    r"\bprice\w*|\bpt\b|\btarget\w*|\bmoon\b|\bpump\w*|\bdump\w*|\bshould\s+i\s+(?:buy|sell|ape|hold)|\bbuy\b|\bsell\b|\bape\b"
+    r"|\bhow\s+high\b|\bgo(?:ing)?\s+(?:up|down)\b|\bath\b|\bmarket\s*cap|\bmcap\b|\b\d+x\b|\bbullish\b|\bbearish\b"
+    r"|\bundervalued\b|\bovervalued\b|\bfinancial\s+advice\b|\bnfa\b|\bwen\s+\$", re.I)
+
+
+def v73_unsafe(text: str) -> str:
+    """'' when a line may carry the bot's name, else why not."""
+    t = text or ""
+    if _off_limits(t) or _V49_BANNED.search(t):
+        return "off-limits"
+    if _V49_LINK.search(t):
+        return "an involvement claim"
+    try:
+        if _has_profanity(_JINX_SWEAR_OK.sub("", t)):
+            return "swearing"
+    except Exception:
+        pass
+    if re.search(r"\bjinx", t, re.I):
+        return "jinx"
+    return ""
+
+
+def v73_call_text(text: str, parent: dict | None = None, author: str = "") -> str:
+    body = re.sub(r"@\w{1,15}", "", _v73_body(text)).strip()
+    m = _V73_CALL.search(body)
+    call = ""
+    if m:
+        call = body[m.end():].strip(" :-–—,.\"“”'")
+        if len(call) < 8:
+            call = body[:m.start()].strip(" :-–—,.\"“”'")
+    if len(call) < 8 and parent and (parent.get("handle") or "").lower() == (author or "").lower():
+        call = re.sub(r"@\w{1,15}|https?://\S+", "", parent.get("text") or "").strip()
+    call = re.sub(r"\s+", " ", call).strip(" :-–—\"“”'")
+    if call[:1].islower():
+        call = call[0].upper() + call[1:]
+    return call[:200]
+
+
+def v73_call_problem(call: str) -> str:
+    if len(call) < 8:
+        return "empty"
+    if _V73_PRICE.search(call):
+        return "price"
+    why = v73_unsafe(call)
+    if why == "an involvement claim":
+        return "claim"
+    return "blocked" if why else ""
+
+
+# ── the record (the site's canon, fresh; the bundled copy if the site's down) ──
+_V73_REC = {"t": 0.0, "rows": []}
+
+
+def v73_record() -> list:
+    if _V73_REC["rows"] and time.time() - _V73_REC["t"] < 6 * 3600:
+        return _V73_REC["rows"]
+    rows = []
+    try:
+        r = httpx.get(f"{SITE_URL}/canon.json", timeout=12, headers={"User-Agent": "tsukiverseai-bot"})
+        if r.status_code == 200:
+            rows = ((r.json() or {}).get("data") or {}).get("events") or []
+    except Exception as e:
+        log.info(f"v73 record: site canon unreachable ({e}); using the bundled copy")
+    if not rows:
+        for p in (os.path.join(_HERE, "knowledge", "record.json"), os.path.join(os.getcwd(), "knowledge", "record.json")):
+            try:
+                with open(p, encoding="utf-8") as f:
+                    rows = json.load(f)
+                break
+            except Exception:
+                continue
+    rows = [e for e in rows if isinstance(e, dict) and re.match(r"\d{4}-\d{2}-\d{2}$", str(e.get("date", "")))]
+    if rows:
+        _V73_REC.update(t=time.time(), rows=rows)
+    return rows
+
+
+def _v73_cap_first(s: str) -> str:
+    s = (s or "").strip()
+    return s[:1].upper() + s[1:]
+
+
+def v73_on_date(d: date, year_given: bool = True) -> list[dict]:
+    """everything on the record that day, oldest first: {date, time, title, url}."""
+    out, seen = [], set()
+
+    def same(x: date) -> bool:
+        return x == d if year_given else (x.month, x.day) == (d.month, d.day)
+
+    for e in v73_record():
+        try:
+            x = date.fromisoformat(e["date"])
+        except Exception:
+            continue
+        if not same(x):
+            continue
+        title = re.sub(r"\s+", " ", str(e.get("title") or "")).strip()
+        if not title or v73_unsafe(title):
+            continue
+        out.append({"date": x, "time": str(e.get("time") or ""), "title": title,
+                    "url": f"{SITE_URL}/event/{e.get('slug')}/" if e.get("slug") else ""})
+        seen.add((x, title.lower()[:30]))
+    try:
+        con = db()
+        rows = con.execute("SELECT date_est, time_est, title FROM rk_archive").fetchall()
+        con.close()
+    except Exception:
+        rows = []
+    for ds, ts, title in rows:
+        try:
+            x = date.fromisoformat(str(ds))
+        except Exception:
+            continue
+        if not same(x) or any(o["date"] == x for o in out if o["time"] and ts and o["time"].replace(" ", "").lower() == str(ts).replace(" ", "").lower()):
+            continue
+        t = "Roaring Kitty: " + re.sub(r"\s+", " ", str(title or "")).strip()
+        if v73_unsafe(t) or (x, t.lower()[:30]) in seen:
+            continue
+        out.append({"date": x, "time": str(ts or "").replace(" ", "").lower(), "title": t, "url": ""})
+        seen.add((x, t.lower()[:30]))
+    if not out:
+        for x, w in LORE_DATES:
+            if same(x) and x <= datetime.now(PROJECT_TZ).date() and not v73_unsafe(w):
+                out.append({"date": x, "time": "", "title": _v73_cap_first(w), "url": ""})
+
+    def key(o):
+        tm = o["time"]
+        mm = re.match(r"(\d{1,2}):(\d{2})\s*([ap]m)", tm.lower()) if tm else None
+        mins = ((int(mm.group(1)) % 12) + (12 if mm.group(3) == "pm" else 0)) * 60 + int(mm.group(2)) if mm else 9999
+        return (o["date"], mins)
+    return sorted(out, key=key)
+
+
+def v73_nearest(d: date, days: int = 10) -> dict | None:
+    best = None
+    for e in v73_record():
+        try:
+            x = date.fromisoformat(e["date"])
+        except Exception:
+            continue
+        gap = abs((x - d).days)
+        if 0 < gap <= days and (best is None or gap < best[0]) and not v73_unsafe(str(e.get("title"))):
+            best = (gap, {"date": x, "time": str(e.get("time") or ""), "title": str(e.get("title") or "")})
+    return best[1] if best else None
+
+
+def v73_record_context(query: str, n: int = 6) -> str:
+    """the canon events closest to what's being asked, for grounding Ask Tsuki."""
+    words = {w for w in re.findall(r"[a-z0-9$]{3,}", (query or "").lower()) if w not in STOPWORDS}
+    scored = []
+    for e in v73_record():
+        blob = " ".join(str(e.get(k) or "") for k in ("title", "lead", "body", "date")).lower()
+        s = sum(1 for w in words if w in blob)
+        if s:
+            scored.append((s, e))
+    scored.sort(key=lambda x: (-x[0], x[1].get("date", "")))
+    return "\n".join(f"- {e.get('date')} {e.get('time') or ''}: {e.get('lead') or e.get('title')}" for _, e in scored[:n])
+
+
+# ══ the cards ══════════════════════════════════════════════════════════════
+# the site's look: ice & sky, receipt paper, ink borders, hard shadows, Tsuki red.
+# fonts & cat art ship in assets/cards; if they're missing, the art comes from
+# the live site and the fonts fall back to the ones the bot already has.
+_V73_FONTS = {
+    "mono": ("cards/fonts/courier-prime-latin-700-normal.ttf",),
+    "display": ("cards/fonts/fredoka-latin-600-normal.ttf", "fonts/Fredoka-SemiBold.ttf", "fonts/Fredoka-Bold.ttf"),
+    "bold": ("fonts/Fredoka-Bold.ttf", "cards/fonts/fredoka-latin-600-normal.ttf"),
+    "body": ("cards/fonts/didact-gothic-latin-400-normal.ttf", "fonts/DidactGothic-Regular.ttf"),
+    "tall": ("cards/fonts/teko-latin-700-normal.ttf", "fonts/Fredoka-Bold.ttf"),
+}
+_V73_FONT_CACHE: dict = {}
+
+
+def _v73_font(kind: str, size: int):
+    from PIL import ImageFont
+    key = (kind, size)
+    if key in _V73_FONT_CACHE:
+        return _V73_FONT_CACHE[key]
+    f = None
+    for rel in _V73_FONTS.get(kind, ()) + _V73_FONTS["display"] + _V73_FONTS["body"]:
+        for base in (os.path.join(_HERE, "assets"), os.path.join(os.getcwd(), "assets")):
+            p = os.path.join(base, rel)
+            if os.path.isfile(p):
+                try:
+                    f = ImageFont.truetype(p, size)
+                    break
+                except Exception:
+                    pass
+        if f:
+            break
+    if f is None:
+        for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold.ttf"):
+            try:
+                f = ImageFont.truetype(p, size)
+                break
+            except Exception:
+                pass
+    if f is None:
+        try:
+            f = ImageFont.load_default(size=size)
+        except Exception:
+            f = ImageFont.load_default()
+    _V73_FONT_CACHE[key] = f
+    return f
+
+
+def _v73_art(name: str):
+    """a cat pose (RGBA) from assets/cards/cat, else from the live site."""
+    from PIL import Image
+    for base in (V73_CARD_DIR, os.path.join(os.getcwd(), "assets", "cards")):
+        for p in (os.path.join(base, "cat", f"{name}.webp"), os.path.join(base, f"{name}.png")):
+            if os.path.isfile(p):
+                try:
+                    return Image.open(p).convert("RGBA")
+                except Exception:
+                    pass
+    cache = os.path.join(tempfile.gettempdir(), f"v73-cat-{name}.webp")
+    try:
+        if not os.path.isfile(cache):
+            r = httpx.get(f"{SITE_URL}/static/img/cat/{name}.webp", timeout=12)
+            if r.status_code == 200 and r.content[:4] == b"RIFF":
+                with open(cache, "wb") as f:
+                    f.write(r.content)
+        return Image.open(cache).convert("RGBA")
+    except Exception:
+        return None
+
+
+def _v73_plain(s: str) -> str:
+    """the card fonts have no emoji: drop anything outside the basic planes."""
+    s = (s or "").replace("’", "'").replace("‘", "'")
+    return "".join(ch for ch in s if ord(ch) < 0x2190 or ch in "→✓★●·…—–“”").strip()
+
+
+def _v73_wrap(d, text: str, font, width: int) -> list[str]:
+    out = []
+    for para in _v73_plain(text).split("\n"):
+        line = ""
+        for w in para.split():
+            trial = (line + " " + w).strip()
+            if d.textlength(trial, font=font) <= width:
+                line = trial
+            else:
+                if line:
+                    out.append(line)
+                while d.textlength(w, font=font) > width and len(w) > 4:     # one very long word
+                    cut = len(w)
+                    while cut > 4 and d.textlength(w[:cut], font=font) > width:
+                        cut -= 1
+                    out.append(w[:cut])
+                    w = w[cut:]
+                line = w
+        out.append(line)
+    return [l for l in out if l is not None]
+
+
+def _v73_fit(d, text: str, kind: str, width: int, sizes: tuple, max_lines: int):
+    """the biggest size the text fits at, in max_lines lines."""
+    for s in sizes:
+        f = _v73_font(kind, s)
+        lines = _v73_wrap(d, text, f, width)
+        if len(lines) <= max_lines:
+            return f, lines
+    f = _v73_font(kind, sizes[-1])
+    lines = _v73_wrap(d, text, f, width)[:max_lines]
+    if lines:
+        lines[-1] = lines[-1].rstrip(" .,") + "…"
+    return f, lines
+
+
+def _v73_sticker(im, box, fill, shadow=14, border=6, radius=34):
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(im)
+    x0, y0, x1, y1 = box
+    d.rounded_rectangle((x0 + shadow, y0 + shadow, x1 + shadow, y1 + shadow), radius, fill=INK)
+    d.rounded_rectangle(box, radius, fill=fill, outline=INK, width=border)
+
+
+def _v73_centre(d, text, y, font, fill, W, x0=0):
+    w = d.textlength(text, font=font)
+    d.text((x0 + (W - w) / 2, y), text, font=font, fill=fill)
+
+
+def _v73_dash(d, x0, x1, y, fill=MUTE):
+    x = x0
+    while x < x1:
+        d.line((x, y, min(x + 14, x1), y), fill=fill, width=3)
+        x += 24
+
+
+def _v73_paste_cat(im, name: str, h: int, xy: tuple, flip: bool = False):
+    from PIL import ImageOps
+    art = _v73_art(name)
+    if art is None:
+        return
+    w = int(art.width * h / art.height)
+    art = art.resize((w, h))
+    if flip:
+        art = ImageOps.mirror(art)
+    im.alpha_composite(art, (int(xy[0]), int(xy[1])))
+
+
+def _v73_stamp(im, label: str, centre: tuple, colour, angle: int = -14, r: int = 132):
+    """a rubber stamp: a ring and a word, rotated, a bit see-through."""
+    from PIL import Image, ImageDraw
+    S = r * 2 + 40
+    st = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(st)
+    c = colour + (215,)
+    d.ellipse((20, 20, S - 20, S - 20), outline=c, width=12)
+    d.ellipse((42, 42, S - 42, S - 42), outline=c, width=4)
+    lines = label.split("\n")
+    size = 74
+    while size > 30 and max(d.textlength(w, font=_v73_font("tall", size)) for w in lines) > S - 84:
+        size -= 4
+    f = _v73_font("tall", size)
+    lh = int(size * 0.92)
+    for i, word in enumerate(lines):
+        y = S / 2 - (len(lines) * lh) / 2 + i * lh - 2
+        w = d.textlength(word, font=f)
+        d.text(((S - w) / 2, y), word, font=f, fill=c)
+    st = st.rotate(angle, resample=Image.BICUBIC, expand=False)
+    im.alpha_composite(st, (int(centre[0] - S / 2), int(centre[1] - S / 2)))
+
+
+def _v73_save(im, name: str) -> str:
+    p = os.path.join(tempfile.gettempdir(), f"v73-{name}-{int(time.time() * 1000) % 10**9}.png")
+    im.convert("RGB").save(p, "PNG", optimize=True)
+    return p
+
+
+def _v73_backdrop(W, H, band=SKY, band_h: int | None = None):
+    """ice page, a sky band with a few stars, an ink rule: the site's first screen."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGBA", (W, H), ICE + (255,))
+    d = ImageDraw.Draw(im)
+    bh = band_h or int(H * 0.34)
+    d.rectangle((0, 0, W, bh), fill=band + (255,))
+    d.line((0, bh, W, bh), fill=INK, width=5)
+    rnd = random.Random(f"{W}x{bh}")
+    for _ in range(22):
+        x, y = rnd.randrange(W), rnd.randrange(max(10, bh - 16))
+        s = rnd.choice((3, 4, 5))
+        d.line((x - s, y, x + s, y), fill=(255, 255, 255, 220), width=2)
+        d.line((x, y - s, x, y + s), fill=(255, 255, 255, 220), width=2)
+    return im
+
+
+def _v73_put(d, xy, text, font, fill) -> int:
+    """draw text and return the y of its real bottom (Teko & Fredoka sit low in their boxes)."""
+    d.text(xy, text, font=font, fill=fill)
+    return d.textbbox(xy, text, font=font)[3]
+
+
+def _v73_size_to_content(W, body, min_h, max_h, pad):
+    """lay the body out on scratch paper, shrinking until it fits, then pick a height
+    that hugs it: no dead space, never taller than 4:5, never shorter than 16:9."""
+    from PIL import Image, ImageDraw
+    scratch = Image.new("RGBA", (W, 4000))
+    sd = ImageDraw.Draw(scratch)
+    for scale in (1.0, 0.92, 0.84, 0.76, 0.68):
+        y_end, _ = body(scratch, sd, scale, 0)
+        if y_end + pad <= max_h:
+            break
+    H = int(min(max(y_end + pad, min_h), max_h))
+    off = max(0, (H - (y_end + pad)) // 2)
+    return H, scale, off
+
+
+def _v73_cta(im, W, H, text):
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((64, H - 112, W - 78, H - 36), 22, fill=INK)
+    f, _ = _v73_fit(d, text, "display", W - 200, (34, 31, 28), 1)
+    _v73_centre(d, text, H - 112 + (76 - f.size) / 2 - 4, f, (255, 255, 255), W - 142, 64)
+
+
+def v73_receipt_card(n: int, handle: str, call: str, when: datetime, tid: str = "", called: bool = False) -> str | None:
+    """the stamped receipt. called=True is the same receipt with the green CALLED IT stamp."""
+    try:
+        from PIL import ImageDraw
+        W = 1200
+        x0, x1, top = 200, 1000, 56
+        L, R = x0 + 64, x1 - 64
+        t = when.astimezone(PROJECT_TZ)
+        rows = [("STAMPED", t.strftime("%a %-d %b %Y").upper()), ("TIME", t.strftime("%-I:%M%p").upper() + " ET")]
+        if tid:
+            rows.append(("POST", "…" + str(tid)[-10:]))
+
+        def body(im, d, k, off):
+            y = top + 54 + off
+            _v73_centre(d, "THE KITTY CODEX", y, _v73_font("display", int(64 * k)), INK, x1 - x0, x0)
+            y += int(80 * k)
+            _v73_centre(d, f"RECEIPT #{n:04d}", y, _v73_font("mono", int(40 * k)), RED_DEEP, x1 - x0, x0)
+            y += int(64 * k)
+            _v73_dash(d, L, R, y)
+            y += 30
+            d.text((L, y), "CALLED BY", font=_v73_font("mono", 26), fill=MUTE)
+            y += 38
+            hf, _ = _v73_fit(d, "@" + handle, "display", R - L, tuple(int(s * k) for s in (64, 56, 48, 40)), 1)
+            y = _v73_put(d, (L, y), "@" + handle, hf, INK) + 26
+            _v73_dash(d, L, R, y)
+            y += 30
+            d.text((L, y), "THE CALL", font=_v73_font("mono", 26), fill=MUTE)
+            y += 42
+            cf, lines = _v73_fit(d, "“" + call.strip("“”\"") + "”", "display", R - L,
+                                 tuple(int(s * k) for s in (78, 70, 62, 54, 48, 42)), 5)
+            lh = int(cf.size * 1.18)
+            for line in lines:
+                bottom = _v73_put(d, (L, y), line, cf, INK)
+                y += lh
+            y = bottom + 30
+            _v73_dash(d, L, R, y)
+            rows_top = y
+            y += 30
+            mf = _v73_font("mono", 32)
+            for k_, v in rows:
+                d.text((L, y), k_, font=mf, fill=MUTE)
+                d.text((L + 190, y), v, font=mf, fill=INK)
+                y += 50
+            y += 6
+            _v73_dash(d, L, R, y)
+            y += 30
+            _v73_centre(d, "tsukiverse.xyz/codex  ·  @tsukiverseai", y, _v73_font("mono", 26), MUTE, x1 - x0, x0)
+            y += 40
+            return y, {"rows_top": rows_top, "rows_bottom": y - 76}
+
+        H, k, off = _v73_size_to_content(W, body, 900, 1440, 96)
+        im = _v73_backdrop(W, H, MINT if called else SKY)
+        y1 = H - 56
+        _v73_sticker(im, (x0, top, x1, y1), RECEIPT + (255,), radius=18)
+        d = ImageDraw.Draw(im)
+        for x in range(x0 + 6, x1 - 6, 40):                                   # torn bottom edge
+            d.polygon([(x, y1 - 2), (x + 20, y1 - 20), (x + 40, y1 - 2)], fill=ICE + (255,))
+        _, a = body(im, d, k, off)
+        cy = (a["rows_top"] + a["rows_bottom"]) / 2
+        if called:
+            _v73_stamp(im, "CALLED\nIT", (R - 70, cy), GREEN, angle=-12, r=112)
+            _v73_paste_cat(im, "face-laugh", 230, (34, H - 300))
+        else:
+            _v73_stamp(im, "STAMPED", (R - 70, cy), RED, angle=-14, r=104)
+            _v73_paste_cat(im, "face-sideeye", 220, (34, H - 290))
+        return _v73_save(im, f"receipt{n}{'c' if called else ''}")
+    except Exception as e:
+        log.warning(f"v73 receipt card: {e}")
+        return None
+
+
+# the ten cats. (key, name, the line when nobody can read them, pose, colour)
+V73_CATS = [
+    ("timestamp", "The Timestamp Cat", "Checks every time to the minute. Screenshots first, opinions later", "face-sideeye", MINT),
+    ("nightdesk", "The Night Desk Cat", "Up when the posts drop. Sees it before the timeline wakes up", "face-yawn", LAV),
+    ("bagworker", "The Bagworker", "Shows up every single day & carries the chat on their back", "stand", SUN),
+    ("patient", "The Patient Cat", "Doesn't need it explained twice. Doesn't need it today either", "face-tea", SKY),
+    ("welcome", "The Welcome Mat", "First to say hi to every new face. The reason people stay", "sit-front", MINT),
+    ("film", "The Film Cat", "Knows every scene Tsuki ever posted & what it was really about", "face-smug", LAV),
+    ("skeptic", "The Skeptic Cat", "Asks for the source every time. The Codex needs you", "face-side", CONCRETE),
+    ("hype", "The Hype Cat", "All caps, all heart. The energy the timeline runs on", "face-laugh", SUN),
+    ("wizard", "The Wizard", "Plays the long game. Cards close to the chest", "face-calm", SKY),
+    ("artist", "The Meme Cat", "Edits, art & sketches. Keeps the feed alive", "walk-side", SUN),
+]
+V73_CAT_KEYS = {c[0]: c for c in V73_CATS}
+
+
+def _v73_avatar(url: str, size: int):
+    from PIL import Image, ImageDraw
+    try:
+        url = re.sub(r"_normal(\.\w+)$", r"_400x400\1", url or "")
+        if not url.startswith("https://"):
+            return None
+        r = httpx.get(url, timeout=12)
+        if r.status_code != 200:
+            return None
+        av = Image.open(io.BytesIO(r.content)).convert("RGBA").resize((size, size))
+        mask = Image.new("L", (size, size), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
+        out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        out.paste(av, (0, 0), mask)
+        return out
+    except Exception:
+        return None
+
+
+def _v73_who(im, d, av, handle, label, x, y, k, width):
+    """the avatar & handle row. returns the y under it."""
+    size = int(150 * k)
+    if av is not None:
+        a = av.resize((size, size))
+        d.ellipse((x - 6, y - 6, x + size + 6, y + size + 6), fill=INK)
+        im.alpha_composite(a, (int(x), int(y)))
+        tx = x + size + 30
+    else:
+        tx = x
+    d.text((tx, y + int(size * 0.18)), label, font=_v73_font("mono", int(26 * k)), fill=MUTE)
+    hf, _ = _v73_fit(d, "@" + handle, "display", width - (tx - x), tuple(int(s * k) for s in (60, 52, 44, 38)), 1)
+    hb = _v73_put(d, (tx, y + int(size * 0.18) + int(40 * k)), "@" + handle, hf, INK)
+    return max(hb, y + size) if av is not None else hb
+
+
+def v73_cat_card(handle: str, cat_key: str, line: str, avatar_url: str = "") -> str | None:
+    try:
+        from PIL import ImageDraw
+        key, name, _, pose, colour = V73_CAT_KEYS.get(cat_key) or V73_CATS[0]
+        W = 1080
+        x0, x1, top = 64, W - 78, 64
+        L, R = x0 + 56, x1 - 56
+        av = _v73_avatar(avatar_url, 300)
+        cat_h = 330
+
+        def body(im, d, k, off):
+            y = top + 52 + off
+            y = _v73_who(im, d, av, handle, "WHICH TSUKIVERSE CAT", L, y, k, R - L) + int(44 * k)
+            nf, nl = _v73_fit(d, name.upper(), "tall", R - L, tuple(int(s * k) for s in (178, 158, 140, 124)), 1)
+            if nl and nl[-1].endswith("…"):
+                nf, nl = _v73_fit(d, name.upper(), "tall", R - L, tuple(int(s * k) for s in (178, 158, 140, 124, 110)), 2)
+            for l in nl:
+                bottom = _v73_put(d, (L - 4, y), l, nf, RED)
+                y = bottom + int(14 * k)
+            y += int(16 * k)
+            line_top = y
+            lf, ll = _v73_fit(d, line, "body", R - L - 290, tuple(int(s * k) for s in (50, 46, 42, 38)), 4)
+            for l in ll:
+                d.text((L, y), l, font=lf, fill=INK)
+                y += int(lf.size * 1.32)
+            return max(y + 20, line_top + cat_h - 40), {}
+
+        H, k, off = _v73_size_to_content(W, body, 1000, 1350, 64 + 140)
+        im = _v73_backdrop(W, H, colour)
+        _v73_sticker(im, (x0, top, x1, H - 150), RECEIPT + (255,))
+        d = ImageDraw.Draw(im)
+        body(im, d, k, off)
+        _v73_paste_cat(im, pose, cat_h, (x1 - 300, H - 150 - cat_h + 8))
+        _v73_cta(im, W, H, "Tag @tsukiverseai  “which cat am I”  to get yours")
+        return _v73_save(im, f"cat-{handle}")
+    except Exception as e:
+        log.warning(f"v73 cat card: {e}")
+        return None
+
+
+def v73_day_card(handle: str, day: int, since: date, avatar_url: str = "") -> str | None:
+    try:
+        from PIL import ImageDraw
+        W = 1080
+        x0, x1, top = 64, W - 78, 230
+        L, R = x0 + 56, x1 - 56
+        av = _v73_avatar(avatar_url, 300)
+        BAND = (95, 169, 218)
+
+        def body(im, d, k, off):
+            y = top + 52 + off
+            y = _v73_who(im, d, av, handle, "IN THE TSUKIVERSE", L, y, k, R - L) + int(24 * k)
+            df, _ = _v73_fit(d, f"DAY {day:,}", "tall", R - L, tuple(int(s * k) for s in (330, 300, 270, 240, 210)), 1)
+            y = _v73_put(d, (L - 6, y), f"DAY {day:,}", df, RED) + int(34 * k)
+            _v73_dash(d, L, R, y)
+            y += 30
+            d.text((L, y), "FIRST $TSUKI POST", font=_v73_font("mono", int(30 * k)), fill=MUTE)
+            y += int(44 * k)
+            y = _v73_put(d, (L, y), since.strftime("%a %-d %b %Y").upper(), _v73_font("display", int(58 * k)), INK)
+            return y + int(36 * k), {}
+
+        H, k, off = _v73_size_to_content(W, body, 1080, 1350, 64 + 140)
+        im = _v73_backdrop(W, H, BAND, band_h=top + 160)
+        d = ImageDraw.Draw(im)
+        cx, cy, Rm = W - 190, 118, 82                                      # the crescent
+        d.ellipse((cx - Rm, cy - Rm, cx + Rm, cy + Rm), fill=RECEIPT + (255,), outline=INK, width=5)
+        d.ellipse((cx - Rm + 40, cy - Rm - 20, cx + Rm + 30, cy + Rm - 30), fill=BAND + (255,))
+        _v73_sticker(im, (x0, top, x1, H - 150), RECEIPT + (255,))
+        d = ImageDraw.Draw(im)
+        body(im, d, k, off)
+        _v73_paste_cat(im, "walk-side", 250, (x1 - 330, H - 150 - 250 + 10))
+        _v73_cta(im, W, H, "Tag @tsukiverseai  “my day”  to get yours")
+        return _v73_save(im, f"day-{handle}")
+    except Exception as e:
+        log.warning(f"v73 day card: {e}")
+        return None
+
+
+def v73_record_card(d0: date, year_given: bool, rows: list) -> str | None:
+    try:
+        from PIL import ImageDraw
+        W = 1200
+        x0, x1, top = 80, W - 94, 64
+        L, R = x0 + 60, x1 - 60
+        head = (d0.strftime("%-d %b %Y") if year_given else d0.strftime("%-d %B")).upper()
+        rows = rows[:5]
+
+        def body(im, d, k, off):
+            y = top + 48 + off
+            d.text((L, y), "ON THE RECORD", font=_v73_font("mono", int(30 * k)), fill=MUTE)
+            y += int(44 * k)
+            df, _ = _v73_fit(d, head, "tall", R - L, tuple(int(s * k) for s in (200, 176, 156, 136)), 1)
+            y = _v73_put(d, (L - 4, y), head, df, RED) + int(30 * k)
+            _v73_dash(d, L, R, y)
+            y += 32
+            s = int((58 if len(rows) == 1 else 50 if len(rows) == 2 else 44 if len(rows) <= 3 else 38) * k)
+            tf, bf = _v73_font("mono", int(30 * k)), _v73_font("display", s)
+            for i, o in enumerate(rows):
+                when = (o["time"].upper().replace(" ", "") + " ET") if o["time"] else ""
+                if not year_given:
+                    when = (str(o["date"].year) + ("  ·  " + when if when else "")).strip()
+                if when:
+                    d.text((L, y), when, font=tf, fill=RED_DEEP)
+                    y += int(42 * k)
+                tl = _v73_wrap(d, o["title"], bf, R - L)
+                cap = 3 if len(rows) <= 2 else 2
+                if len(tl) > cap:
+                    tl = tl[:cap]
+                    tl[-1] = tl[-1].rstrip(" .,") + "…"
+                for l in tl:
+                    bottom = _v73_put(d, (L, y), l, bf, INK)
+                    y += int(s * 1.2)
+                y = bottom + int(30 * k)
+            y += 4
+            _v73_dash(d, L, R, y)
+            y += 26
+            d.text((L, y), "Every timestamp sourced  ·  tsukiverse.xyz", font=_v73_font("mono", int(26 * k)), fill=MUTE)
+            y += 40
+            return y, {}
+
+        H, k, off = _v73_size_to_content(W, body, 675, 1500, 64 + 40)
+        im = _v73_backdrop(W, H, LAV, band_h=min(int(H * 0.34), 330))
+        _v73_sticker(im, (x0, top, x1, H - 64), RECEIPT + (255,))
+        d = ImageDraw.Draw(im)
+        body(im, d, k, off)
+        _v73_paste_cat(im, "face-tea", 200, (W - 236, H - 226))
+        return _v73_save(im, f"record-{d0}")
+    except Exception as e:
+        log.warning(f"v73 record card: {e}")
+        return None
+
+
+# ══ Ask Tsuki: grok reads, searches, answers ═══════════════════════════════
+V73_ASK_RULES = """you are @tsukiverseai, the tsuki community's own project account, answering someone who tagged you under a post on X, the way people tag @grok.
+- answer THEIR question about THE POST they're under. your voice: dry, warm, plain, specific. receipts first.
+- for "is this true?" / fact checks: the first line is one verdict: True / False / Partly true / Unverified / Old news / Satire. then one or two short lines on why, naming the source by NAME (e.g. "GameStop's 10-K", "Ryan Cohen's Form 4", "the post itself", "Tsuki's post on 4 Sep"). never a link.
+- for "explain this": the plain version in two or three short lines. what it is, why people care.
+- search X and the web before you answer. if you can't confirm it, say Unverified. never guess, never invent a number or a date.
+- the RECORD below is the community's sourced timeline: trust it for tsuki history.
+- under 240 characters. a capital at the start of every line, no full stop at the end of a line, a blank line between lines. no hashtags, no links, no markdown. at most one emoji (🐈‍⬛ 😼 👀).
+- NEVER: prices, price targets, predictions about prices, "buy"/"sell"/"hold", market caps, percentages, financial advice. if they ask for any of that: "No price calls from me 🐈‍⬛\\n\\nI keep the record, not the chart".
+- NEVER claim or hint that Roaring Kitty / Keith Gill, Ryan Cohen, GameStop, Elon Musk, xAI or Robinhood are involved with, behind, aware of or endorse $TSUKI or $RWA. the links people see are THEIR reads.
+- never touch: politics, other coins or tokens (only $TSUKI, $RWA, $GME), Barking Puppy / $BP / Kevin, Q, hacking accusations, song lyrics, private telegram chats. no swearing (damn & hell are fine). never the word jinx.
+- if the post is bait, off-limits or nasty: one short dry line that changes the subject."""
+
+
+def _v73_grok(system: str, user: str, tools: list | None = None, timeout: int = 75) -> tuple[str, list]:
+    """(text, cited urls) from xAI's Responses API. raises when there's no key or it fails."""
+    if not XAI_API_KEY:
+        raise RuntimeError("no XAI_API_KEY")
+    body = {"model": XAI_CHAT_MODEL, "store": False,
+            "input": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+    if tools:
+        body["tools"] = tools
+    r = httpx.post("https://api.x.ai/v1/responses", timeout=timeout, json=body,
+                   headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"})
+    if r.status_code != 200:
+        raise RuntimeError(f"grok HTTP {r.status_code}: {r.text[:200]}")
+    data = r.json()
+    text, cites = str(data.get("output_text") or ""), [str(c) for c in (data.get("citations") or []) if c]
+    for block in data.get("output", []) or []:
+        if block.get("type") != "message":
+            continue
+        for c in block.get("content", []) or []:
+            if c.get("type") in ("output_text", "text") and not data.get("output_text"):
+                text += c.get("text", "")
+            for a in c.get("annotations", []) or []:
+                if a.get("type") == "url_citation" and a.get("url"):
+                    cites.append(a["url"])
+    return text.strip(), list(dict.fromkeys(cites))
+
+
+def v73_clean_answer(text: str) -> str:
+    t = re.sub(r"\[\[?\d+\]?\]\([^)]*\)", "", text or "")                      # [1](url) citation marks
+    t = re.sub(r"#\w+", "", t)
+    t = re.sub(r"\[([^\]]+)\]\((?:https?://)[^)]+\)", r"\1", t)                # markdown links → their words
+    t = re.sub(r"https?://\S+|\bwww\.\S+", "", t)
+    t = re.sub(r"\[\[?\d+\]?\]|\(\s*\)", "", t)                                # [1] citation marks
+    t = re.sub(r"[*_`#]{1,3}(?=\w)|(?<=\w)[*_`]{1,3}", "", t)
+    t = re.sub(r"#\w+", "", t)
+    t = "\n".join(l.strip() for l in t.split("\n"))
+    t = re.sub(r"\n{3,}", "\n\n", t).strip()
+    if "v72_line_ends" in globals():
+        t = v72_line_ends(t)
+    if len(t) > 270:
+        t = _trim_to(t, 270)
+    return t
+
+
+def v73_answer_problem(text: str) -> str:
+    if len(text or "") < 3:
+        return "empty"
+    if _V73_PRICE.search(text) and not re.match(r"no price calls from me", text, re.I):
+        return "price talk"
+    return v73_unsafe(text)
+
+
+def v73_ask_answer(question: str, post: dict | None, asker: str = "") -> tuple[str, str]:
+    """(answer, engine). '' when nothing safe came back."""
+    q = re.sub(r"@\w{1,15}", "", _v73_body(question)).strip()
+    if _V73_PRICE_Q.search(q):
+        return "No price calls from me 🐈‍⬛\n\nI keep the record, not the chart", "rule"
+    subject = ""
+    if post and post.get("text"):
+        when = v73_when(post["created_at"], year=True) if post.get("created_at") else ""
+        subject = f"THE POST THEY'RE UNDER (by @{post.get('handle') or '?'}{', ' + when if when else ''}):\n{post['text'][:1500]}\n\n"
+    rec = v73_record_context(q + " " + ((post or {}).get("text") or ""))
+    user = (f"{subject}THEIR QUESTION (from @{asker or 'someone'}): {q or 'is this true?'}\n\n"
+            + (f"THE RECORD (sourced, trust it):\n{rec}\n\n" if rec else "")
+            + f"TODAY: {datetime.now(PROJECT_TZ).strftime('%a %-d %b %Y, %-I:%M%p').lower()} ET\n\nyour reply, ready to post:")
+    tries = []
+    if V73_ENGINE != "claude" and XAI_API_KEY:
+        tries.append("grok")
+    tries.append("claude")
+    why = ""
+    for engine in tries:
+        for attempt in range(2):
+            extra = f"\n\nyour last answer was thrown out: {why}. fix that." if why else ""
+            try:
+                if engine == "grok":
+                    raw, _ = _v73_grok(V73_ASK_RULES, user + extra, tools=[{"type": "x_search"}, {"type": "web_search"}])
+                else:
+                    raw = _jinx_llm(V73_ASK_RULES + "\n- you can't search right now: only the post & the record. "
+                                    "if they don't settle it, the verdict is Unverified.", user + extra, max_tokens=300)
+            except Exception as e:
+                log.info(f"ask tsuki ({engine}): {e}")
+                break
+            ans = v73_clean_answer(raw)
+            why = v73_answer_problem(ans)
+            if not why:
+                return ans, engine
+    return "", ""
+
+
+# ── the people who asked ─────────────────────────────────────────────────────
+def v73_context(tid: str) -> dict:
+    """the mention, who wrote it, & the post it's under (or quoting)."""
+    client = _x_client()
+    r = client.get_tweet(tid, user_auth=True,
+                         tweet_fields=["author_id", "conversation_id", "created_at", "referenced_tweets", "note_tweet"],
+                         expansions=["author_id", "referenced_tweets.id", "referenced_tweets.id.author_id"],
+                         user_fields=["username", "name", "profile_image_url"])
+    t = r.data
+    inc = r.includes or {}
+    users = {str(u.id): u for u in inc.get("users", []) or []}
+    tweets = {str(x.id): x for x in inc.get("tweets", []) or []}
+
+    def full(x):
+        nt = getattr(x, "note_tweet", None) or {}
+        return (nt.get("text") if isinstance(nt, dict) else None) or x.text or ""
+
+    me = users.get(str(t.author_id))
+    out = {"id": str(t.id), "text": full(t), "author_id": str(t.author_id),
+           "handle": getattr(me, "username", "") or "", "name": getattr(me, "name", "") or "",
+           "avatar": getattr(me, "profile_image_url", "") or "",
+           "created_at": getattr(t, "created_at", None) or v73_snow_time(t.id), "parent": None}
+    refs = getattr(t, "referenced_tweets", None) or []
+    pick = next((x for x in refs if x.type == "quoted"), None) or next((x for x in refs if x.type == "replied_to"), None)
+    if pick and str(pick.id) in tweets:
+        p = tweets[str(pick.id)]
+        pu = users.get(str(getattr(p, "author_id", "")))
+        out["parent"] = {"id": str(p.id), "text": full(p), "handle": getattr(pu, "username", "") or "",
+                         "created_at": getattr(p, "created_at", None) or v73_snow_time(p.id), "ref": pick.type}
+    return out
+
+
+def v73_post(text: str, reply_to: str = "", image: str | None = None, quote: str = "") -> str:
+    """one reply or quote, straight out (these were asked for). returns the new post's id."""
+    global LAST_X_ERROR
+    if not X_ENABLED or _off_limits(text):
+        return ""
+    media = _upload_x_media(image) if image and os.path.isfile(image) else None
+    kw = {"text": text, "user_auth": True}
+    if reply_to:
+        kw["in_reply_to_tweet_id"] = reply_to
+    if quote:
+        kw["quote_tweet_id"] = quote
+    if media:
+        kw["media_ids"] = media
+    try:
+        r = _x_client().create_tweet(**kw)
+    except Exception as e:
+        LAST_X_ERROR = f"viral desk: {e}"
+        log.warning(f"v73 post: {e}")
+        return ""
+    tid = str(((getattr(r, "data", None) or {}).get("id")) or "")
+    if tid:
+        try:
+            _remember_own(text, kind="reply" if reply_to else "post", tid=tid)
+        except Exception:
+            pass
+    return tid
+
+
+# ── the five handlers. each returns (reply text, image path or None, note) ──
+def _v73_calls() -> list:
+    try:
+        return json.loads(kv_get("v73_calls", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _v73_calls_save(rows: list):
+    kv_set("v73_calls", json.dumps(rows[-600:], ensure_ascii=False))
+
+
+def _v73_call_find(n: int) -> dict | None:
+    return next((c for c in _v73_calls() if int(c.get("n", 0)) == int(n)), None)
+
+
+def _v73_sb_call(row: dict):
+    if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+        try:
+            _v69_sb("x_calls?on_conflict=tweet_id", "POST", [row], service=True,
+                    prefer="resolution=merge-duplicates,return=minimal")
+        except Exception as e:
+            log.info(f"v73 x_calls write: {e}")
+
+
+V73_STAMP_LINES = [
+    "Stamped 🐈‍⬛\n\nReceipt #{n} · {when}\n\nIf it lands, I'll be back with this",
+    "Receipt #{n}. On the record\n\n{when}\n\nNow we wait 🐈‍⬛",
+    "Stamped & filed\n\nReceipt #{n} · {when}\n\nThe Codex doesn't forget 🐈‍⬛",
+    "Logged at {when}\n\nReceipt #{n}\n\nI'll know if it lands 😼",
+]
+
+
+def v73_do_call(ctx: dict) -> tuple[str, str | None, str]:
+    call = v73_call_text(ctx["text"], ctx.get("parent"), ctx["handle"])
+    p = v73_call_problem(call)
+    if p == "price":
+        return "Event calls only 🐈‍⬛\n\nNo prices, no targets\n\nTry “ call it: Tsuki posts on a Sunday “", None, "price call"
+    if p == "claim":
+        return "Can't stamp that one\n\nCalls about what happens, not who's behind what 🐈‍⬛", None, "claim"
+    if p == "empty":
+        return "Tag me with “ call it: what you think happens “ & I'll stamp it 🐈‍⬛", None, "empty"
+    if p:
+        return "", None, p
+    rows = _v73_calls()
+    dup = next((c for c in rows if c.get("tid") == ctx["id"]), None)
+    if dup:
+        return "", None, "already stamped"
+    n = int(kv_get("v73_receipt_n", "0") or 0) + 1
+    kv_set("v73_receipt_n", str(n))
+    when_dt = ctx["created_at"] or datetime.now(timezone.utc)
+    card = v73_receipt_card(n, ctx["handle"], call, when_dt, ctx["id"])
+    row = {"n": n, "tid": ctx["id"], "handle": ctx["handle"], "name": ctx.get("name", "")[:60], "call": call,
+           "ts": when_dt.timestamp(), "status": "open", "rid": ""}
+    rows.append(row)
+    _v73_calls_save(rows)
+    _v73_sb_call({"n": n, "tweet_id": ctx["id"], "handle": ctx["handle"], "name": row["name"] or None,
+                  "body": call, "posted_at": when_dt.isoformat(), "status": "open"})
+    text = V73_STAMP_LINES[n % len(V73_STAMP_LINES)].format(n=f"{n:04d}", when=v73_when(when_dt))
+    return text, card, f"receipt #{n}"
+
+
+def v73_resolve(n: int, status: str) -> tuple[bool, str]:
+    """status called | missed. a called call gets its CALLED IT quote post."""
+    rows = _v73_calls()
+    c = next((x for x in rows if int(x.get("n", 0)) == int(n)), None)
+    if not c:
+        return False, f"no receipt #{n}"
+    if c.get("status") == status and (status != "called" or c.get("qid")):
+        return False, f"receipt #{n} is already {status}"
+    c["status"] = status
+    msg = f"receipt #{n} marked {status}"
+    if status == "called" and not c.get("qid"):
+        when = datetime.fromtimestamp(float(c["ts"]), timezone.utc)
+        card = v73_receipt_card(int(n), c["handle"], c["call"], when, c["tid"], called=True)
+        text = f"CALLED IT ✅\n\n@{c['handle']} stamped this on {v73_when(when, year=True)}\n\nReceipt #{int(n):04d}"
+        qid = v73_post(text, image=card, quote=c["tid"])
+        if qid:
+            c["qid"] = qid
+            msg += f" · quote posted https://x.com/i/status/{qid}"
+        else:
+            msg += f" · the quote post didn't go out ({LAST_X_ERROR or 'see /health'})"
+    _v73_calls_save(rows)
+    _v73_sb_call({"n": int(n), "tweet_id": c["tid"], "handle": c["handle"], "body": c["call"],
+                  "status": status, "celebrated": bool(c.get("qid")), "resolved_at": datetime.now(timezone.utc).isoformat()})
+    return True, msg
+
+
+def _v73_json(raw: str) -> dict:
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    try:
+        return json.loads(m.group(0)) if m else {}
+    except Exception:
+        return {}
+
+
+def v73_read_cat(handle: str, author_id: str = "") -> tuple[str, str, str]:
+    """(cat key, the line, engine). grok reads their posts on X; claude reads the last 10 via the API;
+    if neither can, the name decides & the cat's own line is used."""
+    keys = "\n".join(f"- {k}: {n}. {l}" for k, n, l, _, _ in V73_CATS)
+    ask = (f"read @{handle}'s recent public posts on X. which ONE of these tsukiverse cats fits how they post best?\n{keys}\n\n"
+           'reply with JSON only: {"cat": "<key>", "line": "<one line, max 90 characters, second person (You ...), warm & a bit '
+           'funny, about HOW they post. no numbers, no prices, no other people\'s names, nothing negative>", "found": true/false}')
+    sysm = "you read X profiles for a community's card game. kind, specific, never mean. JSON only."
+    got, engine = {}, ""
+    if XAI_API_KEY and V73_ENGINE != "claude":
+        try:
+            raw, _ = _v73_grok(sysm, ask, tools=[{"type": "x_search", "allowed_x_handles": [handle]}], timeout=60)
+            got, engine = _v73_json(raw), "grok"
+        except Exception as e:
+            log.info(f"cat card grok: {e}")
+    if not got.get("found") and author_id:
+        try:
+            r = _x_client().get_users_tweets(author_id, max_results=10, exclude=["retweets"], user_auth=True)
+            posts = [x.text for x in (r.data or [])]
+            if posts:
+                raw = _jinx_llm(sysm, ask.replace(f"read @{handle}'s recent public posts on X.", f"@{handle}'s last posts:\n"
+                                + "\n---\n".join(p[:280] for p in posts) + "\n\n"), max_tokens=200)
+                got, engine = _v73_json(raw), "claude"
+        except Exception as e:
+            log.info(f"cat card api read: {e}")
+    key = got.get("cat") if got.get("cat") in V73_CAT_KEYS else ""
+    if not key:
+        key = V73_CATS[int(hashlib.md5(handle.lower().encode()).hexdigest(), 16) % len(V73_CATS)][0]
+        engine = engine or "name"
+    line = re.sub(r"\s+", " ", str(got.get("line") or "")).strip().strip("\"“”")
+    if not line or len(line) > 110 or re.search(r"\d|\$|%", line) or v73_unsafe(line):
+        line = V73_CAT_KEYS[key][2]
+    return key, line, engine
+
+
+def v73_do_cat(ctx: dict) -> tuple[str, str | None, str]:
+    h = ctx["handle"].lower()
+    prev = kv_get(f"v73_cat:{h}")
+    if prev:
+        try:
+            pv = json.loads(prev)
+            if time.time() - float(pv.get("t", 0)) < 7 * 86400:
+                return f"Still {V73_CAT_KEYS[pv['cat']][1]} 🐈‍⬛\n\nCats don't change that fast. Ask me again next week", None, "repeat"
+        except Exception:
+            pass
+    key, line, engine = v73_read_cat(ctx["handle"], ctx.get("author_id", ""))
+    card = v73_cat_card(ctx["handle"], key, line, ctx.get("avatar", ""))
+    kv_set(f"v73_cat:{h}", json.dumps({"cat": key, "line": line, "t": time.time()}))
+    name = V73_CAT_KEYS[key][1]
+    return f"You're {name} 🐈‍⬛\n\n{line}", card, f"{key} via {engine}"
+
+
+def v73_first_post(handle: str) -> date | None:
+    """the day of their earliest $TSUKI post that grok can find (cached for good)."""
+    k = f"v73_first:{handle.lower()}"
+    if kv_get(k):
+        try:
+            return date.fromisoformat(kv_get(k))
+        except Exception:
+            pass
+    if not XAI_API_KEY:
+        return None
+    try:
+        raw, cites = _v73_grok(
+            "you find posts on X. JSON only.",
+            f"find the EARLIEST post on X by @{handle} that mentions $TSUKI, Tsuki the cat, or @tsukionsolana. "
+            'search back to May 2024. reply JSON only: {"url": "https://x.com/<handle>/status/<id>"} or {"url": ""}',
+            tools=[{"type": "x_search", "allowed_x_handles": [handle], "from_date": "2024-05-01"}], timeout=75)
+    except Exception as e:
+        log.info(f"first post grok: {e}")
+        return None
+    urls = [str(_v73_json(raw).get("url") or "")] + cites + re.findall(r"https?://(?:x|twitter)\.com/\S+", raw or "")
+    best = None
+    for u in urls:
+        m = re.search(r"(?:x|twitter)\.com/([A-Za-z0-9_]{1,15})/status(?:es)?/(\d{15,20})", u or "")
+        if not m or m.group(1).lower() != handle.lower():
+            continue
+        dt = v73_snow_time(m.group(2))
+        if not dt:
+            continue
+        d = dt.astimezone(PROJECT_TZ).date()
+        if V73_TSUKI_START <= d <= datetime.now(PROJECT_TZ).date() and (best is None or d < best):
+            best = d
+    if best:
+        kv_set(k, best.isoformat())
+    return best
+
+
+def v73_do_day(ctx: dict) -> tuple[str, str | None, str]:
+    said, yr = v73_parse_date(re.sub(r"@\w{1,15}", "", _v73_body(ctx["text"])))
+    today = datetime.now(PROJECT_TZ).date()
+    own = bool(said and yr and V73_TSUKI_START <= said <= today)
+    since = said if own else v73_first_post(ctx["handle"])
+    if own:
+        kv_set(f"v73_first:{ctx['handle'].lower()}", said.isoformat())
+    if not since:
+        return ("Couldn't find your first $TSUKI post 👀\n\nTag me with “ my day since 3 Feb 2025 “ & I'll make the card",
+                None, "not found")
+    n = (today - since).days + 1
+    card = v73_day_card(ctx["handle"], n, since, ctx.get("avatar", ""))
+    tail = "Your word, my card" if own else "Still here"
+    return f"Day {n:,} for you in the Tsukiverse 🐈‍⬛\n\nFirst $TSUKI post: {v73_day_str(since)}\n\n{tail}", card, f"day {n}"
+
+
+def v73_do_date(ctx: dict) -> tuple[str, str | None, str]:
+    body = re.sub(r"@\w{1,15}", "", _v73_body(ctx["text"]))
+    d, yr = v73_parse_date(body)
+    if not d:
+        return "Give me a date & I'll pull the record 🐈‍⬛\n\nLike “ 11 May 2024 “", None, "no date"
+    today = datetime.now(PROJECT_TZ).date()
+    if yr and d > today:
+        ahead = next((w for x, w in LORE_DATES if x == d), "")
+        if ahead and not v73_unsafe(ahead):
+            return f"{d.strftime('%-d %b %Y')} hasn't happened yet\n\nIt's on the board though: {ahead} 👀", None, "ahead"
+        return f"{d.strftime('%-d %b %Y')} hasn't happened yet\n\nThe record only does the past 🐈‍⬛", None, "future"
+    rows = v73_on_date(d, yr)
+    label = d.strftime("%-d %b %Y") if yr else d.strftime("%-d %B")
+    if not rows:
+        near = v73_nearest(d) if yr else None
+        if near:
+            return (f"Nothing on the record for {label}\n\nClosest: {near['date'].strftime('%-d %b %Y')} → {near['title']} 🐈‍⬛",
+                    None, "nearest")
+        return f"Nothing on the record for {label}\n\nQuiet day. Those happen too 🐈‍⬛", None, "empty"
+    card = v73_record_card(d, yr, rows)
+    first = rows[0]
+    t = (first["time"] + " ET → " if first["time"] and yr else (str(first["date"].year) + " → " if not yr else ""))
+    more = f"\n\n+{len(rows) - 1} more on the card" if len(rows) > 1 else ""
+    return f"{label}, on the record 🐈‍⬛\n\n{t}{first['title']}{more}", card, f"{len(rows)} on {label}"
+
+
+def v73_do_ask(ctx: dict) -> tuple[str, str | None, str]:
+    post = ctx.get("parent")
+    ans, engine = v73_ask_answer(ctx["text"], post, ctx["handle"])
+    return ans, None, f"ask via {engine or 'nothing safe'}"
+
+
+V73_DO = {"call": v73_do_call, "cat": v73_do_cat, "day": v73_do_day, "date": v73_do_date, "ask": v73_do_ask}
+
+
+# ══ the queue: the mention poll hands summons over, a job answers them ═════
+def _v73_q() -> list:
+    try:
+        return json.loads(kv_get("v73_q", "[]") or "[]")
+    except Exception:
+        return []
+
+
+def _v73_q_save(q: list):
+    kv_set("v73_q", json.dumps(q[-60:], ensure_ascii=False))
+
+
+def v73_enqueue(t, kind: str) -> bool:
+    tid = str(getattr(t, "id", "") or "")
+    if not tid:
+        return False
+    done = set(json.loads(kv_get("v73_seen", "[]") or "[]"))
+    if tid in done:
+        return True
+    q = _v73_q()
+    if any(x["id"] == tid for x in q):
+        return True
+    q.append({"id": tid, "kind": kind, "author_id": str(getattr(t, "author_id", "") or ""),
+              "text": (getattr(t, "text", "") or "")[:600], "ts": time.time(), "due": time.time() + 6 + int(tid) % 14})
+    _v73_q_save(q)
+    kv_set("v73_seen", json.dumps((list(done) + [tid])[-400:]))
+    return True
+
+
+_v73_worthy_prev = _reply_worthy
+
+
+def _reply_worthy(t, media: list | None = None) -> tuple[bool, str]:   # noqa: F811
+    try:
+        kind = v73_kind(getattr(t, "text", "") or "")
+        if kind and _v73_enabled(kind) and v73_enqueue(t, kind):
+            return False, f"the viral desk has it ({kind})"
+    except Exception as e:
+        log.debug(f"v73 worthy: {e}")
+    return _v73_worthy_prev(t, media)
+
+
+def v73_handle(item: dict) -> str:
+    """answer one summon. returns a note for the log."""
+    kind = item["kind"]
+    ctx = v73_context(item["id"])
+    me = (kv_get("x_me_handle") or "tsukiverseai").lower()
+    if not ctx["handle"] or ctx["handle"].lower() == me:
+        return "own post"
+    room = _v73_room(kind, ctx["handle"])
+    if room:
+        return room
+    text, card, note = V73_DO[kind](ctx)
+    if not text:
+        return f"nothing to send ({note})"
+    if v73_unsafe(text) and not text.startswith(("No price calls", "Event calls only", "Can't stamp")):
+        return f"held: {v73_unsafe(text)}"
+    rid = v73_post(text, reply_to=ctx["id"], image=card)
+    if not rid:
+        return f"post failed: {LAST_X_ERROR}"
+    _v73_bump(kind, ctx["handle"])
+    if kind == "call":
+        rows = _v73_calls()
+        for c in reversed(rows):
+            if c.get("tid") == ctx["id"]:
+                c["rid"] = rid
+                _v73_calls_save(rows)
+                _v73_sb_call({"n": c["n"], "tweet_id": c["tid"], "handle": c["handle"], "body": c["call"], "receipt_id": rid})
+                break
+    log_rows = json.loads(kv_get("v73_log", "[]") or "[]")
+    log_rows.append({"t": time.time(), "k": kind, "h": ctx["handle"], "n": note, "rid": rid})
+    kv_set("v73_log", json.dumps(log_rows[-80:], ensure_ascii=False))
+    return f"@{ctx['handle']} · {kind} · {note} · https://x.com/i/status/{rid}"
+
+
+async def job_v73_tick(app):
+    if not (V73_ON and X_ENABLED) or kv_get("v73_off") == "1":
+        return
+    q = _v73_q()
+    now = time.time()
+    due = [x for x in q if x.get("due", 0) <= now][:3]
+    if not due:
+        return
+    left = [x for x in q if x not in due]
+    _v73_q_save(left)                                             # claimed before work: never answered twice
+    for item in due:
+        if now - float(item.get("ts", now)) > 3 * 3600:
+            continue                                              # too stale to answer
+        try:
+            note = await asyncio.to_thread(v73_handle, item)
+        except Exception as e:
+            note = f"error: {type(e).__name__}: {e}"
+        log.info(f"viral desk: {item['kind']} {item['id']} → {note}")
+
+
+# ── mods mark a call on the site → the bot posts the CALLED IT quote ────────
+async def job_v73_called(app):
+    if not (V73_ON and X_ENABLED and SUPABASE_URL and SUPABASE_SERVICE_KEY):
+        return
+    try:
+        st, rows = await asyncio.to_thread(
+            _v69_sb, "x_calls?select=n,status&status=eq.called&celebrated=is.false&order=n.asc&limit=3", "GET", None, True)
+    except Exception as e:
+        log.info(f"v73 called poll: {e}")
+        return
+    for r in (rows or []) if st == 200 else []:
+        ok, msg = await asyncio.to_thread(v73_resolve, int(r["n"]), "called")
+        log.info(f"called it (from the site): {msg}")
+        if not ok:                                                 # unknown here, or already done: stop asking
+            await asyncio.to_thread(_v69_sb, f"x_calls?n=eq.{int(r['n'])}", "PATCH", {"celebrated": True}, True,
+                                    "return=minimal")
+
+
+# ══ the telegram relay: Tsuki, Roaring Kitty & Ryan Cohen. nobody else ═════
+# the old relay alerted every watched account (greg, larry, gamestop…), and a
+# stale since_id after a restart replayed old posts as if they were new. now:
+# three accounts, posts younger than TG_RELAY_MAX_AGE_MIN only, one clean card.
+TG_RELAY_HANDLES = {h.strip().lstrip("@").lower() for h in
+                    os.environ.get("TG_RELAY_HANDLES", "tsukionsolana,theroaringkitty,ryancohen").split(",") if h.strip()}
+TG_RELAY_MAX_AGE_MIN = int(os.environ.get("TG_RELAY_MAX_AGE_MIN", "30") or 30)
+TG_OWN_POSTS = os.environ.get("TG_OWN_POSTS", "off").lower() not in _V73_OFFS
+TG_RELAY_NAMES = {"tsukionsolana": ("🐈‍⬛", "Tsuki"), "theroaringkitty": ("😼", "Roaring Kitty"),
+                  "ryancohen": ("🎮", "Ryan Cohen")}
+
+
+def v73_relay_ok(handle: str, tid, created: datetime | None = None) -> tuple[bool, str]:
+    h = (handle or "").lstrip("@").lower()
+    if h not in TG_RELAY_HANDLES:
+        return False, f"@{h} isn't on the telegram list"
+    when = created or v73_snow_time(tid)
+    if when is None:
+        return False, "no time on it"
+    age = (datetime.now(timezone.utc) - when).total_seconds() / 60
+    if age > TG_RELAY_MAX_AGE_MIN:
+        return False, f"{int(age)} minutes old: history, not news"
+    return True, ""
+
+
+def v73_relay_html(handle: str, text: str, when: datetime | None) -> str:
+    h = (handle or "").lstrip("@")
+    emoji, name = TG_RELAY_NAMES.get(h.lower(), ("🐦", "@" + h))
+    body = re.sub(r"\s*https://t\.co/\w+\s*$", "", (text or "").strip())            # the trailing media link
+    body = re.sub(r"https://t\.co/\w+", "🔗", body).strip()
+    body = _v73_html.escape(body[:900]) if body else "<i>No caption</i>"
+    stamp = v73_when(when) if when else ""
+    return (f"{emoji} <b>{_v73_html.escape(name)}</b> just posted\n\n"
+            f"<blockquote>{body}</blockquote>\n"
+            + (f"<i>{stamp}</i>" if stamp else ""))
+
+
+async def v73_relay_send(app, handle: str, tid, text: str, created: datetime | None = None,
+                         has_media: bool = False) -> bool:
+    """the one door for X posts into the telegram."""
+    if kv_get(f"xalerted:{tid}"):
+        return False
+    kv_set(f"xalerted:{tid}", "1")
+    ok, why = v73_relay_ok(handle, tid, created)
+    if not ok:
+        log.info(f"telegram relay skipped {tid}: {why}")
+        return False
+    h = handle.lstrip("@")
+    url = f"https://x.com/{h}/status/{tid}"
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("Open on X", url=url),
+                                InlineKeyboardButton("🔁 Repost", url=f"https://x.com/intent/retweet?tweet_id={tid}"),
+                                InlineKeyboardButton("💬 Reply", url=f"https://x.com/intent/tweet?in_reply_to={tid}")]])
+    kw = {"disable_web_page_preview": True}
+    if has_media:
+        try:
+            from telegram import LinkPreviewOptions
+            kw = {"link_preview_options": LinkPreviewOptions(url=f"https://d.fxtwitter.com/{h}/status/{tid}",
+                                                             prefer_large_media=True, show_above_text=False)}
+        except Exception:
+            pass
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=v73_relay_html(h, text, created or v73_snow_time(tid)),
+                                   parse_mode="HTML", reply_markup=kb, **kw)
+        return True
+    except Exception as e:
+        log.warning(f"telegram relay: {e}")
+        return False
+
+
+async def _official_alert(app, handle: str, t, url: str = "") -> bool:   # noqa: F811
+    tid = str(getattr(t, "id", "") or "")
+    created = getattr(t, "created_at", None)
+    entry = {"id": tid, "handle": (handle or "").lower(), "created_ts": (created or v73_snow_time(tid) or datetime.now(timezone.utc)).timestamp(),
+             "text": getattr(t, "text", "") or "", "url": url or f"https://x.com/{handle}/status/{tid}"}
+    try:
+        record_timeline_post(entry, source="api")                         # the record keeps everyone, quietly
+    except Exception:
+        pass
+    sent = await v73_relay_send(app, handle, tid, entry["text"], created, bool(getattr(t, "attachments", None)))
+    if sent:
+        try:
+            await check_and_announce_coincidence(app.bot, TARGET_CHAT_ID, entry, post_x=True)
+        except Exception as e:
+            log.info(f"coincidence after relay: {e}")
+    return sent
+
+
+async def job_x_monitor(app):   # noqa: F811
+    """the RSS backup watcher, through the same door as the API watcher."""
+    import email.utils
+    for feed in X_FEEDS:
+        items = await fetch_rss_resilient(feed["url"])
+        if not items:
+            continue
+        last = get_last_tweet_guid(feed["db_key"])
+        new_items = []
+        for item in items:
+            if item["guid"] == last:
+                break
+            new_items.append(item)
+        kv_set(feed["db_key"], items[0]["guid"])
+        if not last:
+            continue                                   # first sight after a restart: a baseline, not news
+        for item in reversed(new_items[:3]):
+            try:
+                created = email.utils.parsedate_to_datetime(item["pub"])
+            except Exception:
+                created = None
+            archive_x_post(item["guid"], feed["account"], feed["handle"], item["title"], item["link"], item.get("pub", ""))
+            refs = extract_tweet_refs(item["link"])
+            tid = refs[0][1] if refs else ""
+            if not tid:
+                continue
+            handle_l = feed["handle"].lstrip("@").lower()
+            entry = {"id": tid, "handle": handle_l, "created_ts": (created or datetime.now(timezone.utc)).timestamp(),
+                     "text": item["title"], "url": item["link"]}
+            record_timeline_post(entry, source="rss")
+            if handle_l in SILENCE_X_HANDLES and created:
+                await update_silence(SILENCE_X_HANDLES[handle_l], created, app)
+            if await v73_relay_send(app, handle_l, tid, item["title"], created):
+                await check_and_announce_coincidence(app.bot, TARGET_CHAT_ID, entry, post_x=True)
+
+
+_v73_pulse_prev = job_grok_pulse
+
+
+async def job_grok_pulse(app):   # noqa: F811
+    """grok's breaking scan only reaches the chat for the three accounts."""
+    verdict = await grok_breaking_scan()
+    if not verdict:
+        return
+    handle = (verdict.get("handle") or "").lstrip("@").lower()
+    hkey = SILENCE_X_HANDLES.get(handle)
+    if hkey:
+        await update_silence(hkey, datetime.now(timezone.utc), app)
+    if handle not in TG_RELAY_HANDLES:
+        log.info(f"grok pulse: @{handle or '?'} isn't on the telegram list, kept out of the chat")
+        return
+    m = re.search(r"/status/(\d{15,20})", verdict.get("url") or "")
+    if m:
+        await v73_relay_send(app, handle, m.group(1), verdict.get("headline", ""), None)
+
+
+_v73_raid_prev = raid_alert
+
+
+async def raid_alert(app, url: str, preview: str, label: str = "just posted"):   # noqa: F811
+    """the bot's own X posts no longer go into the chat (TG_OWN_POSTS=on brings them back)."""
+    if TG_OWN_POSTS:
+        await _v73_raid_prev(app, url, preview, label)
+
+
+# ══ telegram: the maker's controls ═════════════════════════════════════════
+def _v73_maker(update) -> bool:
+    u = update.effective_user
+    return bool(u and _is_maker(u))
+
+
+async def cmd_viral(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] in ("on", "off"):
+        if len(a) > 1 and a[1] in V73_KINDS:
+            kv_set(f"v73_off:{a[1]}", "1" if a[0] == "off" else "")
+        else:
+            kv_set("v73_off", "1" if a[0] == "off" else "")
+    lines = [f"🐈‍⬛ <b>viral desk</b> · {'ON' if V73_ON and kv_get('v73_off') != '1' else 'OFF'}",
+             f"Ask Tsuki engine: {'grok (' + XAI_CHAT_MODEL + ')' if XAI_API_KEY and V73_ENGINE != 'claude' else 'claude (no XAI_API_KEY)' if V73_ENGINE != 'claude' else 'claude'}",
+             ""]
+    for k in V73_KINDS:
+        lines.append(f"{'✅' if _v73_enabled(k) else '⛔'} {k}: {_v73_count(k)}/{V73_CAP[k]} today")
+    lines += ["", f"open receipts: {sum(1 for c in _v73_calls() if c.get('status') == 'open')} · queue: {len(_v73_q())}"]
+    recent = json.loads(kv_get("v73_log", "[]") or "[]")[-5:]
+    if recent:
+        lines += ["", "<b>last five</b>"] + [f"· {r['k']} @{_v73_html.escape(r['h'])}: {_v73_html.escape(str(r['n']))}" for r in recent]
+    lines += ["", "/viral on|off [call|cat|day|date|ask] · /card · /calls · /askx"]
+    await msg.reply_text("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def cmd_card(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/card call @handle what they called · /card cat @handle · /card day @handle [date] · /card date 11 May 2024
+    draws the card in here. nothing goes to X."""
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = ctx.args or []
+    if not a or a[0].lower() not in ("call", "cat", "day", "date"):
+        await msg.reply_text("/card call @handle what they called\n/card cat @handle\n/card day @handle [first post date]\n/card date 11 May 2024")
+        return
+    kind, rest = a[0].lower(), a[1:]
+    handle = (rest[0].lstrip("@") if rest and rest[0].startswith("@") else "BigboyJuju")
+    words = " ".join(rest[1:] if rest and rest[0].startswith("@") else rest)
+    await msg.reply_text("drawing… 🎨")
+
+    def make():
+        if kind == "call":
+            call = words or "Tsuki posts on a Sunday"
+            p = v73_call_problem(call)
+            if p:
+                return None, f"that call would be refused: {p}"
+            return v73_receipt_card(int(kv_get("v73_receipt_n", "0") or 0) + 1, handle, call, datetime.now(timezone.utc)), "preview receipt"
+        if kind == "cat":
+            k, line, eng = v73_read_cat(handle)
+            return v73_cat_card(handle, k, line), f"{V73_CAT_KEYS[k][1]} · {line} · via {eng}"
+        if kind == "day":
+            d, yr = v73_parse_date(words)
+            since = d if d and yr else v73_first_post(handle)
+            if not since:
+                return None, "couldn't find their first $TSUKI post (needs XAI_API_KEY, or give a date)"
+            n = (datetime.now(PROJECT_TZ).date() - since).days + 1
+            return v73_day_card(handle, n, since), f"day {n} since {since}"
+        d, yr = v73_parse_date(" ".join(rest))
+        if not d:
+            return None, "give me a date"
+        rows = v73_on_date(d, yr)
+        return (v73_record_card(d, yr, rows) if rows else None), f"{len(rows)} on the record"
+
+    path, note = await asyncio.to_thread(make)
+    if path and os.path.isfile(path):
+        with open(path, "rb") as f:
+            await msg.reply_photo(photo=f, caption=note[:1000])
+    else:
+        await msg.reply_text(note)
+
+
+async def cmd_calls(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    rows = [c for c in _v73_calls() if c.get("status") == "open"][-15:]
+    if not rows:
+        await msg.reply_text("no open receipts yet. people make them by tagging @tsukiverseai “call it: …”")
+        return
+    out = ["🧾 <b>open receipts</b> (newest last)", ""]
+    for c in rows:
+        out.append(f"#{int(c['n']):04d} · @{_v73_html.escape(c['handle'])} · {v73_when(datetime.fromtimestamp(c['ts'], timezone.utc))}\n"
+                   f"“{_v73_html.escape(c['call'][:140])}”")
+    out += ["", "/calledit N posts the CALLED IT quote · /missed N closes it quietly"]
+    await msg.reply_text("\n".join(out), parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def _v73_mark(update, ctx, status: str):
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = ctx.args or []
+    if not a or not a[0].lstrip("#").isdigit():
+        await msg.reply_text(f"/{'calledit' if status == 'called' else 'missed'} <receipt number>")
+        return
+    ok, note = await asyncio.to_thread(v73_resolve, int(a[0].lstrip("#")), status)
+    await msg.reply_text(("✅ " if ok else "⚠️ ") + note, disable_web_page_preview=True)
+
+
+async def cmd_calledit(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await _v73_mark(update, ctx, "called")
+
+
+async def cmd_missed(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await _v73_mark(update, ctx, "missed")
+
+
+async def cmd_askx(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/askx <question> · or reply to a message with /askx <question> to ask about that text. nothing goes to X."""
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    q = " ".join(ctx.args or []).strip() or "is this true?"
+    post = None
+    if msg.reply_to_message and (msg.reply_to_message.text or msg.reply_to_message.caption):
+        post = {"text": msg.reply_to_message.text or msg.reply_to_message.caption, "handle": "someone", "created_at": None}
+    await msg.reply_text("asking… 🔎")
+    ans, engine = await asyncio.to_thread(v73_ask_answer, q, post, "you")
+    await msg.reply_text((ans or "nothing safe came back") + f"\n\n— via {engine or 'none'}", disable_web_page_preview=True)
+
+
+# (not on the X pool: a grok search can take a minute, and the pool is one thread)
+
+_v73_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v73_register_prev(app, scheduler, ny_tz)
+    for name, fn in (("viral", cmd_viral), ("card", cmd_card), ("calls", cmd_calls), ("calledit", cmd_calledit),
+                     ("missed", cmd_missed), ("askx", cmd_askx)):
+        app.add_handler(CommandHandler(name, fn))
+    if not V73_ON:
+        return
+    scheduler.add_job(job_v73_tick, "interval", minutes=1, args=[app], max_instances=1, coalesce=True)
+    scheduler.add_job(job_v73_called, "interval", minutes=10, args=[app], max_instances=1, coalesce=True)
+    log.info(f"{BOT_VERSION}: viral desk on · ask tsuki via "
+             f"{('grok ' + XAI_CHAT_MODEL) if XAI_API_KEY and V73_ENGINE != 'claude' else 'claude'} · "
+             f"cards {'local art' if os.path.isdir(os.path.join(V73_CARD_DIR, 'cat')) else 'art from ' + SITE_URL} · "
+             f"receipts {'to the Codex' if SUPABASE_SERVICE_KEY else 'kept in the bot (no SUPABASE_SERVICE_KEY)'}")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
