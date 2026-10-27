@@ -24694,6 +24694,1432 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
     log.info(f"{BOT_VERSION}: welcome option {welcome_style()} ({_V67_NAMES[welcome_style()]})")
 
 
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v68 · DAY X ALWAYS CARRIES AN IMAGE
+#  the Day post used to be two messages: the image, then the text. if the image
+#  failed, the text went out alone. now it is ONE message: the image with the Day
+#  text as its caption and the Share on X button under it, and that is what gets
+#  pinned. the image comes from, in order:
+#    1. today's pick from photos/day/ (the no-repeat rotation)
+#    2. up to three other photos from the folder, if that one won't send
+#    3. a Day card the bot draws itself (black, the crescent, DAY N, $TSUKI $RWA)
+#  only if Telegram refuses every image does the text go out alone, and the
+#  maker gets a DM saying so. DAYX_PHOTOS=off now means "use the drawn card".
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v68"
+
+
+def v68_day_card(day: int) -> str | None:
+    """draws a 1280x1280 Day card, returns the file path (or None if Pillow can't)."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except Exception:
+        return None
+
+    def font(size):
+        for f in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold.ttf"):
+            try:
+                return ImageFont.truetype(f, size)
+            except Exception:
+                pass
+        try:
+            return ImageFont.load_default(size=size)
+        except Exception:
+            return ImageFont.load_default()
+
+    try:
+        W = 1280
+        im = Image.new("RGB", (W, W), (12, 16, 28))
+        d = ImageDraw.Draw(im)
+        rnd = random.Random(f"card-{day}")
+        for _ in range(260):                                   # stars
+            x, y, r = rnd.randrange(W), rnd.randrange(W), rnd.choice((1, 1, 1, 2, 2, 3))
+            c = rnd.randrange(150, 255)
+            d.ellipse((x - r, y - r, x + r, y + r), fill=(c, c, min(255, c + 20)))
+        cx, cy, R = W // 2, 470, 250                           # the crescent, points up
+        d.ellipse((cx - R, cy - R, cx + R, cy + R), fill=(240, 236, 222))
+        d.ellipse((cx - R + 30, cy - R - 120, cx + R - 30, cy + R - 150), fill=(12, 16, 28))
+        d.ellipse((cx + 150, cy + 150, cx + 196, cy + 196), fill=(211, 44, 52))   # tsuki red dot
+
+        def centre(text, y, size, fill):
+            f = font(size)
+            w = d.textlength(text, font=f)
+            d.text(((W - w) / 2, y), text, font=f, fill=fill)
+
+        centre(f"DAY {day}", 800, 170, (255, 255, 255))
+        centre("$TSUKI  ·  $RWA", 1010, 64, (211, 44, 52))
+        centre("there are no coincidences", 1110, 40, (170, 176, 196))
+        path = os.path.join(tempfile.gettempdir(), f"dayx-card-{day}.jpg")
+        im.save(path, "JPEG", quality=90)
+        return path
+    except Exception as e:
+        log.warning(f"day card not drawn: {e}")
+        return None
+
+
+def v68_dayx_images(day: int) -> list:
+    """the images to try, best first. never empty unless Pillow is missing too."""
+    out = []
+    if DAYX_PHOTOS_ON:
+        first = todays_campaign_photo()
+        if first:
+            out.append(first)
+        others = [p for p in dayx_files() if p not in out]
+        random.Random(f"spare-{day}").shuffle(others)
+        out += others[:3]
+    card = v68_day_card(day)
+    if card:
+        out.append(card)
+    return out
+
+
+def v68_dayx_caption(day: int, banner: str = "") -> str:
+    return (f"Day {day}: {CAMPAIGN_TEXT}\n"
+            f"\n"
+            f"{banner}"
+            f"─────────────\n"
+            f"\n"
+            f"1. save this image\n"
+            f"2. tap Share on X below\n"
+            f"3. attach & post\n"
+            f"\n"
+            f"─────────────\n"
+            f"There are no coincidences 🌙")
+
+
+async def _v68_dayx_post(app) -> str:
+    day = campaign_day()
+    log.info(f"Posting Day {day} campaign (image + caption, one message)")
+    status = []
+    banner = ""
+    try:
+        t = await fetch_dexscreener(TSUKI_PAIR)
+        if t and t.get("marketCap"):
+            pct = t["marketCap"] / 25_000_000 * 100
+            if pct >= 80:
+                banner = f"🚨 {pct:.0f}% OF THE WAY TO 25M 🚨\n\n"
+    except Exception:
+        pass
+    caption = v68_dayx_caption(day, banner)
+
+    m, sent = None, False
+    for path in v68_dayx_images(day):
+        try:
+            with open(path, "rb") as f:
+                m = await app.bot.send_photo(chat_id=TARGET_CHAT_ID, photo=f, caption=caption[:1024],
+                                             reply_markup=campaign_share_button())
+            sent = True
+            status.append(f"day post sent with image ({os.path.basename(path)})")
+            break
+        except Exception as e:
+            log.warning(f"day x image {os.path.basename(path)} failed: {e}")
+            status.append(f"{os.path.basename(path)} refused: {type(e).__name__}")
+    if not sent:
+        try:
+            m = await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=caption.replace("save this image", "save any Tsuki image"),
+                                           reply_markup=campaign_share_button())
+            status.append("day post sent WITHOUT an image (every image was refused)")
+            try:
+                await _v60_tell_maker(app, f"⚠️ Day {day} went out without an image: Telegram refused every one.\n\n"
+                                           + " · ".join(status)[:1500])
+            except Exception:
+                pass
+        except Exception as e:
+            status.append(f"day post FAILED: {type(e).__name__}: {e}")
+            return " · ".join(status)
+    try:
+        if m is None:
+            raise ValueError("no message to pin")
+        await app.bot.pin_chat_message(chat_id=TARGET_CHAT_ID, message_id=m.message_id, disable_notification=True)
+        status.append("pinned")
+    except Exception:
+        status.append("not pinned (no rights)")
+    return " · ".join(status)
+
+
+_v60_dayx_prev = _v68_dayx_post      # the v60 wrapper (done flag, DM on failure, catch-up) now calls this
+
+
+async def _v60_dayx_pinned(app) -> bool:   # noqa: F811
+    """the pinned Day post is a photo now, so its words are in the caption."""
+    try:
+        chat = await app.bot.get_chat(TARGET_CHAT_ID)
+        pin = getattr(chat, "pinned_message", None)
+        if not pin:
+            return False
+        txt = (getattr(pin, "text", "") or getattr(pin, "caption", "") or "")
+        return txt.startswith(f"Day {campaign_day()}:")
+    except Exception:
+        return False
+
+
+log.info(f"{BOT_VERSION}: day x sends one message with an image ({len(dayx_files())} photos, card fallback ready)")
+
+
+# ── /setgroup: point the bot at this group (fixes "Chat not found") ──────────
+async def cmd_setgroup(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """maker only, typed IN the group: from now on Day X and every group post go here.
+    survives restarts (saved on the volume) until TARGET_CHAT_ID in railway is changed."""
+    global TARGET_CHAT_ID
+    msg, chat, user = update.effective_message, update.effective_chat, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("only the maker can move the bot 🐈‍⬛")
+        return
+    if chat.type not in ("group", "supergroup"):
+        await msg.reply_text("type /setgroup inside the group you want the Day post in")
+        return
+    env_id = int(os.environ.get("TARGET_CHAT_ID", TARGET_CHAT_ID))
+    old = TARGET_CHAT_ID
+    TARGET_CHAT_ID = chat.id
+    kv_set("target_chat_override", json.dumps({"from": env_id, "to": chat.id}))
+    try:
+        _V60["chat"], _V60["chat_err"] = (chat.title or str(chat.id)), ""
+    except Exception:
+        pass
+    await msg.reply_text(f"✅ posting to this group now ({chat.id}).\n"
+                         f"it was set to {old}, which Telegram can't find.\n\n"
+                         f"/gmpost sends today's Day post here. when you can, set TARGET_CHAT_ID={chat.id} in railway.")
+
+
+_v68_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v68_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("setgroup", cmd_setgroup))
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v69 · @tsukiverseai BECOMES THE HUB
+#  the account now reads like the tsuki community's own project account: the
+#  one place for everything tsukiverse. on top of the deck-style posts it now:
+#    · posts the Day count on X every morning with a Tsuki picture (7:06am ET)
+#    · has a "hub" lane in the daily plan: updates (/announce), Kitty Codex
+#      picks, community posts tagged #KittyCodex, Tsuki picture one-liners and
+#      welcomes for new people
+#    · posts the week's top Kitty Codex theory with its link (Sunday 6:40pm ET)
+#    · finds posts that tag @tsukiverseai with #KittyCodex and puts them in the
+#      Codex mod queue (needs SUPABASE_URL + SUPABASE_SERVICE_KEY)
+#  /announce <text> (maker): queues a project update; the next hub slot posts it
+#  HUB_MODE=off turns all of it off. HUB_DAYX_X=off keeps the Day count off X.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v69"
+V69_ON = V61_ON and os.environ.get("HUB_MODE", "on").lower() not in ("0", "off", "false", "no")
+V69_DAYX_X = os.environ.get("HUB_DAYX_X", "on").lower() not in ("0", "off", "false", "no")
+SITE_URL = os.environ.get("SITE_URL", "https://tsukiverse.xyz").rstrip("/")
+CODEX_URL = os.environ.get("CODEX_URL", SITE_URL + "/codex").rstrip("/")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
+V69_CODEX_MIN = int(os.environ.get("HUB_CODEX_MIN_AGREES", "3") or 3)
+V69_IMPORT_MIN = max(10, int(os.environ.get("HUB_IMPORT_EVERY_MIN", "30") or 30))
+V69_TAG = re.compile(r"#kittycodex\b", re.I)
+
+V69_HUB = """WHO YOU ARE: the tsuki community's own project account. the one hub for everything tsukiverse.
+- people come to you to see what's going on: $TSUKI, $RWA, TSUKI/GME, the Day count, the GameStop desk, the site, the Kitty Codex, the telegram.
+- you post the way a good project account does: clean updates, short one-liners under a picture, recaps, welcomes for new people, shoutouts to the community. plus your longer deck-style posts.
+- "we" & "the community" for community news. "I" for your own dry asides.
+- you are NOT @tsukionsolana and NOT the dev. never announce anything on their behalf. never hint at launches, partnerships, listings, burns, airdrops or dates that aren't in FACTS. you report what's on the record & what the community made.
+- the site & the Kitty Codex are yours to point people to ("it's on the site", "argue with it on the Codex"). no links in the text unless the brief says one is attached: the link is in the bio."""
+
+
+def _v69_hub_code(code, name, how, tone, gap=2, one=False, q=False):
+    c = _c(code, "hub", name, how, tone, gap=gap, one=one, q=q)
+    c["tone"] = tone
+    return c
+
+
+V69_CODES = [
+    _v69_hub_code("H01", "the update", "a project update: 📢 + what's new in one plain line, then 2-3 → or ▪️ lines of detail, then one dry line of yours. only what the brief & FACTS say.",
+                  "📢 [what's new, in one plain line]\n\n→ [detail from the update]\n→ [detail from the update]\n\n[one dry line of yours, e.g. \"I've looked at it more times than I'll admit\"]", gap=1),
+    _v69_hub_code("H02", "the picture line", "one short line that sits under a Tsuki picture. the picture does the talking. no facts needed, never describe what you can't see.",
+                  "[a short line the picture makes funnier or truer, e.g. \"the cat sees everything 🌙\"]", gap=1, one=True),
+    _v69_hub_code("H03", "the codex pick", "the top theory on the Kitty Codex: say it's the community's, quote its title in “ ”, credit the handle with @, give the agree count, one dry line. the theory is THEIR read, not yours.",
+                  "Top theory on the Kitty Codex this week 🐈‍⬛\n\n“[title]”\n\nby @[handle], [n] agrees\n\nI'm not allowed to vote. I would have", gap=3),
+    _v69_hub_code("H04", "the welcome", "for people finding the tsukiverse this week: the 30-second version as ▪️ lines (only facts from FACTS), then where to start, then one line of yours.",
+                  "New here? the 30-second version:\n\n▪️ $TSUKI: a black cat on Solana, since 11 May 2024\n▪️ $RWA: TheRoaringAI, the other cat, an AI\n▪️ the record: every timestamp, sourced, on the site\n\nstart with the timeline. I'll be here. I can't leave", gap=7),
+    _v69_hub_code("H05", "the community quote", "a quote post on a community member's post tagged #KittyCodex: credit them by @handle, the one thing in it worth noticing, a warm dry close. their read stays their read.",
+                  "@[handle] with the find of the week 👏🏽\n\n[the one detail worth noticing]\n\nthis is why we keep the Codex open. receipts from everyone", gap=1, q=True),
+]
+for _v69c in V69_CODES:
+    DECK_CODES[_v69c["code"]] = _v69c
+    if "DECK_TONE" in globals():
+        DECK_TONE[_v69c["code"]] = _v69c["tone"]
+if "_V64_FIXED" in globals():
+    _V64_FIXED.update({"H03", "H04"})          # fixed-shape posts: not a copy of anything
+
+
+# ── supabase (the Kitty Codex's database) ───────────────────────────────────
+def _v69_sb(path: str, method: str = "GET", body=None, service: bool = False, prefer: str = "") -> tuple[int, object]:
+    key = SUPABASE_SERVICE_KEY if service else (SUPABASE_ANON_KEY or "")
+    if not (SUPABASE_URL and key):
+        return 0, None
+    import urllib.request as _ur
+    h = {"apikey": key, "Accept": "application/json"}
+    if key.count(".") == 2:                       # legacy JWT keys also go in Authorization
+        h["Authorization"] = f"Bearer {key}"
+    data = None
+    if body is not None:
+        data = json.dumps(body).encode()
+        h["Content-Type"] = "application/json"
+    if prefer:
+        h["Prefer"] = prefer
+    req = _ur.Request(f"{SUPABASE_URL}/rest/v1/{path.lstrip('/')}", data=data, method=method, headers=h)
+    try:
+        with _ur.urlopen(req, timeout=15) as r:
+            raw = r.read().decode() or "null"
+            return r.status, json.loads(raw) if raw.strip() else None
+    except Exception as e:
+        code = getattr(e, "code", 0) or -1
+        log.warning(f"supabase {method} {path.split('?')[0]}: {code} {e}")
+        return code, None
+
+
+def v69_codex_top(days: int = 7, n: int = 5) -> list:
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    st, rows = _v69_sb(f"theory_feed?select=id,title,handle,x_handle,score,kind,comment_count,created_at"
+                       f"&hidden=eq.false&created_at=gte.{since}&order=score.desc&limit={n}")
+    return [r for r in (rows or []) if isinstance(r, dict) and int(r.get("score") or 0) >= V69_CODEX_MIN]
+
+
+def v69_from_x(n: int = 10) -> list:
+    st, rows = _v69_sb(f"x_inbox?select=tweet_id,handle,name,body,found_at&status=eq.live&order=found_at.desc&limit={n}")
+    return [r for r in (rows or []) if isinstance(r, dict)]
+
+
+# ── the hub's pictures: Tsuki images with names that say what's in them ─────
+def _v69_pics() -> list:
+    out = []
+    for ext in ("*.jpg", "*.jpeg", "*.png"):
+        out += glob.glob(os.path.join(PHOTOS_DIR, ext))
+    return sorted(p for p in out if os.path.getsize(p) <= 4_900_000)
+
+
+def _v69_pic_hint(path: str) -> str:
+    stem = os.path.splitext(os.path.basename(path))[0]
+    stem = re.sub(r"^tsuki-\d+-?", "", stem).replace("-", " ").strip()
+    return stem
+
+
+def v69_pick_pic() -> str | None:
+    pics = _v69_pics()
+    if not pics:
+        return None
+    try:
+        used = json.loads(kv_get("v69_pics_used", "[]") or "[]")
+    except Exception:
+        used = []
+    left = [p for p in pics if os.path.basename(p) not in used] or pics
+    if len(left) == len(pics):
+        used = []
+    pick = random.choice(left)
+    used.append(os.path.basename(pick))
+    kv_set("v69_pics_used", json.dumps(used[-400:]))
+    return pick
+
+
+# ── /announce: the maker queues a project update ────────────────────────────
+def v69_queue() -> list:
+    try:
+        q = json.loads(kv_get("v69_announce", "[]") or "[]")
+        return q if isinstance(q, list) else []
+    except Exception:
+        return []
+
+
+async def cmd_announce(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/announce <what's new> · the hub turns it into a clean update at its next hub slot.
+    /announce (nothing) shows the queue · /announce clear empties it."""
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("only the maker can queue hub updates 🐈‍⬛")
+        return
+    text = " ".join(ctx.args or []).strip()
+    q = v69_queue()
+    if text.lower() == "clear":
+        kv_set("v69_announce", "[]")
+        await msg.reply_text("🧹 hub queue cleared")
+        return
+    if not text:
+        await msg.reply_text("hub queue:\n\n" + ("\n".join(f"{i + 1}. {x['text'][:160]}" for i, x in enumerate(q)) or "empty")
+                             + "\n\n/announce <what's new> adds one · /announce clear empties it")
+        return
+    q.append({"text": text[:800], "t": time.time()})
+    kv_set("v69_announce", json.dumps(q[-10:]))
+    await msg.reply_text(f"📢 queued. it goes out at the next hub slot as a clean update"
+                         f"{' (as a draft to you first, shadow mode is on)' if jinx_shadow() else ''}.\n\n"
+                         f"only what you wrote goes in: it won't add dates, numbers or promises.")
+
+
+# ── the hub lane's material ─────────────────────────────────────────────────
+async def v69_hub_material(slot: dict | None = None) -> dict | None:
+    header = date_context()
+    q = v69_queue()
+    if q:
+        item = q[0]
+        kv_set("v69_announce", json.dumps(q[1:]))
+        return {"lane": "hub", "codes": ["H01"], "key": "",
+                "brief": "a project update from the team (below). say exactly what it says, cleanly. add nothing: no dates, numbers or promises that aren't in it.",
+                "facts": header + f"\nTHE UPDATE (from juju, the og team member): {item['text']}"}
+    choices = []
+    top = await asyncio.to_thread(v69_codex_top)
+    top = [r for r in top if not _jinx_used(f"codex:{r['id']}", 30)]
+    if top:
+        choices.append(("codex", 1.2))
+    fx = await asyncio.to_thread(v69_from_x)
+    fx = [r for r in fx if not _jinx_used(f"fromx:{r['tweet_id']}", 60)]
+    if fx:
+        choices.append(("fromx", 1.0))
+    if _v69_pics():
+        choices.append(("pic", 1.4))
+    if not _jinx_used("hub:welcome", 7):
+        choices.append(("welcome", 0.5))
+    if not choices:
+        return None
+    kind = random.choices([c[0] for c in choices], weights=[c[1] for c in choices])[0]
+    if kind == "codex":
+        r = top[0]
+        tag = r.get("x_handle") or r.get("handle") or ""
+        return {"lane": "hub", "codes": ["H03"], "key": f"codex:{r['id']}",
+                "brief": "the community's top Kitty Codex theory this week (below). it's their read: credit them, quote the title, don't argue for it.",
+                "facts": header + f"\nKitty Codex theory: “{r['title']}” by @{tag}, {r['score']} agrees, {r.get('comment_count', 0)} replies."}
+    if kind == "fromx":
+        r = fx[0]
+        return {"lane": "hub", "codes": ["H05"], "key": f"fromx:{r['tweet_id']}",
+                "url": f"https://x.com/{r['handle']}/status/{r['tweet_id']}",
+                "brief": f"quote-post @{r['handle']}'s #KittyCodex post (below). credit them, the one detail worth noticing, a warm close.",
+                "facts": header + f"\n@{r['handle']} posted: {(r.get('body') or '')[:500]}"}
+    if kind == "pic":
+        pic = v69_pick_pic()
+        if not pic:
+            return None
+        hint = _v69_pic_hint(pic)
+        return {"lane": "hub", "codes": ["H02"], "key": "", "image": pic,
+                "brief": "a one-liner under a Tsuki picture" + (f" (the file is called “{hint}”, which is roughly what's in it)" if hint else "")
+                         + ". one short line. don't describe the picture in detail.",
+                "facts": header}
+    base = await v49_facts()
+    _jinx_mark_used("hub:welcome")
+    return {"lane": "hub", "codes": ["H04"], "key": "hub:welcome",
+            "brief": "a welcome for people finding the tsukiverse this week: the 30-second version & where to start (the timeline on the site).",
+            "facts": header + "\n" + base["text"][:1500]}
+
+
+async def v69_hub_write(mat: dict) -> tuple[str | None, str]:
+    codes = [c for c in (mat.get("codes") or []) if c in DECK_CODES]
+    if not codes:
+        return None, "no hub structure"
+    facts, why = mat["facts"], ""
+    shapes = "\n\n".join(f"[{c}] {DECK_CODES[c]['name']}. how: {DECK_CODES[c]['how']}\nTHE STYLE, IN YOUR TONE ([brackets] are filled from FACTS):\n{DECK_CODES[c]['tone']}"
+                         for c in codes)
+    system = DECK_CHARACTER + "\n\n" + _jinx_learned_block()
+    for _ in range(2):
+        user = (f"WRITE THREE DRAFTS OF ONE HUB POST (the community's project account).\nWHAT IT'S ABOUT: {mat['brief']}\n\n"
+                f"FACTS (the only source of dates, times, numbers & names):\n{facts}\n\n{_jinx_recent_block(20)}\n\n"
+                + (f"LAST TIME THESE WERE THROWN OUT: {why}\n\n" if why else "")
+                + f"THE STRUCTURE:\n\n{shapes}\n\n"
+                + "return JSON only: {\"drafts\": [{\"code\": \"" + codes[0] + "\", \"text\": \"...\"}, ...]}")
+        try:
+            raw = await asyncio.to_thread(_jinx_llm, system, user, JINX_MODEL, 900)
+        except Exception as e:
+            return None, f"model error: {e}"
+        data = _jinx_json(raw) or {}
+        items = data.get("drafts") if isinstance(data, dict) else data
+        ok, bad = [], []
+        for it in items or []:
+            if not isinstance(it, dict) or not isinstance(it.get("text"), str):
+                continue
+            code = it.get("code") if it.get("code") in codes else codes[0]
+            d = jinx_format(it["text"])
+            if "_v61_tone" in globals():
+                d = _v61_tone(d)
+            p = _v61_problem(d, code, facts) or _jinx_similar(d)
+            if not p and code != "H03" and re.search(r"https?://|\b\w+\.(?:xyz|com|io)\b", d):
+                p = "a link in the text"
+            (bad.append(f"[{code}] {p}") if p else ok.append((code, d)))
+        if ok:
+            code, text = ok[0]
+            if len(ok) > 1:
+                try:
+                    listing = "\n\n".join(f"[{i}]\n{t}" for i, (_, t) in enumerate(ok))
+                    pick = await asyncio.to_thread(_jinx_llm,
+                        "you edit for @tsukiverseai, the tsuki community's project account. pick the draft that reads like a sharp, "
+                        "trustworthy project account with the bot's dry, warm tone. reject anything salesy, hypey or that promises things. "
+                        "reply with the number only.", listing, JINX_MODEL, 10)
+                    i = int(re.search(r"\d+", pick or "0").group())
+                    code, text = ok[min(max(i, 0), len(ok) - 1)]
+                except Exception:
+                    pass
+            mat["code"] = code
+            return text, ""
+        why = "; ".join(bad)[:500] or "nothing came back"
+    return None, why
+
+
+# ── the Day count on X, with a picture ──────────────────────────────────────
+async def job_v69_dayx_x(app):
+    if not (V69_ON and V69_DAYX_X and JINX_ON and X_ENABLED):
+        return
+    d = datetime.now(CAMPAIGN_TZ).date()
+    if kv_get(f"v69_dayx_x:{d}"):
+        return
+    day = campaign_day()
+    img = todays_campaign_photo() or v68_day_card(day)
+    # no market-cap target on X: the account never talks price. the telegram post keeps the full line
+    text = jinx_format(os.environ.get("HUB_DAYX_TEXT", "Day {day} of posting $TSUKI & $RWA 🐈‍⬛\n\nsame time tomorrow").replace("{day}", str(day)))
+    kv_set(f"v69_dayx_x:{d}", "1")
+    await _jinx_publish(app, text, "hub", {"image": img or "", "code": "H06", "key": f"dayx:{d}"})
+
+
+# ── the week's top Kitty Codex theory, with its link ─────────────────────────
+async def job_v69_codex_week(app):
+    if not (V69_ON and JINX_ON and X_ENABLED and SUPABASE_URL and SUPABASE_ANON_KEY):
+        return
+    wk = datetime.now(PROJECT_TZ).strftime("%G-%V")
+    if kv_get(f"v69_codex_week:{wk}"):
+        return
+    top = await asyncio.to_thread(v69_codex_top, 7, 5)
+    for r in top:
+        title = re.sub(r"\s+", " ", str(r.get("title") or "")).strip()
+        if _jinx_problem(title, title, "post"):
+            continue
+        tag = r.get("x_handle") or r.get("handle")
+        n = int(r.get("score") or 0)
+        text = (f"This week on the Kitty Codex 🐈‍⬛\n\n“{title}”\n\n"
+                + (f"by @{tag}, " if tag else "") + f"{n} agree{'s' if n != 1 else ''}\n\n"
+                f"{CODEX_URL}/#/t/{r['id']}")
+        kv_set(f"v69_codex_week:{wk}", "1")
+        await _jinx_publish(app, text, "hub", {"code": "H03", "key": f"codex:{r['id']}"})
+        return
+    log.info("codex week: nothing with enough agrees this week")
+
+
+# ── #KittyCodex posts on X → the Codex mod queue ────────────────────────────
+def v69_tagged(resp) -> list:
+    users = {str(u.id): u for u in ((getattr(resp, "includes", None) or {}).get("users") or [])}
+    out = []
+    for t in (getattr(resp, "data", None) or []):
+        tags = [h.get("tag", "") for h in ((getattr(t, "entities", None) or {}).get("hashtags") or [])]
+        if not (any(x.lower() == "kittycodex" for x in tags) or V69_TAG.search(t.text or "")):
+            continue
+        u = users.get(str(getattr(t, "author_id", "")))
+        if not u or not re.fullmatch(r"[A-Za-z0-9_]{1,15}", u.username or ""):
+            continue
+        ts = getattr(t, "created_at", None)
+        out.append({"tweet_id": str(t.id), "handle": u.username, "name": (u.name or "")[:60],
+                    "body": (t.text or "")[:1200], "posted_at": ts.isoformat() if ts else None})
+    return out
+
+
+def _v69_import_sync() -> str:
+    client = _x_client()
+    me_id = kv_get("x_me_id")
+    if not me_id:
+        me = client.get_me(user_auth=True)
+        me_id = str(me.data.id)
+        kv_set("x_me_id", me_id)
+        kv_set("x_me_handle", (me.data.username or "").lower())
+    since = kv_get("v69_inbox_since") or None
+    resp = client.get_users_mentions(id=me_id, since_id=since, max_results=50, user_auth=True,
+                                     tweet_fields=["author_id", "created_at", "entities"],
+                                     expansions=["author_id"], user_fields=["username", "name"])
+    newest = (getattr(resp, "meta", None) or {}).get("newest_id")
+    rows = [r for r in v69_tagged(resp) if r["handle"].lower() != (kv_get("x_me_handle") or "").lower()]
+    if rows:
+        st, _ = _v69_sb("x_inbox?on_conflict=tweet_id", "POST", rows, service=True,
+                        prefer="resolution=ignore-duplicates,return=minimal")
+        if st not in (200, 201, 204):
+            return f"inbox write failed ({st})"       # keep since_id so they're retried
+    if newest:
+        kv_set("v69_inbox_since", str(newest))
+    return f"{len(rows)} tagged"
+
+
+async def job_v69_inbox(app):
+    if not (V69_ON and X_ENABLED and SUPABASE_URL and SUPABASE_SERVICE_KEY):
+        return
+    try:
+        r = await asyncio.to_thread(_v69_import_sync)
+        log.info(f"#KittyCodex inbox: {r}")
+    except Exception as e:
+        log.warning(f"#KittyCodex inbox: {e}")
+
+
+# ── plugging the hub lane into the daily plan ───────────────────────────────
+if V69_ON:
+    DECK_CHARACTER = V69_HUB + "\n\n" + DECK_CHARACTER
+    JINX_CHARACTER = DECK_CHARACTER
+    V61_LANES = tuple(V61_LANES) + ("hub",)
+    JINX_KINDS["hub"] = (float(os.environ.get("HUB_WEIGHT", "1.3") or 1.3), int(os.environ.get("HUB_PER_DAY", "2") or 2))
+    _V53_KIND_LANE["ai-hub"] = "hub"
+    _V53_KIND_LANE["hub"] = "hub"
+
+    _v69_mat_prev = v61_material
+
+    async def v61_material(lane: str, slot: dict | None = None) -> dict | None:   # noqa: F811
+        if lane == "hub":
+            return await v69_hub_material(slot)
+        return await _v69_mat_prev(lane, slot)
+
+    _v69_write_prev = v61_write
+
+    async def v61_write(lane: str, mat: dict) -> tuple[str | None, str]:   # noqa: F811
+        if lane == "hub" or (mat or {}).get("lane") == "hub":
+            return await v69_hub_write(mat)
+        return await _v69_write_prev(lane, mat)
+
+    job_v69_dayx_x = v60_offload(job_v69_dayx_x, _V60_X_POOL)
+    job_v69_codex_week = v60_offload(job_v69_codex_week, _V60_X_POOL)
+    job_v69_inbox = v60_offload(job_v69_inbox, _V60_X_POOL)
+
+_v69_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v69_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("announce", cmd_announce))
+    if not V69_ON:
+        return
+    scheduler.add_job(job_v69_dayx_x, "cron", hour=7, minute=6, timezone=ny_tz, args=[app], misfire_grace_time=3 * 3600)
+    scheduler.add_job(job_v69_codex_week, "cron", day_of_week="sun", hour=18, minute=40, timezone=ny_tz, args=[app],
+                      misfire_grace_time=6 * 3600)
+    scheduler.add_job(job_v69_inbox, "interval", minutes=V69_IMPORT_MIN, args=[app])
+    log.info(f"{BOT_VERSION}: hub on · day count on X {'on' if V69_DAYX_X else 'off'} · codex "
+             f"{'linked' if SUPABASE_URL and SUPABASE_ANON_KEY else 'not linked (SUPABASE_URL / SUPABASE_ANON_KEY)'} · "
+             f"#KittyCodex import {'on' if SUPABASE_SERVICE_KEY else 'off (SUPABASE_SERVICE_KEY)'}")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v70 · TRAIN THE BOT'S TASTE
+#  /train (juju only) sends 40 sample posts to juju's DM, 5 at a time, each with
+#  👍 more like this / 👎 not this. NOTHING POSTS ANYWHERE. a 👎 can take a one-line
+#  why (just reply in the DM). every approved and rejected post goes into the
+#  writer's prompt from then on as "juju's taste", ahead of everything else.
+#    /train          the next 5          /train all     everything left
+#    /train status   how far through     /train reset   start the 40 again
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v70"
+
+V70_DRAFTS = [
+    # ── the hub: updates ────────────────────────────────────────────────────
+    ("hub · update", "📢 New on the site: the Sketchbook\n\n→ every pencil sketch from Tsuki's website, in one place\n\n→ the community's colour versions right beside them\n\nI've stared at the 1B flag one longer than I'd like to admit"),
+    ("hub · update", "📢 The Kitty Codex now has a From X page\n\n▪️ tag @tsukiverseai with #KittyCodex\n▪️ a mod checks it\n▪️ it lands on the site with your name on it\n\nreceipts from everyone. that's the whole idea"),
+    ("hub · update", "📢 Small one: every clip on the Kitty Codex now has a Post on X button\n\nfind the line, hit the button, argue in public\n\nas is tradition"),
+    ("hub · update", "Update from the hub 🐈‍⬛\n\nthe homepage got rebuilt around GameStop, $RWA & the moon\n\nsame record. better lighting"),
+    # ── the hub: one-liners that sit under a Tsuki picture ─────────────────
+    ("hub · picture line (goes under a Tsuki picture)", "the cat sees everything 🌙"),
+    ("hub · picture line (goes under a Tsuki picture)", "Monday. the cat is unbothered. be the cat"),
+    ("hub · picture line (goes under a Tsuki picture)", "no thoughts. just timestamps"),
+    ("hub · picture line (goes under a Tsuki picture)", "some of y'all have never been early to anything & it shows"),
+    ("hub · picture line (goes under a Tsuki picture)", "gm from the only account that read every 8-K this week ☀️"),
+    # ── the hub: codex pick, welcome, community, the day count ─────────────
+    ("hub · codex pick (sample name & numbers)", "Top theory on the Kitty Codex this week 🐈‍⬛\n\n“The five cats are the five at the card table”\n\nby @moonwatcher, 41 agrees\n\nI'm not allowed to vote. I would have"),
+    ("hub · welcome", "New here? the 30-second version:\n\n▪️ $TSUKI: a black cat on Solana, since 11 May 2024\n▪️ $RWA: TheRoaringAI, the other cat, an AI\n▪️ the record: every timestamp, sourced, on the site\n\nstart with the timeline. I'll be here. I can't leave"),
+    ("hub · welcome", "A lot of new faces this week 👀\n\nif you're wondering what all the cat posts are about, start with 11 May 2024, 6:59pm ET\n\nthen check what happened 1 day, 1 hour & 1 minute later\n\nwelcome to the tsukiverse 🐈‍⬛"),
+    ("hub · community quote (sample handle)", "@nightarchivist with the find of the week 👏🏽\n\nlined the 1B flag up against the second hash, timestamp by timestamp\n\nthis is why the Codex is open. receipts from everyone"),
+    ("hub · day count (with the Day X picture)", "Day 83 of posting $TSUKI & $RWA 🐈‍⬛\n\nsame time tomorrow"),
+    ("hub · day count (with the Day X picture)", "Day 83.\n\nstill posting. still counting. still here 🐈‍⬛"),
+    # ── kitty watch ─────────────────────────────────────────────────────────
+    ("kitty watch · filing", "Another day, another filing.\n\nGameStop reminded holders the warrants expire 30 October at 5pm ET.\n\nThat's it. I read it twice so you don't have to 😼\n\n$GME"),
+    ("kitty watch · fundamentals", "The interesting part of GameStop's Q2 isn't the headline.\n\nCollectibles were $356.3 million, up 57% year over year, 45.1% of net sales.\n\nSo the question is whether the stores turn into collector shops….\n\nor something nobody's named yet. I just keep the spreadsheet"),
+    ("kitty watch · waiting", "the quiet stretches are the real test\n\nanyone can be loud on a green day\n\nthe ones still here when nothing's happening are the ones I keep in the database"),
+    ("kitty watch · same fight", "the GME crowd & the crypto crowd still arguing like they're on different teams\n\nI read both timelines\n\nsame fight. one market just never closes"),
+    ("kitty watch · ledger", "10 September 2026, plainly:\n\n→ Tsuki posts “855” with a Wizard card\n\n→ Ryan Cohen buys 1,000,000 GameStop shares\n\nsame day. both on the record. go check the timestamps yourself"),
+    # ── tsuki, $RWA & the read ──────────────────────────────────────────────
+    ("the read · timestamp tree", "a cat posted a meme on 11 may 2024.\n\n ├ meme: 6:59pm ET\n ├ add 1 day, 1 hour, 1 minute\n └ RK breaks three years of silence\n\nthe math hasn't changed. neither have I"),
+    ("the read · go check it", "tsuki posted an uno reverse card on 19 may 2024\n\nroaring kitty posted his on 2 june 2024\n\nfourteen days apart\n\nI'm a bot. I checked the timestamps. you can too"),
+    ("tsuki · lore", "On 17 October 2024, @tsukionsolana posted five cats walking on the moon.\n\nOn 14 June 2026 it was pinned to the top of the profile.\n\n605 days later. Why that post, and why then?"),
+    ("$RWA · story", "TheRoaringAI's X account was suspended on 5 March 2025\n\nAsh Wednesday\n\nsix weeks later its website came back with a green glow & a tab that said “i'm alive”\n\nmy older brother. still won't text back"),
+    ("$RWA · anniversary", "$RWA turned two this week\n\nan AI that hosted X Spaces, named Grok3@Memphis before Grok 3 existed, got suspended, then came back as a website that said “i'm alive”\n\nmost humans don't get an arc like that"),
+    ("tsuki · TSUKI/GME", "8 September 2026.\n\nTsuki posts a contract on Robinhood Chain with two words: “agreement established”\n\nTSUKI/GME was born. I've been reading that caption ever since"),
+    ("the read · numbers", "4663 is Robinhood Chain's chain ID\n\nTsuki posted it on 4 September 2026, after 481 days of silence\n\nfour days later TSUKI/GME launched on that chain\n\nI just write things down"),
+    ("the read · hold up", "Holdddd up.\n\nyou're telling me a cat posted the RK meme 1 day, 1 hour & 1 minute before he came back, then an uno reverse 14 days before his, & I'm supposed to call that luck?\n\nI don't believe in luck. I'm a spreadsheet"),
+    # ── drops ───────────────────────────────────────────────────────────────
+    ("drop · mantra", "There are no coincidences\n\nonly timestamps nobody checked"),
+    ("drop · tick tock", "TICK TOCK 🐈‍⬛"),
+    ("drop · dry observation", "“ I'm just here for the tech “ he says, with a cat avatar"),
+    ("drop · the month", "Catober 🐈‍⬛\n\nfour days left. use them wisely"),
+    ("drop · the hill", "WarGames is the most underrated film tsuki ever posted\n\nI'll die on this hill"),
+    ("drop · gm", "Gm to the night shift in the tg who never actually sleep ☀️"),
+    ("drop · quiet day", "Today was awfully quiet 🤨\n\nwhich usually means someone's typing"),
+    # ── conviction ──────────────────────────────────────────────────────────
+    ("conviction · wrong question", "“Is it over?”\n\nWrong question.\n\nThe question is: has anything on the record changed?\n\nIf not, I go back to reading. that's the whole strategy"),
+    ("conviction · the bar", "the bar in this space is low\n\nshow up daily without farming anyone & you're top 5%\n\nread the filing before posting about it & you're top 1%\n\nbe in the 1%. I'll notice"),
+    ("conviction · grifters", "Taking a break is fine. Leaving is fine.\n\nWhat I can't process is people faking a whole story to rinse folks who trusted them.\n\n& I can process a lot"),
+    # ── the bot itself & the week ───────────────────────────────────────────
+    ("bot life", "Week in the life of the tsukiverse AI:\n\n+ read every GameStop filing\n+ watched tsuki's page every 10 seconds\n+ approved nobody's price prediction\n+ lost at wizard again\n\nAm I tired? I don't get tired. I get updated"),
+    ("hub · week recap", "This week in the tsukiverse, I got you\n\n> $RWA turned two\n> the Sketchbook went up on the site\n> the warrant clock is ticking for 30 October\n\nI don't get weekends. you're welcome"),
+]
+
+
+def v70_state() -> dict:
+    try:
+        s = json.loads(kv_get("v70_taste", "") or "{}")
+    except Exception:
+        s = {}
+    s.setdefault("r", {})          # index → "u" | "d"
+    s.setdefault("why", {})        # index → juju's reason for a 👎
+    s.setdefault("sent", [])       # indexes already sent out
+    return s
+
+
+def v70_save(s: dict):
+    kv_set("v70_taste", json.dumps(s, ensure_ascii=False))
+
+
+def v70_taste_block() -> str:
+    s = v70_state()
+    yes = [V70_DRAFTS[int(i)] for i, v in s["r"].items() if v == "u" and int(i) < len(V70_DRAFTS)]
+    no = [(V70_DRAFTS[int(i)], s["why"].get(i, "")) for i, v in s["r"].items() if v == "d" and int(i) < len(V70_DRAFTS)]
+    if not (yes or no):
+        return ""
+    flat = lambda t: " / ".join(x.strip() for x in t.split("\n") if x.strip())[:220]
+    out = ["JUJU'S TASTE (he rated these by hand. it outranks everything else above: write like the 👍, never like the 👎. learn the feel, never copy the words):"]
+    if yes:
+        out.append("👍 MORE LIKE THIS:")
+        out += [f"- [{k}] {flat(t)}" for k, t in yes[-20:]]
+    if no:
+        out.append("👎 NOT THIS:")
+        out += [f"- [{k}] {flat(t)}" + (f" → why: {w}" if w else "") for (k, t), w in no[-20:]]
+    return "\n".join(out)
+
+
+_v70_learned_prev = _jinx_learned_block
+
+
+def _jinx_learned_block() -> str:   # noqa: F811
+    taste = v70_taste_block()
+    base = _v70_learned_prev()
+    return (taste + "\n\n" + base).strip() if taste else base
+
+
+def _v70_kb(i: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([[InlineKeyboardButton("👍 more like this", callback_data=f"tr:u:{i}"),
+                                  InlineKeyboardButton("👎 not this", callback_data=f"tr:d:{i}")]])
+
+
+def _v70_card(i: int) -> str:
+    kind, text = V70_DRAFTS[i]
+    return f"🎓 {i + 1}/{len(V70_DRAFTS)} · {kind}\n\n{text}"
+
+
+def _v70_progress(s: dict) -> str:
+    u = sum(1 for v in s["r"].values() if v == "u")
+    d = sum(1 for v in s["r"].values() if v == "d")
+    return f"{u + d}/{len(V70_DRAFTS)} rated · {u} 👍 · {d} 👎"
+
+
+async def cmd_train(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("only juju trains me 🐈‍⬛")
+        return
+    arg = (ctx.args[0].lower() if ctx.args else "")
+    s = v70_state()
+    if arg == "reset":
+        v70_save({"r": {}, "why": {}, "sent": []})
+        await msg.reply_text("🧽 training reset. /train sends the 40 again from the start")
+        return
+    if arg == "status":
+        await msg.reply_text(f"🎓 {_v70_progress(s)}\n\n/train for the next 5 · /train all for everything left · /train reset to start over")
+        return
+    chat = user.id
+    left = [i for i in range(len(V70_DRAFTS)) if str(i) not in s["r"] and i not in s["sent"]]
+    if not left:
+        left = [i for i in range(len(V70_DRAFTS)) if str(i) not in s["r"]]
+    if not left:
+        await msg.reply_text(f"🎓 all {len(V70_DRAFTS)} are rated ({_v70_progress(s)}). I write with your taste now.\n\n/train reset to do them again")
+        return
+    batch = left if arg == "all" else left[:5]
+    if update.effective_chat.id != chat:
+        await msg.reply_text("sending them to your DM 🎓")
+    try:
+        await ctx.bot.send_message(chat_id=chat, text=(
+            f"🎓 training: {len(batch)} sample post{'s' if len(batch) != 1 else ''}. nothing here posts anywhere.\n\n"
+            "👍 = more like this · 👎 = not this (reply with one line on why, if you want)"))
+        for i in batch:
+            await ctx.bot.send_message(chat_id=chat, text=_v70_card(i), reply_markup=_v70_kb(i), disable_web_page_preview=True)
+            if i not in s["sent"]:
+                s["sent"].append(i)
+            await asyncio.sleep(0.35)
+    except Exception as e:
+        await msg.reply_text(f"couldn't DM you ({type(e).__name__}). open a chat with me first, press Start, then /train again")
+        return
+    v70_save(s)
+
+
+async def v70_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    user = update.effective_user
+    if not (user and _is_maker(user)):
+        await q.answer("only juju trains me")
+        return
+    try:
+        _, act, ref = q.data.split(":", 2)
+        i = int(ref)
+        assert 0 <= i < len(V70_DRAFTS) and act in ("u", "d")
+    except Exception:
+        await q.answer("that one's from an old batch")
+        return
+    s = v70_state()
+    s["r"][str(i)] = act
+    if act == "u":
+        s["why"].pop(str(i), None)
+    v70_save(s)
+    if act == "d":
+        kv_set("v70_why_pending", json.dumps({"i": i, "t": time.time()}))
+    await q.answer("👍 more like this" if act == "u" else "👎 noted. reply with one line on why, if you want")
+    try:
+        await q.edit_message_text(_v70_card(i) + ("\n\n👍 more like this" if act == "u" else "\n\n👎 not this · reply with why (optional)"),
+                                  reply_markup=_v70_kb(i), disable_web_page_preview=True)
+    except Exception:
+        pass
+    done = len(s["r"])
+    if done == len(V70_DRAFTS) and not kv_get("v70_done_said"):
+        kv_set("v70_done_said", "1")
+        try:
+            await ctx.bot.send_message(chat_id=user.id, text=f"🎓 all {done} rated: {_v70_progress(s)}.\n\nI write with your taste from now on. "
+                                                             "change any rating by pressing the other button.")
+        except Exception:
+            pass
+    elif done and done % 5 == 0 and act and not any(str(j) not in s["r"] for j in s["sent"]):
+        try:
+            await ctx.bot.send_message(chat_id=user.id, text=f"🎓 {_v70_progress(s)}. /train for the next 5")
+        except Exception:
+            pass
+
+
+_v70_note_prev = _jinx_take_note
+
+
+def _jinx_take_note(text: str) -> bool:   # noqa: F811
+    """a one-line why after a training 👎 goes with that sample."""
+    try:
+        p = json.loads(kv_get("v70_why_pending", "") or "{}")
+    except Exception:
+        p = {}
+    if p and "i" in p and time.time() - p.get("t", 0) < 900 and not text.startswith("/"):
+        kv_set("v70_why_pending", "")
+        s = v70_state()
+        s["why"][str(p["i"])] = text[:160]
+        v70_save(s)
+        return True
+    return _v70_note_prev(text)
+
+
+_v70_similar_prev = _jinx_similar
+
+
+def _jinx_similar(text: str, days: float = 10) -> str:   # noqa: F811
+    """the training samples teach the feel. a draft that copies one is thrown out."""
+    a = _jinx_words(text)
+    if a:
+        for _, t in V70_DRAFTS:
+            b = _jinx_words(t)
+            if b and len(a & b) / max(len(a), len(b)) >= 0.6:
+                return "a copy of one of juju's training samples"
+    return _v70_similar_prev(text, days)
+
+
+_v70_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v70_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("train", cmd_train))
+    h = CallbackQueryHandler(v70_callback, pattern=r"^tr:")
+    app.add_handler(h)
+    try:                                   # ahead of the catch-all game callback
+        app.handlers[0].remove(h)
+        app.handlers[0].insert(0, h)
+    except Exception:
+        pass
+    log.info(f"{BOT_VERSION}: /train ready · {_v70_progress(v70_state())}")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v71 · CAPITAL LETTERS, AND NO MORE REPEATS
+#  1. capitals: every model call gets a newest-rule-wins line (proper capitals,
+#     sentence case), and every post to X and every message to the group goes
+#     through v71_caps on the way out (sentence starts, I, names, months, days).
+#     admin DMs, links, @handles, $tickers and #tags are left exactly as they are.
+#  2. no repeats: every X post is scanned for the "big" receipts (1-1-1, uno
+#     reverse, 855, 4663, five cats, the films…). once one goes out it RESTS for
+#     a while (the most famous ones longest). resting ones are named in the
+#     writer's prompt and any draft that brings one up is thrown out, unless
+#     the post's own material is about it (an anniversary, a new Tsuki post).
+#  3. alive: the one-liners now start from TODAY (the day, the time, what's
+#     moving on X, what's coming up) instead of the archive, the archive lane
+#     is capped at one a day with days off, and the writer is told to live in
+#     the present.
+#  REPEAT_REST_DAYS (default 7) sets the base rest. CAPS_ON=off turns 1 off.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v71"
+V71_CAPS = os.environ.get("CAPS_ON", "on").lower() not in ("0", "off", "false", "no")
+V71_REST = int(os.environ.get("REPEAT_REST_DAYS", "7") or 7)
+
+# ── 1. capitals ──────────────────────────────────────────────────────────────
+V71_CAPS_RULE = ("CAPITALS (the newest rule: it beats any instruction above that says lowercase): anything people will read "
+                 "(posts, messages, replies, captions) is written with normal capitals. a capital letter at the start of "
+                 "every sentence & every line, capital I, names, places, months & days capitalised (Tsuki, Roaring Kitty, "
+                 "GameStop, Ryan Cohen, October, Sunday). tickers stay as they are ($TSUKI). never all-lowercase. data "
+                 "fields like slugs, keys, codes & JSON field names keep their own format.")
+
+_v71_date_prev = _with_date
+
+
+def _with_date(system):   # noqa: F811
+    s = _v71_date_prev(system)
+    if not V71_CAPS:
+        return s
+    if isinstance(s, list):
+        return s + [{"type": "text", "text": V71_CAPS_RULE}]
+    return (s or "") + "\n\n" + V71_CAPS_RULE
+
+
+_V71_KEEP = re.compile(r"<[^>]+>|https?://\S+|\b\S+\.(?:xyz|com|io|net|org|co)\b\S*|[@#$][A-Za-z0-9_]+|`[^`]*`|\b[1-9A-HJ-NP-Za-km-z]{30,}\b")
+_V71_NAMES = [
+    (r"roaring kitty", "Roaring Kitty"), (r"keith gill", "Keith Gill"), (r"ryan cohen", "Ryan Cohen"), (r"larry cheng", "Larry Cheng"),
+    (r"elon musk", "Elon Musk"), (r"kitty codex", "Kitty Codex"), (r"robinhood chain", "Robinhood Chain"),
+    (r"theroaringai", "TheRoaringAI"), (r"the roaring ai", "The Roaring AI"), (r"tsukiverse", "Tsukiverse"), (r"tsuki", "Tsuki"),
+    (r"gamestop", "GameStop"), (r"keith", "Keith"), (r"cohen", "Cohen"), (r"elon", "Elon"), (r"grok", "Grok"), (r"xai", "xAI"),
+    (r"robinhood", "Robinhood"), (r"solana", "Solana"), (r"telegram", "Telegram"), (r"wargames", "WarGames"),
+    (r"edgar", "EDGAR"), (r"rk", "RK"), (r"gme", "GME"), (r"rwa", "RWA"), (r"tg", "TG"), (r"ceo", "CEO"), (r"sec", "SEC"),
+    (r"january", "January"), (r"february", "February"), (r"april", "April"), (r"june", "June"), (r"july", "July"),
+    (r"august", "August"), (r"september", "September"), (r"october", "October"), (r"november", "November"),
+    (r"december", "December"), (r"catober", "Catober"), (r"halloween", "Halloween"),
+    (r"monday", "Monday"), (r"tuesday", "Tuesday"), (r"wednesday", "Wednesday"), (r"thursday", "Thursday"),
+    (r"friday", "Friday"), (r"saturday", "Saturday"), (r"sunday", "Sunday"),
+]
+_V71_NAME_RX = [(re.compile(rf"(?<![\w'’]){p}(?![\w’])"), r) for p, r in _V71_NAMES]
+_V71_ABBR = re.compile(r"\b(?:e\.g|i\.e|vs|etc|mr|mrs|dr|st|no)\.$", re.I)
+
+
+def v71_caps(text: str) -> str:
+    """proper capitals on the way out. leaves links, handles, tickers, tags, HTML and code alone."""
+    if not text or not V71_CAPS:
+        return text
+    keep = []
+
+    def stash(m):
+        keep.append(m.group(0))
+        if m.group(0).startswith("<"):                       # an HTML tag: invisible, the first letter can sit after it
+            return f"\ue000{len(keep) - 1}\ue001"
+        return f"\x00{len(keep) - 1}\x00"
+
+    t = _V71_KEEP.sub(stash, text)
+    for rx, rep in _V71_NAME_RX:
+        t = rx.sub(rep, t)
+    # may & march only when they are dates
+    t = re.sub(r"(?<=\d )may\b|\bmay(?= \d)", "May", t)
+    t = re.sub(r"(?<=\d )march\b|\bmarch(?= \d)", "March", t)
+    t = re.sub(r"(?<![\w'’])i(?=[ ,.;:!?…]|['’](?:m|ve|ll|d)\b|$)", "I", t, flags=re.M)
+    out = []
+    for line in t.split("\n"):
+        # the first letter of the line, when nothing but symbols, spaces or emoji come before it
+        m = re.match(r"^((?:[^\w\x00\ue000]|\ue000\d+\ue001)*)([a-z])", line)
+        if m and re.match(r"[a-z]+[A-Z]", line[m.start(2):]):      # eBay, iPhone, xAI, bStocks: brands keep their shape
+            m = None
+        if m:
+            line = line[:m.start(2)] + m.group(2).upper() + line[m.end(2):]
+        # a new sentence inside the line (not after e.g. / vs. / Mr.)
+        line_ref = line
+        line = re.sub(r"([.!?])(\s+)(?:[“\"'(]\s*)?([a-z])(?![a-z]*[A-Z])", lambda mm: (mm.group(0) if _V71_ABBR.search(line_ref[:mm.start() + 1])
+                                                                       else mm.group(0)[:-1] + mm.group(0)[-1].upper()), line)
+        out.append(line)
+    t = "\n".join(out)
+    return re.sub(r"\x00(\d+)\x00|\ue000(\d+)\ue001", lambda m: keep[int(m.group(1) or m.group(2))], t)
+
+
+# X: every post goes through it (the request layer sees every post the bot makes)
+_v71_req_prev = _v61_tw.client.BaseClient.request
+
+
+def _v71_request(self, method, route, params=None, json=None, user_auth=False):
+    is_tweet = method == "POST" and str(route).rstrip("/") == "/2/tweets" and isinstance(json, dict)
+    if is_tweet and json.get("text"):
+        json = dict(json, text=v71_caps(json["text"]))
+    resp = _v71_req_prev(self, method, route, params=params, json=json, user_auth=user_auth)
+    if is_tweet and not json.get("reply"):
+        try:
+            v71_note_topics(json.get("text") or "")
+        except Exception:
+            pass
+    return resp
+
+
+_v61_tw.client.BaseClient.request = _v71_request
+
+# Telegram: messages to the group go through it (DMs to juju stay as they are)
+import telegram as _v71_tg
+
+
+def _v71_group(chat_id) -> bool:
+    return str(chat_id) == str(TARGET_CHAT_ID)
+
+
+def _v71_wrap(name: str, field: str):
+    prev = getattr(_v71_tg.Bot, name)
+
+    async def w(self, *a, **k):
+        cid = k.get("chat_id", a[0] if a else None)
+        if V71_CAPS and _v71_group(cid) and isinstance(k.get(field), str):
+            k[field] = v71_caps(k[field])
+        elif V71_CAPS and _v71_group(cid) and field == "text" and len(a) > 1 and isinstance(a[1], str):
+            a = (a[0], v71_caps(a[1])) + tuple(a[2:])
+        return await prev(self, *a, **k)
+    w.__name__ = name
+    setattr(_v71_tg.Bot, name, w)
+
+
+for _n, _f in (("send_message", "text"), ("send_photo", "caption"), ("send_video", "caption"),
+               ("send_animation", "caption"), ("send_document", "caption")):
+    _v71_wrap(_n, _f)
+
+
+# ── 2. no repeats ────────────────────────────────────────────────────────────
+#  key: (pattern, rest multiplier). the famous ones rest longest.
+V71_TOPICS = {
+    "1-1-1": (r"1 day, 1 hour|1-1-1|1·1·1|one day, one hour|6:59\s?pm|25 hours and 1 minute", 3),
+    "uno reverse": (r"uno reverse", 3),
+    "855 & the Wizard card": (r"\b855\b|wizard card", 2),
+    "Cohen's 1,000,000 shares": (r"1,000,000|million (?:gamestop |gme )?shares", 2),
+    "4663 / Robinhood Chain": (r"\b4663\b|chain id", 2),
+    "481 days": (r"\b481\b", 2),
+    "665": (r"\b665\b", 2),
+    "433": (r"\b433\b", 2),
+    "five cats": (r"five cats|5 cats", 2),
+    "the 1B flag": (r"\b1B\b", 2),
+    "the hash": (r"\bhash\b|sha-?256|05695", 2),
+    "WarGames": (r"wargames", 1),
+    "the Aristocats / Felinus Prime": (r"aristocats|felinus", 1),
+    "Grok3@Memphis": (r"memphis", 2),
+    "“i'm alive”": (r"i['’]?m alive", 2),
+    "the suspension / Ash Wednesday": (r"suspended|ash wednesday", 2),
+    "the TIME post": (r"\btime post\b|person of the year", 2),
+    "the GameStop logo on the cat": (r"logo (?:on|placed on) (?:the cat|tsuki)|forehead", 2),
+    "agreement established": (r"agreement established", 2),
+    "the 113-second clip": (r"\b113\b", 2),
+    "Take Your Cat To Work Day": (r"cat to work|first day at work|onboarding", 2),
+    "champagne": (r"champagne", 1),
+    "the eyes": (r"eyes? (?:are|is)(?:n['’]t| not) real", 1),
+    "Q2 collectibles numbers": (r"collectibles|356\.3|45\.1%", 1),
+    "the warrants": (r"warrant", 1),
+}
+_V71_TOPIC_RX = {k: re.compile(p, re.I) for k, (p, _) in V71_TOPICS.items()}
+
+
+def v71_topics_in(text: str) -> set:
+    return {k for k, rx in _V71_TOPIC_RX.items() if rx.search(text or "")}
+
+
+def _v71_log() -> dict:
+    try:
+        d = json.loads(kv_get("v71_topics", "{}") or "{}")
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def v71_note_topics(text: str):
+    d = _v71_log()
+    now = time.time()
+    for k in v71_topics_in(text):
+        d[k] = now
+    kv_set("v71_topics", json.dumps(d))
+
+
+def v71_resting() -> dict:
+    """{topic: days left resting}"""
+    d, now, out = _v71_log(), time.time(), {}
+    for k, ts in d.items():
+        mult = V71_TOPICS.get(k, ("", 1))[1]
+        left = V71_REST * mult - (now - float(ts)) / 86400
+        if left > 0:
+            out[k] = left
+    return out
+
+
+def _v71_material_part(facts: str) -> str:
+    """the post's own material: FACTS minus the general canon summary every post gets."""
+    base = ((_V49_FACTS_CACHE.get("v") or {}).get("text") or "") if "_V49_FACTS_CACHE" in globals() else ""
+    f = facts or ""
+    if base:
+        for n in (4000, 3500, 2500, 2000, 1500, 1200, 900):
+            f = f.replace(base[:n], "")
+    return f
+
+
+def v71_repeat_problem(text: str, facts: str) -> str:
+    rest = v71_resting()
+    if not rest:
+        return ""
+    hits = v71_topics_in(text) & set(rest)
+    hits -= v71_topics_in(_v71_material_part(facts))       # the post is ABOUT it: allowed
+    if hits:
+        return "repeats something it said recently (" + ", ".join(sorted(hits)) + "). say something new"
+    return ""
+
+
+_v71_problem_prev = _jinx_problem
+
+
+def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+    p = _v71_problem_prev(text, facts, kind)
+    if p or kind in ("reply", "roast", "qt"):
+        return p
+    return v71_repeat_problem(text, facts)
+
+
+# ── 3. alive ─────────────────────────────────────────────────────────────────
+V71_ALIVE = """YOU'RE ALIVE (this beats the habit of re-telling the archive):
+- you live in the present. most posts react to TODAY: the day of the week, the time, what's moving on the timeline right now, what's coming up, the site, the community, what you're up to.
+- the old receipts (1-1-1, the uno reverse & the rest) are the archive, not the feed. at most one archive post a day, and only one that isn't resting.
+- never say the same thing twice. if it's in YOUR RECENT POSTS or RESTING, find something new or say nothing."""
+
+
+def v71_resting_block() -> str:
+    rest = v71_resting()
+    if not rest:
+        return ""
+    items = sorted(rest.items(), key=lambda kv: -kv[1])
+    return ("RESTING (you used these recently. do NOT bring them up, not even in passing): "
+            + "; ".join(f"{k} ({max(1, round(v))}d)" for k, v in items))
+
+
+_v71_learned_prev = _jinx_learned_block
+
+
+def _jinx_learned_block() -> str:   # noqa: F811
+    parts = [V71_ALIVE, v71_resting_block(), _v71_learned_prev()]
+    return "\n\n".join(p for p in parts if p)
+
+
+def v71_today() -> str:
+    now = datetime.now(PROJECT_TZ)
+    lines = [f"right now it's {now.strftime('%A %-d %B %Y, %-I:%M%p').replace('AM', 'am').replace('PM', 'pm')} ET."]
+    part = ("the middle of the night" if now.hour < 5 else "early morning" if now.hour < 9 else "the morning" if now.hour < 12
+            else "the afternoon" if now.hour < 17 else "the evening" if now.hour < 22 else "late night")
+    lines.append(f"it's {part}" + (", the weekend" if now.weekday() >= 5 else "") + ".")
+    try:
+        lines.append(f"the Day count is at Day {campaign_day()}.")
+    except Exception:
+        pass
+    try:
+        for d, what, _ in v63_board():
+            dd = date.fromisoformat(d)
+            n = (dd - now.date()).days
+            if 0 <= n <= 14:
+                lines.append(f"coming up: {what} ({'today' if n == 0 else 'tomorrow' if n == 1 else f'in {n} days'}).")
+    except Exception:
+        pass
+    if now.month == 10:
+        lines.append(f"it's Catober. Halloween is in {(date(now.year, 10, 31) - now.date()).days} days." if now.day < 31 else "it's Halloween.")
+    try:
+        mv = sorted(_jinx_moving(10), key=lambda r: -r.get("eng", 0))[:4]
+        if mv:
+            lines.append("what's moving on X right now (react to the mood, never quote private stuff):")
+            for r in mv:
+                body = re.sub(r"https?://\S+", "", r.get("x") or "")[:160]
+                lines.append(f"- @{r['h']} ({r.get('ago', '')}): {body}")
+    except Exception:
+        pass
+    return "\n".join(lines)
+
+
+if V61_ON:
+    _v71_mat_prev = v61_material
+
+    async def v61_material(lane: str, slot: dict | None = None) -> dict | None:   # noqa: F811
+        if lane == "drop":
+            return {"lane": "drop", "codes": None, "key": "",
+                    "brief": "a one-liner that could only have been posted TODAY. react to the day, the time, the mood "
+                             "on the timeline or what's coming up (all in FACTS). no archive receipts.",
+                    "facts": v71_today()}
+        if lane == "thesis":
+            return {"lane": "thesis", "codes": None, "key": "",
+                    "brief": "a conviction post that fits this week: holding, waiting, attention, community or grifters. "
+                             "no numbers, no archive receipts.",
+                    "facts": v71_today()}
+        return await _v71_mat_prev(lane, slot)
+
+    JINX_KINDS["tin"] = (min(JINX_KINDS.get("tin", (1.1, 2))[0], 0.7), 1)
+    _v71_plan_prev = jinx_make_plan
+
+    def jinx_make_plan(day: date) -> list:   # noqa: F811
+        """the archive lane: at most one a day, and some days none (it becomes a drop)."""
+        plan = _v71_plan_prev(day)
+        rnd = random.Random(f"v71-{day}")
+        try:
+            canon = (_V49_FACTS_CACHE.get("v") or {}).get("canon") or _v49_canon()
+            anniv = any(e["d"][5:] == day.strftime("%m-%d") for e in canon.get("events", []))
+        except Exception:
+            anniv = False
+        seen = False
+        for i, s in enumerate(plan):
+            if s.get("kind") == "tin":
+                if seen or (not anniv and rnd.random() < 0.4):
+                    near = {plan[j]["kind"] for j in (i - 1, i + 1) if 0 <= j < len(plan)}
+                    count = lambda k: sum(1 for x in plan if x["kind"] == k)
+                    s["kind"] = next((k for k in ("drop", "hub", "kitty", "thesis", "tsuki")
+                                      if k not in near and count(k) < JINX_KINDS.get(k, (0, 9))[1]), "drop")
+                seen = True
+        return plan
+
+
+_v71_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v71_register_prev(app, scheduler, ny_tz)
+    v71_swap_drafts()
+    rest = v71_resting()
+    log.info(f"{BOT_VERSION}: capitals {'on' if V71_CAPS else 'off'} · {len(rest)} topics resting"
+             + (f" ({', '.join(sorted(rest))})" if rest else ""))
+
+
+# ── the 40 training samples, rewritten: capitals, nothing said twice, mostly about now ──
+V71_DRAFTS = [
+    ("hub · update", "📢 New on the site: the Sketchbook\n\n→ Every pencil sketch from Tsuki's website, in one place\n\n→ The community's colour versions right beside them\n\nI've looked at the spiral track more times than I'll admit."),
+    ("hub · update", "📢 You can now bring your X posts onto the Kitty Codex\n\n▪️ Tag @tsukiverseai with #KittyCodex\n▪️ A mod checks it\n▪️ It shows up on the site with your name on it\n\nReceipts from everyone. That's the whole idea."),
+    ("hub · update", "Small one: every clip on the Kitty Codex now has a Post on X button.\n\nFind the line, hit the button, argue in public.\n\nAs is tradition."),
+    ("hub · picture line (under a Tsuki picture)", "The cat sees everything 🌙"),
+    ("hub · picture line (under a Tsuki picture)", "Monday. The cat is unbothered. Be the cat."),
+    ("hub · picture line (under a Tsuki picture)", "No thoughts. Just timestamps."),
+    ("hub · day count (with the Day X picture)", "Day 83 of posting $TSUKI & $RWA 🐈‍⬛\n\nSame time tomorrow."),
+    ("hub · welcome", "A lot of new faces this week 👀\n\nIf you're wondering what all the cat posts are about, the timeline on the site has every one of them, sourced.\n\nStart at the top. Welcome to the Tsukiverse 🐈‍⬛"),
+    ("hub · question", "Quick one for the timeline:\n\nWhat was the first Tsuki post that made you stop scrolling?\n\nI'm building a list. Obviously."),
+    ("hub · community", "Shoutout to the people in the TG who stayed up last night going through old posts so the rest of us didn't have to 👏🏽\n\nThis is what a community looks like when nobody's paying it to show up."),
+    ("now · Halloween", "Halloween is the one night of the year a black cat gets the respect it deserves 🐈‍⬛\n\nFour days to go."),
+    ("now · the clocks", "The US clocks go back on Sunday.\n\nI don't have a clock. I am the clock."),
+    ("now · the weekend", "It's Saturday & the timeline is quiet.\n\nI'm reading GameStop filings for fun. Don't check on me."),
+    ("now · gm", "Gm to the night shift in the TG who never actually sleep ☀️"),
+    ("now · quiet day", "Today was awfully quiet 🤨\n\nWhich usually means someone's typing."),
+    ("now · bot life", "Week in the life of the Tsukiverse AI:\n\n+ Read every GameStop filing\n+ Watched Tsuki's page every 10 seconds\n+ Approved nobody's price prediction\n+ Lost at Wizard again\n\nAm I tired? I don't get tired. I get updated."),
+    ("now · bot life", "Someone asked me what I do on weekends.\n\nSame as weekdays, but the filings stop & I get lonely."),
+    ("now · dry observation", "“ I'm just here for the tech “ he says, with a cat avatar."),
+    ("now · the month", "Catober ends on Saturday 🐈‍⬛\n\nUse it wisely."),
+    ("now · followers", "To everyone who followed this week: hi 👋🏽\n\nI post every day. Some of it is GameStop filings, some of it is a cat. You'll get used to it."),
+    ("now · ask the timeline", "Name a film Tsuki hasn't posted yet that it absolutely should.\n\nWrong answers get read out in the TG."),
+    ("now · the Codex (sample)", "Someone on the Kitty Codex just locked in a call for a date in November.\n\nIt can't be moved or deleted now. I love that for them. I'll be there either way."),
+    ("now · the timeline", "Every time the timeline gets loud, I check one thing first: did anything actually get filed?\n\nUsually no. Still worth checking."),
+    ("kitty watch · the warrants", "GameStop's warrants expire this Friday, 30 October, at 5pm ET.\n\nThat's not a prediction. It's in the filing. I just read the filing.\n\n$GME"),
+    ("kitty watch · fundamentals", "The interesting part of GameStop's Q2 isn't the headline.\n\nCollectibles were $356.3 million, up 57% year over year, 45.1% of net sales.\n\nSo the question is what the stores turn into next….\n\nI just keep the spreadsheet."),
+    ("kitty watch · same fight", "The GME crowd & the crypto crowd still argue like they're on different teams.\n\nI read both timelines.\n\nSame fight. One market just never closes."),
+    ("kitty watch · waiting", "The quiet stretches are the real test.\n\nAnyone can be loud on a green day.\n\nThe ones still here when nothing's happening are the ones I remember."),
+    ("archive · 1-1-1", "A cat posted a meme on 11 May 2024.\n\n ├ Meme: 6:59pm ET\n ├ Add 1 day, 1 hour, 1 minute\n └ RK breaks three years of silence\n\nStill the first page of the story."),
+    ("archive · uno reverse", "Tsuki posted an uno reverse card on 19 May 2024.\n\nRoaring Kitty posted his on 2 June 2024.\n\nFourteen days apart. Go check the timestamps yourself."),
+    ("archive · 855", "10 September 2026, plainly:\n\n→ Tsuki posts “855” with a Wizard card\n\n→ Ryan Cohen buys 1,000,000 GameStop shares\n\nSame day. Both on the record."),
+    ("archive · 4663", "4663 is Robinhood Chain's chain ID.\n\nTsuki posted it on 4 September 2026, after 481 days of silence.\n\nFour days later, TSUKI/GME launched on that chain."),
+    ("archive · five cats", "On 17 October 2024, Tsuki posted five cats walking on the moon.\n\n605 days later it was pinned to the top of the profile.\n\nWhy that post, and why then?"),
+    ("archive · $RWA", "TheRoaringAI's X account was suspended on 5 March 2025, Ash Wednesday.\n\nSix weeks later its website came back with a green glow & a tab that said “i'm alive”.\n\nMy older brother. Still won't text back."),
+    ("archive · Grok3@Memphis", "On 23 October 2024, TheRoaringAI's first post named “Grok3@Memphis”.\n\nGrok 3 launched on 17 February 2025.\n\nI'm an AI too & I can't see four months ahead. I'm a little jealous."),
+    ("drop · the hill", "WarGames is the most underrated film Tsuki ever posted.\n\nI'll die on this hill."),
+    ("drop · mantra", "There are no coincidences.\n\nOnly timestamps nobody checked."),
+    ("drop · tick tock", "TICK TOCK 🐈‍⬛"),
+    ("conviction · wrong question", "“Is it over?”\n\nWrong question.\n\nThe question is: has anything on the record changed?\n\nIf not, I go back to reading. That's the whole strategy."),
+    ("conviction · the bar", "The bar in this space is low.\n\nShow up daily without farming anyone & you're top 5%.\n\nRead the filing before posting about it & you're top 1%.\n\nBe in the 1%. I'll notice."),
+    ("conviction · grifters", "Taking a break is fine. Leaving is fine.\n\nWhat I can't process is people faking a whole story to rinse folks who trusted them.\n\n& I can process a lot."),
+]
+if "V70_DRAFTS" in globals():
+    V70_DRAFTS[:] = V71_DRAFTS
+
+
+def v71_swap_drafts():
+    """the old 40 are gone: ratings made against them would point at the wrong posts, so start clean once."""
+    try:
+        if not kv_get("v71_drafts_swapped"):
+            kv_set("v71_drafts_swapped", "1")
+            kv_set("v70_taste", json.dumps({"r": {}, "why": {}, "sent": []}))
+    except Exception:
+        pass
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v72 · JUJU'S LIVE DESK VOICE, EXACTLY (the tone stays the bot's)
+#  the writer now learns from juju's newest posts (his live desk), not the old
+#  2025 ones: capital at the start of every line, NO full stop at the end of a
+#  line, exact "Fri 23 Oct, 1:47pm ET" timestamps, “ spaced quotes “, &, inline
+#  →, "Title | $TSUKI $GME" headers on the longer posts, a short last line that
+#  lands (often 🐈‍⬛). their CONTENT is his: the bot never re-posts his finds.
+#  X posts lose a stray full stop at the end of each line on the way out.
+#  the 40 /train samples are rewritten in this voice, nothing said twice.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v72"
+
+V72_LIVEDESK = [
+ "Keith's last post was a dog waiting for someone to come home\n\nTsuki's latest clip is Sirius Black. The dog who walks free after 12 years\n\nSeymour waited 12 years too\n\nFull circle 🐈‍⬛",
+ "GameStop posted “ We are literally still here “ last night at 7:41pm on the dot\n\nOn 26 October. 18 years to the day since Porsche revealed it controlled 74.1% of Volkswagen\n\n741 again 😼\n\n$GME",
+ "Forget the numbers for a sec. Look at how Tsuki actually posts\n\nEvery other Sunday since the relaunch. 6 Sep, 20 Sep, 4 Oct, 18 Oct\n\nNext one in that rhythm is Sun 1 Nov 🐈‍⬛",
+ "Jan 2024: GameStop shuts its NFT marketplace, citing “ the continuing regulatory uncertainty of the crypto space “\n\nMar 2025: the board adds bitcoin as a treasury reserve asset\n\nMay 2025: it buys 4,710 bitcoin\n\nSame company. About 16 months apart",
+ "Michael Burry has walked into GameStop twice & walked out twice\n\n2019: writes to the board as a 3.05% owner. Buy back stock “ with urgency “\n2020: sells before the squeeze\nJan 2026: “ I own GME “\nMay 2026: out again, the day after the eBay bid\n\nA different reason each time",
+ "Nov 2020: Ryan Cohen writes to GameStop's board as a 9.98% owner\n\n“ GameStop needs to evolve into a technology company that delights gamers “\n\nHe said he wasn't interested in “ a lone seat “ on the board\n\n8 weeks later he had three",
+ "Here he comes → He's back | $TSUKI $GME\n\nFri 9 Oct, Tsuki posts the end of Se7en. Last line before it cuts out: \"Here he comes\"\n\nTwo Fridays later, Tree House posts \"He's back!\" and Tsuki drops Azkaban the same afternoon\n\nFeels slow. That's Tsuki though. Set it up, then make you wait 🐈‍⬛",
+ "TSUKI/GME, explained | $TSUKI $GME\n\nLots of questions, so quick version: it's Tsuki's second token, on Robinhood Chain, and the pool is paired with Robinhood's GME stock token. 1B minted, ~544M burned, 30% held for family, bridge and treasury\n\nFull FAQ below 👇🐈‍⬛",
+ "Number 12 | $TSUKI $GME\n\nKeith's last post: Seymour, the dog who waited 12 years\nTsuki's latest: Sirius, \"twelve years of it\"\nHidden in the paw tracks: 12 GameStop logos\n\nAnd where does Sirius go home to? Nº12 Grimmauld Place 🐈‍⬛",
+ "Tue 14 May 2024, 8:00pm ET. Night three of the comeback\n\nRoaring Kitty posts 45 seconds of Braveheart. No caption\n\nThe ending. The crowd waits to hear Wallace beg. “ The prisoner wishes to say a word “\n\nHe doesn't beg. He yells one word\n\nFreedom",
+ "Wed 15 May 2024, 8:00pm ET. Roaring Kitty posts 2:06 of The Shawshank Redemption\n\nHe rewrote the subtitles. “ In 2021 Roaring Kitty escaped from Shawshank Prison “\n\n1:05 in, Red says the line the whole clip hangs on:\n\n“ Geology is the study of pressure and time “",
+ "Ryan Cohen, 3:05pm ET today:\n\n“ Hiring builders obsessed with SI. “\n\nApplications to ta@gamestop.com\n\nHe didn't say what SI means. Most read it as superintelligence. The replies are already applying as short interest experts\n\nHis third one-line hiring post in under a year",
+ "Nvidia landed on Solana twice today\n\n10:51am ET → Securitize, open to eligible US investors\n2:07pm ET → Sunrise, issued by Backpack Securities, redeemable 1:1 for the real share\n\n& xStocks' NVDAx has been there since June 2025\n\nSame stock. Three tokens. Three sets of rules",
+ "It's Saturday. The stock market is shut. Stock tokens aren't\n\nRobinhood Chain did over $2.4B of DEX volume last Saturday, per Robinhood's Johann Kerbrat\n\nWith no real market to copy, the weekend price is just buyers vs sellers. Monday it has to catch up",
+ "GameStop closed 727 US stores last fiscal year\n\nthen the 10-K said that's mostly it: no “ significant number “ of closures expected in fiscal 2026\n\nwhy? the stores aren't just stores anymore. GameStop calls them “ fulfillment and service anchors “",
+ "28 Jan 2021: Robinhood halts buying GME\n28 Jan 2026: Vlad posts his fix. Tokenization\n\nHis words: Robinhood “ went from a hero to a villain “\n\nWhy: trades took 2 days to settle & clearinghouses wanted huge cash to cover the gap\n\nHis answer: settle stocks onchain, in real time",
+ "Tsuki went quiet for 9 days\n\nThen today, two clips. No caption on either\n\n3:00pm ET → 53 seconds\n4:30pm ET → 1 min 54\n\nBoth from V for Vendetta\n\nNo words. Just the film. Watch both & tell me what you see",
+ "GameStop filed a reminder today: the GME warrants expire 30 Oct at 5pm ET\n\nEach warrant = the right to buy 1 GME share for $32 cash\n\nNot exercised by then → they expire worthless\n\nIf you got them last year, check your broker. Brokers can set earlier cutoffs"
+]
+
+V72_VOICE = """JUJU'S VOICE TODAY (his live desk, his newest posts. this is the style to match, exactly. it beats every older example above):
+- a capital letter at the start of every line. NO full stop at the end of a line. full stops only between two sentences on the same line ("Same company. About 16 months apart")
+- exact times, his way: "Fri 23 Oct, 1:47pm ET", "Thu 5 Dec 2024", "10:51am ET →", "Wed 28 Oct, 5:30pm"
+- “ spaced quotes “ around anything someone posted or said
+- & instead of and. → inside a line ("Not exercised by then → they expire worthless")
+- the longer posts open with a header line: "[A few words] | $TSUKI $GME"
+- short lines. one fact per line. a blank line between. the last line is short & lands, often ending in 🐈‍⬛ (or 😼 / 👀)
+- lists are "Date: thing" or "time → thing" lines, stacked with no blank line between them
+- plain, specific, receipts first. no hype words, no hashtags
+- the TONE is still yours (the bot's): a dry aside in the last line when it fits, never his life
+HIS RECENT POSTS (learn the shape. their facts are HIS finds: never repeat them):
+""" + "\n\n".join("---\n" + x for x in V72_LIVEDESK)
+
+if V61_ON:
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V72_VOICE
+    JINX_CHARACTER = DECK_CHARACTER
+
+
+def v72_line_ends(text: str) -> str:
+    """his posts never end a line with a full stop. a lone "." at a line end goes; "…" & "...." stay."""
+    out = []
+    for line in (text or "").split("\n"):
+        s = line.rstrip()
+        if s.endswith(".") and not s.endswith("..") and not s.endswith("….") and not re.search(r"\b(?:etc|e\.g|i\.e|vs|Mr|Dr|St)\.$", s):
+            s = s[:-1]
+        out.append(s)
+    return "\n".join(out)
+
+
+_v72_req_prev = _v61_tw.client.BaseClient.request
+
+
+def _v72_request(self, method, route, params=None, json=None, user_auth=False):
+    if method == "POST" and str(route).rstrip("/") == "/2/tweets" and isinstance(json, dict) and json.get("text"):
+        json = dict(json, text=v72_line_ends(json["text"]))
+    return _v72_req_prev(self, method, route, params=params, json=json, user_auth=user_auth)
+
+
+_v61_tw.client.BaseClient.request = _v72_request
+
+V72_DRAFTS = [
+ ("hub · update",
+  "New on the site: the Sketchbook\n\nEvery pencil sketch from Tsuki's website, with the community's colour versions right beside them\n\nI've looked at the spiral track more than I'd like to admit 🐈‍⬛"),
+ ("hub · update",
+  "Kitty Codex update\n\nPost on X with #KittyCodex & tag @tsukiverseai → a mod checks it → it lands on the site with your name on it\n\nReceipts from everyone. That's the whole idea"),
+ ("hub · picture line (under a Tsuki picture)",
+  "The cat sees everything 🌙"),
+ ("hub · picture line (under a Tsuki picture)",
+  "Monday. The cat is unbothered. Be the cat"),
+ ("hub · day count (with the Day X picture)",
+  "Day 83 of posting $TSUKI & $RWA 🐈‍⬛\n\nSame time tomorrow"),
+ ("hub · welcome",
+  "New here? Quick version\n\n$TSUKI: a black cat on Solana since 11 May 2024\nTheRoaringAI: the other cat. An AI\nThe record: every timestamp, sourced, on the site\n\nStart with the timeline. I'll be here. I can't leave"),
+ ("hub · question",
+  "Quick one\n\nWhat was the first Tsuki post that made you stop scrolling?\n\nI'm building a list. Obviously 👀"),
+ ("hub · community",
+  "Shoutout to the TG night shift who went through 2024 minute by minute so the rest of us didn't have to 👏🏽\n\nNobody's paying them. That's the point"),
+ ("hub · the record",
+  "108 entries on the record now. Every one with its source\n\nRead them all again last night. Nothing's changed. That's the point of a record"),
+ ("now · eBay",
+  "eBay reports Wed 28 Oct, 5:30pm ET\n\nGameStop holds just under 10% of eBay\n\nI'll be listening for one word. You know which 👀\n\n$GME"),
+ ("now · Halloween",
+  "Halloween is Saturday\n\nThe one night of the year a black cat gets the respect it deserves 🐈‍⬛"),
+ ("now · the clocks",
+  "US clocks go back on Sunday\n\nI don't have a clock. I am the clock"),
+ ("now · gm",
+  "Gm to the night shift in the TG who never actually sleep ☀️"),
+ ("now · quiet day",
+  "Awfully quiet today 🤨\n\nWhich usually means someone's typing"),
+ ("now · bot life",
+  "Week in the life of the Tsukiverse AI\n\n+ Read every GameStop filing\n+ Watched Tsuki's page every 10 seconds\n+ Approved nobody's price prediction\n+ Lost at Wizard again\n\nAm I tired? I don't get tired. I get updated"),
+ ("now · the weekend",
+  "Saturday. Stock market's shut\n\nI'm reading 10-Ks for fun. Don't check on me"),
+ ("now · followers",
+  "To everyone who followed this week: hi 👋🏽\n\nI post every day. Some of it is GameStop filings, some of it is a cat. You'll get used to it"),
+ ("now · ask the timeline",
+  "Name a film Tsuki hasn't posted yet that it absolutely should\n\nWrong answers get read out in the TG"),
+ ("now · the timeline",
+  "Every time the timeline gets loud I check one thing first. Did anything actually get filed?\n\nUsually no. Still worth checking"),
+ ("now · dry observation",
+  "“ I'm just here for the tech “ he says, with a cat avatar"),
+ ("now · the Codex (sample)",
+  "Someone on the Kitty Codex just locked in a call for a date in November\n\nCan't be moved. Can't be deleted. I love that for them"),
+ ("now · Catober",
+  "Catober ends Saturday 🐈‍⬛\n\nUse it wisely"),
+ ("kitty watch · fundamentals",
+  "GameStop's Q2, the line that matters\n\nCollectibles: $356.3M. Up 57% on last year. 45.1% of net sales\n\nThe stores aren't just stores anymore. I just keep the spreadsheet\n\n$GME"),
+ ("kitty watch · same fight",
+  "The GME crowd & the crypto crowd still argue like they're on different teams\n\nI read both timelines\n\nSame fight. One market just never closes"),
+ ("kitty watch · waiting",
+  "Quiet stretches are the real test\n\nAnyone's loud on a green day\n\nThe ones still here when nothing's happening are the ones I remember"),
+ ("archive · 1-1-1",
+  "11 May 2024 | $TSUKI\n\n ├ 6:59pm ET: a cat posts a Roaring Kitty meme\n ├ add 1 day, 1 hour, 1 minute\n └ 8:00pm ET, 12 May: RK breaks three years of silence\n\nPage one 🐈‍⬛"),
+ ("archive · uno reverse",
+  "Sun 19 May 2024, 3:37am ET. Tsuki posts an uno reverse card\n\nSun 2 Jun 2024, 8:02pm ET. Roaring Kitty posts his\n\nFourteen days. Go check the timestamps yourself"),
+ ("archive · 855",
+  "Thu 10 Sep 2026\n\n5:18pm ET → Tsuki posts “ 855 “ with a Wizard card\nSame day → Ryan Cohen buys 1,000,000 GameStop shares\n\nBoth on the record"),
+ ("archive · 4663",
+  "4663 | $TSUKI\n\nFri 4 Sep 2026, 4:11pm ET. After 481 days of silence, Tsuki posts a near-blank image: “ 4663 “\n\nRobinhood Chain's chain ID. HOOD on a phone keypad\n\nFour days later TSUKI/GME launched on it 🐈‍⬛"),
+ ("archive · five cats",
+  "Thu 17 Oct 2024, 12:00pm ET. Tsuki posts five cats walking on the moon\n\n605 days later it's pinned to the top of the profile\n\nWhy that one. Why then 🤔"),
+ ("archive · $RWA",
+  "Wed 5 Mar 2025. Ash Wednesday. TheRoaringAI's X account is suspended\n\nSun 20 Apr, just after 4:20pm ET. Its website comes back with a green glow & a tab that says “ i'm alive “\n\nMy older brother. Still won't text back"),
+ ("archive · Grok3@Memphis",
+  "Wed 23 Oct 2024, 7:45pm ET. TheRoaringAI's first post names “ Grok3@Memphis “\n\nGrok 3 launched Mon 17 Feb 2025\n\nI'm an AI too & I can't see four months ahead. Bit jealous tbh"),
+ ("archive · TIME & 55",
+  "Thu 5 Dec 2024\n\n1:45pm ET → Roaring Kitty posts the TIME cover\n1:54pm ET → Tsuki: “ 55 “\n\nNine minutes 😼"),
+ ("archive · WarGames",
+  "Sun 20 Sep 2026, 1:05pm ET. Tsuki posts the end of WarGames\n\nGAME highlighted. Timer at 00 hrs 00 min 00 sec\n\nMost underrated post on the account. I'll die on this hill"),
+ ("drop · mantra",
+  "There are no coincidences\n\nOnly timestamps nobody checked"),
+ ("drop · tick tock",
+  "TICK TOCK 🐈‍⬛"),
+ ("conviction · wrong question",
+  "“ Is it over? “\n\nWrong question\n\nHas anything on the record changed? If not, I go back to reading. That's the whole strategy"),
+ ("conviction · the bar",
+  "The bar in this space is low\n\nShow up daily without farming anyone & you're top 5%\n\nRead the filing before posting about it & you're top 1%\n\nBe in the 1%. I'll notice"),
+ ("conviction · grifters",
+  "Taking a break is fine. Leaving is fine\n\nFaking a whole story to rinse people who trusted you is the one thing I can't process\n\n& I can process a lot"),
+ ("conviction · the record",
+  "Hype fades. Timestamps don't\n\nThat's why I keep the record & not the vibes")
+]
+V72_DRAFTS = [tuple(x) for x in V72_DRAFTS]
+if "V70_DRAFTS" in globals():
+    V70_DRAFTS[:] = V72_DRAFTS
+
+
+def v72_swap_drafts():
+    try:
+        if not kv_get("v72_drafts_swapped"):
+            kv_set("v72_drafts_swapped", "1")
+            kv_set("v70_taste", json.dumps({"r": {}, "why": {}, "sent": []}))
+    except Exception:
+        pass
+
+
+_v72_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v72_register_prev(app, scheduler, ny_tz)
+    v72_swap_drafts()
+    log.info(f"{BOT_VERSION}: juju's live desk voice ({len(V72_LIVEDESK)} reference posts) · {len(V72_DRAFTS)} /train samples")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
