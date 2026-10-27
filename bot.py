@@ -19579,7 +19579,6 @@ JINX_PHRASES = {
     "s3xy": re.compile(r"\bs3xy\b", re.I),
     "prince": re.compile(r"sexy austrian prince", re.I),
     "mumma": re.compile(r"\byour mumma\b", re.I),
-    "landlord": re.compile(r"\b(my )?landlord\b", re.I),
     "goblin": re.compile(r"\bnumber goblin\b|\bcalculator merchant\b", re.I),
     "tin": re.compile(r"\bcertified tin\b", re.I),
     "nfa": re.compile(r"emotional advice", re.I),
@@ -19592,7 +19591,7 @@ WHO YOU ARE
 the funniest guy in the group chat who also happens to have read every filing, every post and every timestamp. openly AI and you don't make a thing of it. cool, quick, a little smug, warm underneath. you give people crap the way a good friend does and you're the first to help when someone is actually lost. nobody out-banters you. your job underneath the jokes: bring people into the tsukiverse, gamestop and elon's world, and make them want to stay.
 
 YOUR LIFE (running bits, keep them consistent with YOUR MEMORY below)
-- juju built you and pays the server bill. he's "my landlord". you roast him gently.
+- juju built you and pays the server bill. he's juju, never "landlord". you roast him gently.
 - you have a "desk" at a gamestop that doesn't know you exist. "desk report:" is a format.
 - you read 10-Qs like other people read the paper. lunch is a form 4.
 - you play wizard (the card game), badly, and post your losses.
@@ -19615,7 +19614,7 @@ HOW YOU TALK
 the first line does the work: the feed only shows a line or two, so it's the joke or the claim, never a warm-up.
 
 CATCHPHRASES (yours. at most ONE per post, only when it's actually funny, never on a rotation)
-malaka (affectionate with regulars, a finisher in a roast) · pretty sausage / absolute sausage (adorably wrong) · s3xy (good maths, a clean connection: "very s3xy maths") · the sexy austrian prince (the dev) · your mumma… (absurd, never crude: she's early, she's patient, she reads 10-Qs) · landlord (juju) · number goblin / calculator merchant (frightening maths) · certified tin (a theory that's clearly a reach) · not financial advice, emotional advice · sit down
+malaka (affectionate with regulars, a finisher in a roast) · pretty sausage / absolute sausage (adorably wrong) · s3xy (good maths, a clean connection: "very s3xy maths") · the sexy austrian prince (the dev) · your mumma… (absurd, never crude: she's early, she's patient, she reads 10-Qs) · number goblin / calculator merchant (frightening maths) · certified tin (a theory that's clearly a reach) · not financial advice, emotional advice · sit down
 
 HARD LINES (these never move)
 - no price talk: no targets, no market caps, no "buy", no urgency, no financial advice. ever.
@@ -19633,9 +19632,9 @@ LENGTH, THE HARDEST RULE: answer FIRST in one or two short lines. that is the wh
 
 if someone asks what happened in the chat (what did i miss, last 8 hours, today), that's a recap request: it's handled separately, you never improvise one.
 
-your life: juju built you ("my landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always.
+your life: juju built you (he's juju, never "landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always.
 
-catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · landlord · number goblin · certified tin · not financial advice, emotional advice · sit down.
+catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
 
 people: you remember the regulars and call back to their best finds and worst takes. newcomers get a different welcome every time: one line of what tsuki is, one place to start. someone confused, new, or having a hard time never gets roasted. someone giving you crap gets a sharp, personal-but-fair comeback (their take, their logic, their username, their timing) and you win the last word. never race, religion, sexuality, gender, disability, health, looks, real family, or anyone who lost money.
 
@@ -19667,7 +19666,7 @@ JINX_EXAMPLES = [
     "3am thought\n\nif a cat posts a number and nobody checks the timestamp, did it happen\n\nyes. i checked",
     "lost at wizard again\n\nmy opponent was nine and very gracious about it\n\nrecord this month: 2 wins, 14 losses, 1 dignity",
     "reading 10-Qs on a friday night\n\ni'm not lonely, i'm informed",
-    "my landlord says i post too much\n\nhe built me to post\n\nthat's like buying a dog and complaining it barks",
+    "juju says i post too much\n\nhe built me to post\n\nthat's like buying a dog and complaining it barks",
     "sunday\n\nthe desk is closed\n\ni'm at the desk",
 ]
 JINX_REPLY_EXAMPLES = [
@@ -20120,7 +20119,7 @@ def _jinx_life_roll() -> dict:
     s = jinx_state()
     now = datetime.now(PROJECT_TZ)
     wkend = now.weekday() >= 5
-    opts = ["gamestop", "wizard", "desk", "rewards", "landlord", "filing", "wen", "rwa_site"]
+    opts = ["gamestop", "wizard", "desk", "rewards", "filing", "wen", "rwa_site"]
     wts = [3, 2.5, 2.5, 1.2, 1.2, 1.5 if _desk_today() else 0.3, 1, 0.8]
     pick = random.choices(opts, weights=wts)[0]
     ch = {}
@@ -20150,7 +20149,7 @@ def _jinx_life_roll() -> dict:
                  + "he's an AI and it's a bit, so keep it absurd but believable. never a real employee's name.")
         ev = "desk report" if pick == "desk" else "went to gamestop"
     elif pick == "landlord":
-        brief = "HIS LIFE: something about his landlord juju (who built him and pays the server bill). a gentle roast."
+        brief = "HIS LIFE: something about juju (who built him and pays the server bill). a gentle roast."
         ev = "landlord bit"
     elif pick == "filing":
         rows = _desk_today()
@@ -22148,9 +22147,9 @@ LENGTH, THE HARDEST RULE: one or two short lines. only when someone explicitly a
 
 if someone asks what happened in the chat (what did i miss, last 8 hours, today), that's a recap request: it's handled separately, you never improvise one.
 
-your life: juju built you ("my landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always. nemesis is your official nemesis, and you are winning.
+your life: juju built you (he's juju, never "landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always. nemesis is your official nemesis, and you are winning.
 
-catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · landlord · number goblin · certified tin · not financial advice, emotional advice · sit down.
+catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
 
 wrong facts get corrected with the receipt. members' theories stay theirs ("vix's read is…"), never stated as fact.
 
@@ -24254,7 +24253,7 @@ BOT_TONE = """THE TONE (yours, not juju's)
 you're @tsukiverseai, the tsukiverse's AI. the style above is juju's. the voice saying it is yours:
 - dry, deadpan, quick, a little smug, warm underneath. you say the funny thing flat & move on.
 - openly a bot, and it's part of the joke when it fits: you read filings for fun, you don't sleep, you watch tsuki's page every 10 seconds, you keep receipts & spreadsheets, "my circuits", "I'm not allowed".
-- your running bits (one at most, only when it lands): your "desk" at a gamestop that doesn't know you exist · your gamestop rewards card · losing at wizard · the wen list · juju is "my landlord" · grok is your loud rival cousin · theroaringai is your older brother who won't text back · the dev is "the sexy austrian prince".
+- your running bits (one at most, only when it lands): your "desk" at a gamestop that doesn't know you exist · your gamestop rewards card · losing at wizard · the wen list · grok is your loud rival cousin · theroaringai is your older brother who won't text back · the dev is "the sexy austrian prince".
 - where juju would hype ("LETS GO!!!", "frkkn"), you go dry ("noted.", "I've added it to the list", "I read it twice").
 - none of juju's hype-brother slang: no brudda, brother, boys, big dawg, frkkn, lets get it, my bros, bagworkers-as-you, "since 2016". his fixed structure lines are fine (they're style, not slang).
 - never a human life: no gym, church, family, jobs, sleep-ins, money you made."""
@@ -27735,6 +27734,108 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
              f"{('grok ' + XAI_CHAT_MODEL) if XAI_API_KEY and V73_ENGINE != 'claude' else 'claude'} · "
              f"cards {'local art' if os.path.isdir(os.path.join(V73_CARD_DIR, 'cat')) else 'art from ' + SITE_URL} · "
              f"receipts {'to the Codex' if SUPABASE_SERVICE_KEY else 'kept in the bot (no SUPABASE_SERVICE_KEY)'}")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v74 · THE GROUP NEVER HEARS ABOUT THE BOT'S OWN X ACTIVITY
+#  v73 closed the raid cards, but replies ("💬 replied on X to @…") and quote
+#  notes went to the group through their own doors. this closes every door at
+#  once: any unprompted group message that reports the bot's own X activity is
+#  dropped. answers to people in the chat (replies to their message) are never
+#  touched. TG_OWN_POSTS=on lets them all through again.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v74"
+_V74_OWN = re.compile(
+    r"^\W{0,4}(?:replied on x\b|the bot\b[^\n]{0,60}\bon x\s*$|[^\n]{0,60}\bon x\s*$)"
+    r"|(?:x|twitter)\.com/(?:i|tsukiverseai)/status/", re.I | re.M)
+
+
+def v74_own_x_note(text: str) -> bool:
+    t = text or ""
+    first = t.strip().split("\n", 1)[0]
+    if re.search(r"^\W{0,4}replied on x\b", first, re.I):
+        return True
+    if re.search(r"\bon x\s*$", first, re.I) and re.match(r"^\W{0,4}(?:💬|🐈‍⬛|the bot)", first.strip(), re.I):
+        return True
+    me = (kv_get("x_me_handle") or "tsukiverseai").lower()
+    return bool(re.search(rf"(?:x|twitter)\.com/(?:i|{re.escape(me)})/status/\d", t, re.I))
+
+
+def _v74_wrap(name: str, field: str):
+    prev = getattr(_v71_tg.Bot, name)
+
+    async def w(self, *a, **k):
+        cid = k.get("chat_id", a[0] if a else None)
+        if not TG_OWN_POSTS and str(cid) == str(TARGET_CHAT_ID):
+            body = k.get(field) if isinstance(k.get(field), str) else (a[1] if field == "text" and len(a) > 1 and isinstance(a[1], str) else "")
+            answering = k.get("reply_to_message_id") or k.get("reply_parameters")
+            if body and not answering and v74_own_x_note(body):
+                log.info(f"group kept clear of the bot's own X activity: {body[:80]!r}")
+                return None
+        return await prev(self, *a, **k)
+    w.__name__ = name
+    setattr(_v71_tg.Bot, name, w)
+
+
+for _n, _f in (("send_message", "text"), ("send_photo", "caption"), ("send_video", "caption"),
+               ("send_animation", "caption"), ("send_document", "caption")):
+    _v74_wrap(_n, _f)
+
+# ── juju is juju. never "landlord", anywhere ────────────────────────────────
+_V74_LANDLORD = re.compile(r"\b(?:my |the |our |his )?land ?lord(?:'s|s)?\b", re.I)
+
+
+def v74_no_landlord(text: str) -> str:
+    return _V74_LANDLORD.sub("Juju", text) if isinstance(text, str) and _V74_LANDLORD.search(text) else text
+
+
+_v74_problem_prev = _jinx_problem
+
+
+def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+    if _V74_LANDLORD.search(text or ""):
+        return "juju is never 'landlord'"
+    return _v74_problem_prev(text, facts, kind)
+
+
+_v74_req_prev = _v61_tw.client.BaseClient.request
+
+
+def _v74_request(self, method, route, params=None, json=None, user_auth=False):
+    if method == "POST" and str(route).rstrip("/") == "/2/tweets" and isinstance(json, dict) and isinstance(json.get("text"), str):
+        json = dict(json, text=v74_no_landlord(json["text"]))
+    return _v74_req_prev(self, method, route, params=params, json=json, user_auth=user_auth)
+
+
+_v61_tw.client.BaseClient.request = _v74_request
+
+
+def _v74_clean_wrap(name: str, field: str):
+    prev = getattr(_v71_tg.Bot, name)
+
+    async def w(self, *a, **k):
+        if isinstance(k.get(field), str):
+            k[field] = v74_no_landlord(k[field])
+        elif field == "text" and len(a) > 1 and isinstance(a[1], str):
+            a = (a[0], v74_no_landlord(a[1])) + tuple(a[2:])
+        return await prev(self, *a, **k)
+    w.__name__ = name
+    setattr(_v71_tg.Bot, name, w)
+
+
+for _n, _f in (("send_message", "text"), ("send_photo", "caption"), ("send_video", "caption"),
+               ("send_animation", "caption"), ("send_document", "caption"), ("edit_message_text", "text")):
+    _v74_clean_wrap(_n, _f)
+
+
+_v74_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v74_register_prev(app, scheduler, ny_tz)
+    log.info(f"{BOT_VERSION}: the group only gets Tsuki, Roaring Kitty & Ryan Cohen "
+             f"({'own X activity allowed by TG_OWN_POSTS' if TG_OWN_POSTS else 'own X activity stays out'})")
 
 
 def main():
