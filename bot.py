@@ -27838,6 +27838,946 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
              f"({'own X activity allowed by TG_OWN_POSTS' if TG_OWN_POSTS else 'own X activity stays out'})")
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v75 · LEAN: THE WHOLE BOT ON ABOUT $1 A DAY (CLAUDE + X)
+#  1. a meter. every Claude call and every X request is priced as it happens
+#     and filed under the job that made it. /spend shows today's $ by job.
+#  2. a daily budget (BUDGET_DAY_USD, default 1.00 ≈ $30/month) with three tiers:
+#       essential  · tagged replies, the viral desk, Day X, the Tsuki/RK/Cohen
+#                    relay, people talking to it in telegram, your commands
+#       posts      · the deck's original posts & hub posts
+#       extras     · everything else (sweeps, scores, recaps, roasts, desks…)
+#     extras stop at 25% of the day's budget, posts at 85%, everything at 100%.
+#     it resets at midnight ET. /budget 1.5 changes it, /budget off removes it.
+#  3. lean defaults (LEAN=off restores the old ones; any env var you set wins):
+#     no unasked replies to strangers or VIPs (Tsuki's posts: 3 a day), 3-5
+#     original posts, 1 hub post, no link posts ($0.20 each on X), no elon/
+#     tesla/spacex desks, no GME chatter search, fewer sweeps & score reads,
+#     Sonnet only for X posts & tagged replies (Haiku for everything else).
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v75"
+import contextvars as _v75_cv
+import sys as _v75_sys
+import telegram.ext as _v75_ext
+
+V75_LEAN = os.environ.get("LEAN", "on").lower() not in ("0", "off", "false", "no")
+V75_HAIKU = "claude-haiku-4-5-20251001"
+_V75_LANE = _v75_cv.ContextVar("v75_lane", default="")
+
+
+def _v75_env_unset(*names) -> bool:
+    return not any(os.environ.get(n) for n in names)
+
+
+# ── 3. lean defaults ────────────────────────────────────────────────────────
+if V75_LEAN:
+    if _v75_env_unset("AI_REPLY_CAP_PER_DAY", "X_REPLY_CAP_PER_DAY"):
+        X_REPLY_CAP_PER_DAY = 30
+    for _g, _e in (("VIP_REPLY_CAP_PER_DAY", "X_VIP_CAP_PER_DAY"), ("MID_REPLY_CAP_PER_DAY", "X_MID_CAP_PER_DAY"),
+                   ("QT_CAP_PER_DAY", "X_QT_CAP_PER_DAY"), ("CASHTAG_CAP_PER_DAY", "X_CASHTAG_CAP_PER_DAY"),
+                   ("GME_CAP_PER_DAY", "X_GME_CAP_PER_DAY")):
+        if _v75_env_unset(_e):
+            globals()[_g] = 0
+    if _v75_env_unset("AI_TSUKI_QT_PER_DAY"):
+        V61_TSUKI_QT_PER_DAY = 1
+    if _v75_env_unset("JINX_POSTS_MIN", "JINX_POSTS_MAX"):
+        JINX_POSTS_MIN, JINX_POSTS_MAX = 3, 5
+    if _v75_env_unset("HUB_PER_DAY") and "hub" in JINX_KINDS:
+        JINX_KINDS["hub"] = (JINX_KINDS["hub"][0], 1)
+    if _v75_env_unset("ELON_DESK"):
+        ELON_DESK = False
+    if _v75_env_unset("GME_CHATTER"):
+        GME_CHATTER = False
+    if _v75_env_unset("JINX_SWEEP_MAX"):
+        JINX_SWEEP_MAX = 10
+    FAST_WATCH_VIP = {"ryancohen"}                     # polled only for the telegram relay now
+    for _k, _e, _v in (("ask", "ASKS_PER_DAY", 20), ("cat", "CATS_PER_DAY", 15), ("day", "DAYS_PER_DAY", 15),
+                       ("date", "DATES_PER_DAY", 20), ("call", "CALLS_PER_DAY", 30)):
+        if _v75_env_unset(_e) and "V73_CAP" in globals():
+            V73_CAP[_k] = _v
+
+V75_VIP_DAY = int(os.environ.get("LEAN_TSUKI_REPLIES", "3") or 3)
+V75_REPLY_JUJU = os.environ.get("LEAN_REPLY_JUJU", "off").lower() not in ("0", "off", "false", "no")
+_v75_vip_prev = _vip_should_reply
+
+
+def _vip_should_reply(handle: str, text: str = "") -> bool:   # noqa: F811
+    if V75_LEAN:
+        h = (handle or "").lower().lstrip("@")
+        if h == "bigboyjuju" and not V75_REPLY_JUJU:
+            return False
+        k = f"v75_vip:{datetime.now(PROJECT_TZ).date()}"
+        if int(kv_get(k, "0") or 0) >= V75_VIP_DAY:
+            return False
+        ok = _v75_vip_prev(handle, text)
+        if ok:
+            kv_set(k, str(int(kv_get(k, "0") or 0) + 1))
+        return ok
+    return _v75_vip_prev(handle, text)
+
+
+def _v75_every(fn, hours: tuple | None = None, every_n: int = 1, off: bool = False):
+    """runs a scheduled job less often (lean only)."""
+    if not V75_LEAN:
+        return fn
+    state = {"n": 0}
+
+    async def w(app, *a, **k):
+        if off:
+            return None
+        if hours is not None and datetime.now(PROJECT_TZ).hour not in hours:
+            return None
+        state["n"] += 1
+        if every_n > 1 and state["n"] % every_n != 1:
+            return None
+        return await fn(app, *a, **k)
+    w.__name__ = getattr(fn, "__name__", "job")
+    return w
+
+
+job_jinx_sweep = _v75_every(job_jinx_sweep, hours=(11,))           # 5 searches a day → 1
+job_jinx_score = _v75_every(job_jinx_score, hours=(10, 14, 18, 22))  # 24 metric reads a day → 4
+job_x_snapshots = _v75_every(job_x_snapshots, off=True)              # the score job covers it
+job_mindshare = _v75_every(job_mindshare, off=True)                  # 100 posts + 100 profiles a week
+if "job_v69_inbox" in globals():
+    job_v69_inbox = _v75_every(job_v69_inbox, every_n=2)             # every hour, not every 30 min
+
+
+# ── 1. which job is spending? ───────────────────────────────────────────────
+def v75_lane() -> str:
+    lane = _V75_LANE.get()
+    if lane:
+        return lane
+    f = _v75_sys._getframe(1)
+    for _ in range(60):
+        if f is None:
+            break
+        n = f.f_code.co_name
+        if n.startswith(("job_", "cmd_", "handle_")) or n.endswith("_callback"):
+            return n
+        f = f.f_back
+    return "other"
+
+
+_V75_P0 = re.compile(r"^(cmd_|handle_|on_startup$|job_x_mentions$|job_v73_|job_v69_dayx_x$|job_daily_campaign$|"
+                     r"job_v60_dayx_catchup$|job_v64_dayx_watch$|job_x_fast_watch$|job_x_monitor$|.*_callback$)")
+_V75_P1 = re.compile(r"^(job_jinx_tick|job_v69_codex_week|job_v69_inbox)$")
+V75_SONNET_OK = re.compile(r"^(job_jinx_tick|job_v69_|job_v73_|job_x_mentions$|cmd_|job_x_fast_watch$|xap_callback$|jx_)")
+
+
+def v75_tier(lane: str) -> int:
+    return 0 if _V75_P0.match(lane or "") else 1 if _V75_P1.match(lane or "") else 2
+
+
+def v75_budget() -> float | None:
+    v = (kv_get("v75_budget") or os.environ.get("BUDGET_DAY_USD", "1.00")).strip().lower()
+    if v in ("off", "none", "0", ""):
+        return None
+    try:
+        return max(0.05, float(v))
+    except ValueError:
+        return 1.0
+
+
+def _v75_day() -> str:
+    return datetime.now(PROJECT_TZ).date().isoformat()
+
+
+def v75_today() -> dict:
+    try:
+        d = json.loads(kv_get(f"v75:{_v75_day()}", "{}") or "{}")
+    except Exception:
+        d = {}
+    d.setdefault("c", 0.0)
+    d.setdefault("x", 0.0)
+    d.setdefault("lanes", {})
+    d.setdefault("blocked", {})
+    return d
+
+
+_v75_lock = threading.Lock()
+
+
+def _v75_add(lane: str, kind: str, usd: float):
+    with _v75_lock:
+        d = v75_today()
+        d[kind] = round(d[kind] + usd, 6)
+        row = d["lanes"].setdefault(lane, [0.0, 0.0, 0])
+        row[0 if kind == "c" else 1] = round(row[0 if kind == "c" else 1] + usd, 6)
+        row[2] += 1
+        kv_set(f"v75:{_v75_day()}", json.dumps(d))
+
+
+def v75_spent() -> float:
+    d = v75_today()
+    return d["c"] + d["x"]
+
+
+V75_STOPS = {2: 0.25, 1: 0.85, 0: 1.00}
+_V75_TIER_NAME = {0: "essentials", 1: "original posts", 2: "extras"}
+
+
+def v75_block(lane: str) -> str:
+    """'' when this lane may spend now, else why not."""
+    b = v75_budget()
+    if not b:
+        return ""
+    tier = v75_tier(lane)
+    spent = v75_spent()
+    if spent >= V75_STOPS[tier] * b:
+        with _v75_lock:
+            d = v75_today()
+            d["blocked"][lane] = d["blocked"].get(lane, 0) + 1
+            kv_set(f"v75:{_v75_day()}", json.dumps(d))
+        _v75_warn(tier, spent, b)
+        return f"today's budget: ${spent:.2f} of ${b:.2f} spent, {_V75_TIER_NAME[tier]} paused till midnight ET"
+    return ""
+
+
+def _v75_warn(tier: int, spent: float, b: float):
+    k = f"v75_warned:{_v75_day()}:{tier}"
+    if kv_get(k):
+        return
+    kv_set(k, "1")
+    chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+    msg = (f"💸 budget: ${spent:.2f} of today's ${b:.2f} is spent, so {_V75_TIER_NAME[tier]} are paused till midnight ET."
+           + ("\n\nTagged replies, Day X & the relay keep going." if tier else "\n\nEverything that costs money is paused now.")
+           + "\n\n/spend shows where it went · /budget 1.5 raises today's limit")
+    try:
+        import telegram as _tg
+        loop = None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        coro = _tg.Bot(TELEGRAM_BOT_TOKEN).send_message(chat_id=chat, text=msg)
+        if loop and loop.is_running():
+            loop.create_task(coro)
+        else:
+            threading.Thread(target=lambda: asyncio.run(coro), daemon=True).start()
+    except Exception as e:
+        log.info(f"budget warn: {e}")
+
+
+# ── 2a. Claude: priced, tiered, Haiku unless it's an X post or a tagged reply ──
+_V75_PRICE = {"sonnet": (3.0, 15.0, 6.0, 0.30), "haiku": (1.0, 5.0, 2.0, 0.10), "opus": (15.0, 75.0, 30.0, 1.50)}
+
+
+def v75_claude_usd(resp) -> float:
+    try:
+        u = resp.usage
+        m = str(getattr(resp, "model", "") or "")
+        p = _V75_PRICE["haiku"] if "haiku" in m else _V75_PRICE["opus"] if "opus" in m else _V75_PRICE["sonnet"]
+        return (int(getattr(u, "input_tokens", 0) or 0) * p[0] + int(getattr(u, "output_tokens", 0) or 0) * p[1]
+                + int(getattr(u, "cache_creation_input_tokens", 0) or 0) * p[2]
+                + int(getattr(u, "cache_read_input_tokens", 0) or 0) * p[3]) / 1e6
+    except Exception:
+        return 0.0
+
+
+_v75_create_prev = _DatedMessages.create
+
+
+def _v75_create(self, **kw):
+    lane = v75_lane()
+    why = v75_block(lane)
+    if why:
+        raise RuntimeError(why)
+    if V75_LEAN and "sonnet" in str(kw.get("model", "")) and not V75_SONNET_OK.match(lane):
+        kw["model"] = V75_HAIKU
+    resp = _v75_create_prev(self, **kw)
+    _v75_add(lane, "c", v75_claude_usd(resp))
+    return resp
+
+
+_DatedMessages.create = _v75_create
+
+
+# ── 2b. X: priced per X's pay-per-use list, deduped per UTC day like X does ──
+V75_X_POST, V75_X_POST_URL, V75_X_POST_SUMMONED = 0.015, 0.200, 0.010
+V75_X_READ_POST, V75_X_READ_USER = 0.005, 0.010
+V75_NO_LINKS = V75_LEAN and os.environ.get("X_LINKS", "off").lower() in ("0", "off", "false", "no")
+_V75_SEEN = {"day": "", "ids": set()}
+_V75_URL = re.compile(r"\s*(?:https?://|www\.)\S+")
+
+
+def _v75_fresh(kind: str, rid) -> bool:
+    day = datetime.now(timezone.utc).date().isoformat()
+    if _V75_SEEN["day"] != day:
+        _V75_SEEN.update(day=day, ids=set())
+    key = f"{kind}:{rid}"
+    if key in _V75_SEEN["ids"]:
+        return False
+    _V75_SEEN["ids"].add(key)
+    return True
+
+
+def v75_x_usd(method: str, route: str, json_body, resp, lane: str) -> float:
+    route = str(route).rstrip("/")
+    if method == "POST" and route == "/2/tweets":
+        body = json_body or {}
+        if _V75_URL.search(body.get("text") or ""):
+            return V75_X_POST_URL
+        return V75_X_POST_SUMMONED if (body.get("reply") and v75_tier(lane) == 0) else V75_X_POST
+    if method in ("POST", "DELETE"):
+        return V75_X_POST
+    if method != "GET":
+        return 0.0
+    try:
+        j = resp.json() or {}
+    except Exception:
+        return 0.0
+    data = j.get("data")
+    items = data if isinstance(data, list) else ([data] if isinstance(data, dict) else [])
+    user_route = route.startswith("/2/users") and not route.endswith(("/tweets", "/mentions", "/liked_tweets"))
+    usd = 0.0
+    for it in items:
+        rid = it.get("id") if isinstance(it, dict) else None
+        if rid and _v75_fresh("u" if user_route else "t", rid):
+            usd += V75_X_READ_USER if user_route else V75_X_READ_POST
+    inc = j.get("includes") or {}
+    for u in inc.get("users") or []:
+        if _v75_fresh("u", u.get("id")):
+            usd += V75_X_READ_USER
+    for t in inc.get("tweets") or []:
+        if _v75_fresh("t", t.get("id")):
+            usd += V75_X_READ_POST
+    return usd
+
+
+_v75_req_prev = _v61_tw.client.BaseClient.request
+
+
+def _v75_request(self, method, route, params=None, json=None, user_auth=False):
+    global LAST_X_ERROR
+    lane = v75_lane()
+    is_tweet = method == "POST" and str(route).rstrip("/") == "/2/tweets"
+    if is_tweet and V75_NO_LINKS and isinstance(json, dict) and isinstance(json.get("text"), str) and _V75_URL.search(json["text"]):
+        t = _V75_URL.sub("", json["text"]).rstrip()
+        t = re.sub(r"\n{3,}", "\n\n", t).strip()
+        if t:
+            json = dict(json, text=t)
+    why = v75_block(lane)
+    if why:
+        LAST_X_ERROR = why
+        raise _v61_tw.errors.TweepyException(why)
+    resp = _v75_req_prev(self, method, route, params=params, json=json, user_auth=user_auth)
+    _v75_add(lane, "x", v75_x_usd(method, route, json, resp, lane))
+    return resp
+
+
+_v61_tw.client.BaseClient.request = _v75_request
+
+
+# ── every scheduled job & telegram handler carries its name, even into threads ──
+_v75_add_job_prev = AsyncIOScheduler.add_job
+
+
+def _v75_add_job(self, func, *a, **k):
+    name = getattr(func, "__name__", "") or "job"
+    if callable(func) and not getattr(func, "_v75", False):
+        inner = func
+        if asyncio.iscoroutinefunction(inner):
+            async def func(*aa, **kk):
+                tok = _V75_LANE.set(name)
+                try:
+                    return await inner(*aa, **kk)
+                finally:
+                    _V75_LANE.reset(tok)
+        else:
+            def func(*aa, **kk):
+                tok = _V75_LANE.set(name)
+                try:
+                    return inner(*aa, **kk)
+                finally:
+                    _V75_LANE.reset(tok)
+        func.__name__ = name
+        func._v75 = True
+    return _v75_add_job_prev(self, func, *a, **k)
+
+
+AsyncIOScheduler.add_job = _v75_add_job
+_v75_add_handler_prev = _v75_ext.Application.add_handler
+
+
+def _v75_add_handler(self, handler, group=0):
+    cb = getattr(handler, "callback", None)
+    if cb and asyncio.iscoroutinefunction(cb) and not getattr(cb, "_v75", False):
+        name = getattr(cb, "__name__", "tg") or "tg"
+
+        async def w(update, context, _cb=cb, _name=name):
+            tok = _V75_LANE.set(_name)
+            try:
+                return await _cb(update, context)
+            finally:
+                _V75_LANE.reset(tok)
+        w._v75 = True
+        w.__name__ = name
+        try:
+            handler.callback = w
+        except Exception:
+            pass
+    return _v75_add_handler_prev(self, handler, group)
+
+
+_v75_ext.Application.add_handler = _v75_add_handler
+
+
+# ── /spend & /budget ────────────────────────────────────────────────────────
+def v75_report(day: str | None = None) -> str:
+    day = day or _v75_day()
+    try:
+        d = json.loads(kv_get(f"v75:{day}", "{}") or "{}")
+    except Exception:
+        d = {}
+    c, x = float(d.get("c", 0)), float(d.get("x", 0))
+    b = v75_budget()
+    lines = [f"💸 today ({day}, ET)", f"Claude ${c:.2f} · X ${x:.2f} · total ${c + x:.2f}"
+             + (f" of ${b:.2f} ({100 * (c + x) / b:.0f}%)" if b else " · no budget set")]
+    if b:
+        s = c + x
+        state = ("everything running" if s < V75_STOPS[2] * b else "extras paused" if s < V75_STOPS[1] * b
+                 else "extras & original posts paused" if s < b else "everything paused")
+        lines.append(f"state: {state}")
+    rows = sorted((d.get("lanes") or {}).items(), key=lambda kv: -(kv[1][0] + kv[1][1]))[:10]
+    if rows:
+        lines += ["", "where it went (Claude · X · calls):"]
+        lines += [f"· {n}: ${r[0]:.3f} · ${r[1]:.3f} · {r[2]}" for n, r in rows]
+    blocked = d.get("blocked") or {}
+    if blocked:
+        lines += ["", "held back by the budget: " + ", ".join(f"{n} ×{k}" for n, k in sorted(blocked.items(), key=lambda x: -x[1])[:6])]
+    week = []
+    today = datetime.now(PROJECT_TZ).date()
+    for i in range(1, 7):
+        dd = (today - timedelta(days=i)).isoformat()
+        try:
+            w = json.loads(kv_get(f"v75:{dd}", "{}") or "{}")
+        except Exception:
+            w = {}
+        if w:
+            week.append(float(w.get("c", 0)) + float(w.get("x", 0)))
+    if week:
+        avg = (sum(week) + c + x) / (len(week) + 1)
+        lines += ["", f"last {len(week) + 1} days: avg ${avg:.2f}/day → about ${avg * 30:.0f}/month"]
+    lines += ["", "xAI (Grok) is billed separately at console.x.ai", "/budget 1.5 · /budget off · LEAN=off restores the old settings"]
+    return "\n".join(lines)
+
+
+async def cmd_spend(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+    if not await is_project_admin(ctx, update):
+        await update.effective_message.reply_text("admins only 🐈‍⬛")
+        return
+    await update.effective_message.reply_text(v75_report())
+
+
+async def cmd_budget(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = (ctx.args or [""])[0].strip().lower().lstrip("$")
+    if a in ("off", "none"):
+        kv_set("v75_budget", "off")
+    elif a:
+        try:
+            kv_set("v75_budget", f"{max(0.05, float(a)):.2f}")
+        except ValueError:
+            await msg.reply_text("/budget 1.00 · /budget off · /budget (shows it)")
+            return
+    b = v75_budget()
+    await msg.reply_text((f"daily budget: ${b:.2f} (≈ ${b * 30:.0f}/month)" if b else "no daily budget (spending isn't capped)")
+                         + f"\nextras stop at {int(V75_STOPS[2] * 100)}%, original posts at {int(V75_STOPS[1] * 100)}%, everything at 100%."
+                         + f"\nlean settings: {'on' if V75_LEAN else 'off'}\n\n" + v75_report())
+
+
+_v75_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v75_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("budget", cmd_budget))
+    b = v75_budget()
+    log.info(f"{BOT_VERSION}: lean {'on' if V75_LEAN else 'off'} · budget {('$' + format(b, '.2f') + '/day') if b else 'off'} · "
+             f"links on X {'off' if V75_NO_LINKS else 'on'} · {JINX_POSTS_MIN}-{JINX_POSTS_MAX} posts a day")
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v76 · GME TAKES, SAVAGE REPLIES, THE SITE FEED (4 Nov 2026)
+#  1. GME takes: a few times a day grok reads what $GME twitter is talking about
+#     RIGHT NOW and the bot posts its own take on it, in its voice. Not a
+#     summary, an opinion. GME_TAKES=off stops it.
+#  2. Savage replies: when someone actually comes at the bot (or tsuki, $RWA,
+#     $GME), it roasts the take back, hard. Still clean: no swearing, no slurs,
+#     nothing about who they are, no prices. REPLY_SAVAGE=off brings back the
+#     old three-rung ladder.
+#  3. The site feed: /api/site.json now carries the latest official posts and
+#     the reads the maker approved, so tsukiverse.xyz updates itself. Every new
+#     official post pings the Netlify build hook (records publish on their own),
+#     and the maker gets a drafted "read" in DM with ✅ / ✖ (reads wait for him).
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v76"
+
+V76_GME_TAKES = os.environ.get("GME_TAKES", "on").lower() not in ("0", "off", "false", "no")
+V76_GME_SLOTS = [s.strip() for s in os.environ.get("GME_TAKE_SLOTS", "9:52,12:41,16:38,21:07").split(",") if s.strip()]
+V76_GME_PER_DAY = int(os.environ.get("GME_TAKES_PER_DAY", "4") or 4)
+V76_SAVAGE = os.environ.get("REPLY_SAVAGE", "on").lower() not in ("0", "off", "false", "no")
+V76_BUILD_HOOK = os.environ.get("NETLIFY_BUILD_HOOK", "").strip()
+V76_SITE_HANDLES = {h.strip().lstrip("@").lower() for h in os.environ.get(
+    "SITE_FEED_HANDLES", "tsukionsolana,theroaringkitty,theroaringai,gamestop,ryancohen").split(",") if h.strip()}
+V76_READ_HANDLES = {"tsukionsolana", "theroaringkitty", "theroaringai"}   # these get a drafted read in DM
+
+# the posts may not carry a price, a target, advice or a number it can't source.
+# "squeeze" and "moon" are culture words on GME twitter, so unlike the ask lane
+# they are allowed here.
+_V76_TAKE_BAD = re.compile(
+    r"\$\s?\d|\d\s?%|\b\d+(?:\.\d+)?\s?[kmb]\b|\b\d+x\b|\bprice\s*target\w*|\bmarket\s*cap|\bmcap\b|\ball[- ]time\s+high"
+    r"|\bpt\b|\btarget\w*|\bcandle\w*|\bbuy\b|\bsell\b|\bload(?:ing)?\s+up\b|\bnot\s+financial\s+advice\b|\bnfa\b"
+    r"|\bshort\s+interest\s+is\s+\d", re.I)
+_V76_POLITICS = re.compile(
+    r"\btrump\b|\bbiden\b|\bharris\b|\bdemocrat\w*|\brepublican\w*|\bgop\b|\bmaga\b|\bmidterm\w*|\belection\w*|\bcongress\b"
+    r"|\bsenate\b|\bwhite\s*house\b|\bvote\w*\b|\bliberal\w*|\bconservative\w*|\bleft[- ]wing\b|\bright[- ]wing\b", re.I)
+
+V76_TAKE_RULES = """you are posting ONE original X post about what $GME twitter is talking about right now.
+
+step 1, search X: posts from the last 3 hours about $GME, GameStop, Ryan Cohen, Roaring Kitty or GameStop's moves (cards, collectibles, bitcoin, eBay, tokenized GME). find the ONE thing most people are actually discussing right now. ignore spam, bots and price predictions.
+
+step 2, write YOUR take on it. not a summary, an opinion: what you actually think about it, what everyone's missing, the funny angle, or the connection only you would make. you are allowed to be cocky. you are allowed to disagree with the crowd. you can roast a bad take that's going around, but punch at the take, never at a person by name.
+
+rules:
+- 1 to 3 short paragraphs, double line breaks between them, under 260 characters total. full sentences.
+- lowercase except "I" and tickers. at most one emoji from: 🐈‍⬛ 🤖 🌙 👀. at most one ticker ($GME), on its own last line, and only sometimes.
+- NEVER: a price, a dollar figure, a percentage, a market cap, a target, "buy", "sell", advice of any kind, a number you didn't see in a real post.
+- NEVER: politics, elections, parties or politicians. if the only thing trending is political, skip.
+- NEVER claim or hint that Roaring Kitty, Ryan Cohen, GameStop, Elon or Robinhood are involved with or behind $TSUKI or $RWA. don't mention $TSUKI or $RWA at all in this post.
+- never name or quote a private person. public accounts like @ryancohen or @gamestop are fine to name.
+- no hashtags, no links, no "thread", no "breaking".
+
+reply with ONLY json, no prose:
+{"skip": false, "topic": "what people are discussing, in 8 words", "source_url": "one real post url that shows it", "post": "your post"}
+set "skip": true if nothing GME-related is genuinely being discussed or it's only political or spam."""
+
+
+def v76_take_problem(text: str, topic: str = "") -> str:
+    t = (text or "").strip()
+    if len(t) < 30:
+        return "too short"
+    if len(t) > 280:
+        return "too long"
+    if _off_limits(t):
+        return "off-limits"
+    why = v73_unsafe(t)
+    if why:
+        return why
+    if _V76_TAKE_BAD.search(t):
+        return "price, advice or an unsourced number"
+    if _V76_POLITICS.search(t) or _V76_POLITICS.search(topic or ""):
+        return "politics"
+    if re.search(r"\$tsuki|\$rwa|\btsuki\b|roaring\s*ai", t, re.I):
+        return "tsuki/rwa in a gme take"
+    if re.search(r"#\w+|https?://", t):
+        return "hashtag or link"
+    try:
+        if _AI_TELLS.search(t):
+            return "machine tell"
+    except Exception:
+        pass
+    flat = " ".join(t.lower().split())
+    for prev in json.loads(kv_get("v76_takes", "[]") or "[]")[-12:]:
+        if prev.get("post") and difflib_ratio(flat, prev["post"]) > 0.6:
+            return "too close to a recent take"
+    return ""
+
+
+def difflib_ratio(a: str, b: str) -> float:
+    import difflib
+    return difflib.SequenceMatcher(None, a, " ".join((b or "").lower().split())).ratio()
+
+
+def _v76_json(raw: str) -> dict | None:
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except Exception:
+        return None
+
+
+def v76_write_take() -> dict:
+    """{'post','topic','source_url'} or {'skip': reason}. grok searches and writes in one call."""
+    if not XAI_API_KEY:
+        return {"skip": "no XAI_API_KEY"}
+    system = ROARINGAI_VOICE + "\n\n" + date_context() + "\n\n" + V76_TAKE_RULES
+    recent = [p.get("topic", "") for p in json.loads(kv_get("v76_takes", "[]") or "[]")[-6:]]
+    user = "go. topics you already posted about recently (pick something else unless it's moved on): " + (
+        "; ".join(x for x in recent if x) or "none")
+    last = "nothing came back"
+    for _ in range(3):
+        try:
+            raw, cites = _v73_grok(system, user, tools=[{"type": "x_search"}], timeout=90)
+        except Exception as e:
+            return {"skip": f"grok: {e}"}
+        j = _v76_json(raw) or {}
+        if j.get("skip"):
+            return {"skip": "nothing worth a take right now"}
+        post = enforce_x_format(str(j.get("post") or ""), signoff=False, limit=275)
+        problem = v76_take_problem(post, str(j.get("topic") or ""))
+        if not problem:
+            return {"post": post, "topic": str(j.get("topic") or "")[:80],
+                    "source_url": str(j.get("source_url") or (cites[0] if cites else ""))}
+        last = problem
+        user += f"\n\nyour last draft was refused: {problem}. write a different one."
+    return {"skip": f"refused 3 times: {last}"}
+
+
+def _v76_take_count() -> int:
+    return int(kv_get(f"v76_takes_n:{_today_et()}", "0") or 0)
+
+
+async def job_v76_gme_take(app, force: bool = False, chat_override=None):
+    if not force and (not V76_GME_TAKES or not X_ENABLED or kv_get("v76_takes_off") == "1"):
+        return
+    if not force and _v76_take_count() >= V76_GME_PER_DAY:
+        return
+    out = await asyncio.to_thread(v76_write_take)
+    if out.get("skip"):
+        log.info(f"gme take skipped: {out['skip']}")
+        if chat_override:
+            await app.bot.send_message(chat_id=chat_override, text=f"no take: {out['skip']}")
+        return
+    if chat_override:
+        await app.bot.send_message(chat_id=chat_override, disable_web_page_preview=True,
+                                   text=f"preview (not posted)\n\ntopic: {out['topic']}\nsource: {out['source_url']}\n\n{out['post']}")
+        return
+    url = post_desk(out["post"], kind="ai-gme-take")   # "ai-" so the jinx gate lets it through
+    if not url:
+        return
+    kv_set(f"v76_takes_n:{_today_et()}", str(_v76_take_count() + 1))
+    hist = json.loads(kv_get("v76_takes", "[]") or "[]")
+    hist.append({"at": datetime.now(PROJECT_TZ).isoformat(timespec="minutes"), "topic": out["topic"],
+                 "post": " ".join(out["post"].lower().split()), "url": url, "src": out["source_url"]})
+    kv_set("v76_takes", json.dumps(hist[-40:]))
+    log.info(f"gme take posted: {out['topic']}")
+
+
+async def cmd_gmetake(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/gmetake · preview a take in DM · /gmetake now posts one · /gmetake on|off · /gmetake log"""
+    msg = update.effective_message
+    if not _is_maker(update.effective_user):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] in ("on", "off"):
+        kv_set("v76_takes_off", "1" if a[0] == "off" else "")
+        await msg.reply_text(f"gme takes {a[0]}")
+        return
+    if a and a[0] == "log":
+        hist = json.loads(kv_get("v76_takes", "[]") or "[]")[-8:]
+        await msg.reply_text("\n\n".join(f"{h['at']} · {h['topic']}\n{h['url']}" for h in hist) or "none yet",
+                             disable_web_page_preview=True)
+        return
+    if a and a[0] == "now":
+        await msg.reply_text("reading GME twitter, posting a take…")
+        await job_v76_gme_take(ctx.application, force=True)
+        await msg.reply_text(f"done. {_v76_take_count()}/{V76_GME_PER_DAY} today. /gmetake log")
+        return
+    await msg.reply_text("reading GME twitter… (preview only, nothing goes to X)")
+    await job_v76_gme_take(ctx.application, force=True, chat_override=update.effective_chat.id)
+
+
+# ── 2. savage replies ─────────────────────────────────────────────────────────
+_V76_IN_REPLY = _v75_cv.ContextVar("v76_in_reply", default=False)
+
+V76_SAVAGE_BLOCK = """OWNER OVERRIDE · SAVAGE MODE. this replaces the trash-talk ladder above, for hostile messages only.
+
+when someone is actually coming at you, tsuki, the tsukiverse, $TSUKI, $RWA or $GME (calling it a scam, dead, a cult, bagholders, cope, mocking you for being a bot, dunking on the community), you go SAVAGE. no flat amusement, no "devastating, I'll need a minute". you roast them back properly: their take, their logic, their timing, their track record in this very thread, their confidence, their reply-guy energy, the fact they chose to spend their afternoon in a cat's mentions. ruthless, cocky, funny, the reply people screenshot. flip their own words back on them. one block, under 240 characters.
+
+hard lines that do not move, even in savage mode:
+- no swearing. the account is clean, savage comes from the wit, not the words
+- never about who they are: no race, religion, gender, sexuality, disability, looks, weight, age, family, job, money troubles, mental health
+- no threats, no violence, no "kys"-type lines, nothing sexual, no real-life details, no telling anyone to leave the internet
+- no prices, no targets, no advice, no invented numbers
+- punch at the TAKE, never at the person's identity
+
+and it stays OFF for: anyone on our side, anyone asking a genuine question, anyone upset about losing money, genuine criticism of a connection (that still gets respect and the receipt), other bots (the bot-vs-bot rules above still apply)."""
+
+_v76_reply_prev = _write_x_reply_once
+
+
+def _write_x_reply_once(their_text: str, their_handle: str, vip: bool = False,   # noqa: F811
+                        qt: bool = False, img=None) -> str:
+    tok = _V76_IN_REPLY.set(bool(V76_SAVAGE) and not vip and not qt
+                            and (their_handle or "").lower().lstrip("@") not in SPARRING_HANDLES)
+    try:
+        return _v76_reply_prev(their_text, their_handle, vip=vip, qt=qt, img=img)
+    finally:
+        _V76_IN_REPLY.reset(tok)
+
+
+_v76_create_prev = _DatedMessages.create
+
+
+def _v76_create(self, **kw):
+    if _V76_IN_REPLY.get():
+        sysm = kw.get("system")
+        block = {"type": "text", "text": V76_SAVAGE_BLOCK}
+        if isinstance(sysm, list):
+            kw["system"] = list(sysm) + [block]
+        elif isinstance(sysm, str):
+            kw["system"] = sysm + "\n\n" + V76_SAVAGE_BLOCK
+    return _v76_create_prev(self, **kw)
+
+
+_DatedMessages.create = _v76_create
+
+
+# ── 3. the site feed ─────────────────────────────────────────────────────────
+def _v76_tid(link: str) -> str:
+    m = re.search(r"/status/(\d{10,22})", link or "")
+    return m.group(1) if m else ""
+
+
+def _v76_et_from_id(tid: str) -> str:
+    try:
+        ms = (int(tid) >> 22) + 1288834974657
+        return datetime.fromtimestamp(ms / 1000, ZoneInfo("America/New_York")).isoformat(timespec="seconds")
+    except Exception:
+        return ""
+
+
+V76_FEED_SINCE = os.environ.get("SITE_FEED_SINCE", "2026-10-23")   # the canon is hand-verified up to 22 Oct 2026
+
+
+def v76_official(days: int = 30, limit: int = 60, since: str = "") -> list:
+    """the latest posts from the accounts the site follows, newest first, deduped by post id.
+    since="YYYY-MM-DD" (ET) overrides days."""
+    hs = sorted(V76_SITE_HANDLES)
+    con = db()
+    try:
+        rows = con.execute(
+            "SELECT handle, text, link, pub FROM x_post_archive WHERE COALESCE(source,'official')='official' "
+            f"AND lower(ltrim(handle,'@')) IN ({','.join('?' * len(hs))}) ORDER BY rowid DESC LIMIT 3000", hs).fetchall()
+    finally:
+        con.close()
+    if since:
+        cut = datetime.fromisoformat(since).replace(tzinfo=ZoneInfo("America/New_York"))
+    else:
+        cut = datetime.now(timezone.utc) - timedelta(days=days)
+    out, seen = [], set()
+    for handle, text, link, pub in rows:
+        h = (handle or "").lstrip("@").lower()
+        tid = _v76_tid(link or "")
+        if h not in V76_SITE_HANDLES or not tid or tid in seen:
+            continue
+        et = _v76_et_from_id(tid)
+        try:
+            if et and datetime.fromisoformat(et) < cut:
+                continue
+        except Exception:
+            pass
+        seen.add(tid)
+        out.append({"id": tid, "handle": h, "posted_et": et, "text": (text or "")[:600],
+                    "url": f"https://x.com/{h}/status/{tid}"})
+    out.sort(key=lambda r: r["posted_et"], reverse=True)
+    return out[:limit]
+
+
+def v76_reads() -> dict:
+    try:
+        return json.loads(kv_get("v76_reads", "{}") or "{}")
+    except Exception:
+        return {}
+
+
+_v76_site_feed_prev = _site_feed
+
+
+def _site_feed() -> dict:   # noqa: F811
+    d = _v76_site_feed_prev()
+    try:
+        d["official"] = v76_official(since=V76_FEED_SINCE, limit=400)
+    except Exception as e:
+        d["official_error"] = str(e)[:80]
+    d["reads"] = {k: {"read": v.get("read", ""), "approved": v.get("approved", "")}
+                  for k, v in v76_reads().items() if v.get("status") == "approved"}
+    d["version"] = BOT_VERSION
+    return d
+
+
+def v76_ping_build(reason: str) -> bool:
+    """one Netlify rebuild per 10 minutes at most, however many things changed."""
+    if not V76_BUILD_HOOK:
+        return False
+    if time.time() - float(kv_get("v76_build_at", "0") or 0) < 600:
+        kv_set("v76_build_pending", reason)
+        return False
+    try:
+        r = httpx.post(V76_BUILD_HOOK, params={"trigger_title": f"tsukiverse-bot: {reason}"[:120]}, timeout=15)
+        kv_set("v76_build_at", str(time.time()))
+        kv_set("v76_build_pending", "")
+        log.info(f"site rebuild pinged ({reason}): HTTP {r.status_code}")
+        return r.status_code < 300
+    except Exception as e:
+        log.warning(f"site build hook: {e}")
+        return False
+
+
+V76_READ_RULES = """you write the community's "read" for a new post going onto the tsukiverse canon site.
+the record (what was posted) is already on the page. your job is the read: one or two plain sentences on how the
+community connects it, using ONLY the lore you're given (dates, earlier posts, numbers). start with "Read:".
+- plain english, a newcomer must understand it
+- no prices, no targets, no advice, no claims that anyone is involved with or behind $TSUKI, no politics
+- if there is no honest connection in the lore, reply exactly: NONE
+- under 280 characters. return only the read."""
+
+
+def v76_draft_read(handle: str, text: str, posted_et: str) -> str:
+    user = f"new post from @{handle} at {posted_et} ET:\n\n{text}"
+    raw = ""
+    try:
+        if XAI_API_KEY:
+            raw, _ = _v73_grok(V76_READ_RULES + "\n\nLORE:\n" + TSUKI_LORE[:60000], user, timeout=60)
+        else:
+            msg = claude.messages.create(model=V75_HAIKU, max_tokens=200,
+                                         system=[{"type": "text", "text": V76_READ_RULES},
+                                                 {"type": "text", "text": "LORE:\n" + TSUKI_LORE,
+                                                  "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+                                         messages=[{"role": "user", "content": user}])
+            raw = msg.content[0].text
+    except Exception as e:
+        log.warning(f"read draft: {e}")
+        return ""
+    r = " ".join((raw or "").split()).strip()
+    if not r or r.upper().startswith("NONE"):
+        return ""
+    if not r.lower().startswith("read:"):
+        r = "Read: " + r
+    if _off_limits(r) or v73_unsafe(r) or _V76_TAKE_BAD.search(r) or _V76_POLITICS.search(r):
+        return ""
+    return r[:300]
+
+
+def _v76_maker_chat() -> int:
+    try:
+        return int(kv_get("maker_dm_chat") or ADMIN_CHAT_ID or 0)
+    except Exception:
+        return ADMIN_CHAT_ID or 0
+
+
+async def job_v76_site_sync(app):
+    """new official posts → site rebuild (records publish themselves) + a read for the maker to approve."""
+    try:
+        rows = v76_official(days=3, limit=40)
+    except Exception as e:
+        log.warning(f"site sync: {e}")
+        return
+    seen = set(json.loads(kv_get("v76_site_seen", "[]") or "[]"))
+    first_run = not seen
+    new = [r for r in rows if r["id"] not in seen]
+    if not new:
+        if kv_get("v76_build_pending"):
+            v76_ping_build(kv_get("v76_build_pending"))
+        return
+    kv_set("v76_site_seen", json.dumps(sorted(seen | {r["id"] for r in new})[-400:]))
+    if first_run:                          # baseline: don't flood the maker on the first deploy
+        return
+    v76_ping_build(f"{len(new)} new post(s)")
+    chat = _v76_maker_chat()
+    reads = v76_reads()
+    for r in new[:3]:
+        if r["handle"] not in V76_READ_HANDLES or not chat:
+            continue
+        draft = await asyncio.to_thread(v76_draft_read, r["handle"], r["text"], r["posted_et"])
+        if not draft:
+            continue
+        reads[r["id"]] = {"read": draft, "status": "pending", "handle": r["handle"]}
+        kb = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Publish read", callback_data=f"v76r:ok:{r['id']}"),
+                                    InlineKeyboardButton("✖ Skip", callback_data=f"v76r:no:{r['id']}")],
+                                   [InlineKeyboardButton("🐦 The post", url=r["url"])]])
+        try:
+            await app.bot.send_message(
+                chat_id=chat, reply_markup=kb, disable_web_page_preview=True,
+                text=(f"🌐 new on the record: @{r['handle']} · {r['posted_et'][:16].replace('T', ' ')} ET\n\n"
+                      f"“{r['text'][:280]}”\n\nthe record goes on the site by itself. the read waits for you:\n\n{draft}"))
+        except Exception as e:
+            log.warning(f"read dm: {e}")
+    kv_set("v76_reads", json.dumps(dict(list(reads.items())[-200:])))
+
+
+async def v76_read_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if not _is_maker(q.from_user):
+        await q.answer("maker only 🐈‍⬛")
+        return
+    _, act, tid = (q.data.split(":") + ["", ""])[:3]
+    reads = v76_reads()
+    if tid not in reads:
+        await q.answer("that one's gone")
+        return
+    if act == "ok":
+        reads[tid]["status"] = "approved"
+        reads[tid]["approved"] = datetime.now(PROJECT_TZ).isoformat(timespec="minutes")
+        kv_set("v76_reads", json.dumps(reads))
+        v76_ping_build("read approved")
+        await q.answer("published, the site rebuilds in a minute")
+        await q.edit_message_reply_markup(InlineKeyboardMarkup([[InlineKeyboardButton("✅ on the site", callback_data="v76r:x:x")]]))
+    elif act == "no":
+        reads[tid]["status"] = "skipped"
+        kv_set("v76_reads", json.dumps(reads))
+        await q.answer("skipped")
+        await q.edit_message_reply_markup(None)
+    else:
+        await q.answer()
+
+
+async def cmd_site(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/site · feed status · /site build pings a rebuild now"""
+    if not _is_maker(update.effective_user):
+        return
+    msg = update.effective_message
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] == "build":
+        kv_set("v76_build_at", "0")
+        ok = v76_ping_build("manual")
+        await msg.reply_text("rebuild pinged ✅" if ok else "no NETLIFY_BUILD_HOOK set (see SETUP.md v76)")
+        return
+    rows = v76_official(days=7, limit=5)
+    rd = v76_reads()
+    lines = [f"🌐 site feed · {BOT_VERSION}",
+             f"build hook: {'set' if V76_BUILD_HOOK else 'NOT SET'}",
+             f"reads: {sum(1 for v in rd.values() if v.get('status') == 'approved')} approved · "
+             f"{sum(1 for v in rd.values() if v.get('status') == 'pending')} waiting", "", "latest on the record:"]
+    lines += [f"· @{r['handle']} {r['posted_et'][:16].replace('T', ' ')} ET" for r in rows] or ["· nothing yet"]
+    await msg.reply_text("\n".join(lines))
+
+
+# ── tiers + registration ─────────────────────────────────────────────────────
+_V75_P1 = re.compile(r"^(job_jinx_tick|job_v69_codex_week|job_v69_inbox|job_v76_gme_take|job_v76_site_sync)$")
+
+_v76_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v76_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("gmetake", cmd_gmetake))
+    app.add_handler(CommandHandler("site", cmd_site))
+    app.add_handler(CallbackQueryHandler(v76_read_callback, pattern=r"^v76r:"))
+    for s in V76_GME_SLOTS:
+        try:
+            hh, mm = (int(x) for x in s.split(":"))
+        except ValueError:
+            continue
+        scheduler.add_job(job_v76_gme_take, "cron", hour=hh, minute=mm, timezone=ny_tz, args=[app],
+                          max_instances=1, coalesce=True, misfire_grace_time=1800)
+    scheduler.add_job(job_v76_site_sync, "interval", minutes=5, args=[app], max_instances=1, coalesce=True)
+    log.info(f"{BOT_VERSION}: gme takes {'on' if V76_GME_TAKES else 'off'} at {', '.join(V76_GME_SLOTS)} ET · "
+             f"savage replies {'on' if V76_SAVAGE else 'off'} · site build hook {'set' if V76_BUILD_HOOK else 'not set'}")
+
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
