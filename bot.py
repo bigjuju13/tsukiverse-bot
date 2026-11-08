@@ -28778,6 +28778,827 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
 
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v77 · THE RADAR: EVERY CHANGE ON RK, TSUKI & THEROARINGAI, WITHIN SECONDS
+#  every RADAR_SEC (15s) one X request reads all the watched profiles and
+#  compares them with the last look. anything that moved is posted:
+#    · profile picture, banner (new image attached), name, @handle, bio,
+#      location, website link, pinned post, verified badge, locked/unlocked
+#    · a new post, reply, quote or repost (with the text & a link)
+#  every alert goes to your DM only (RADAR_TO=group or both changes that).
+#    · a deleted post (the post count went down)
+#    · followed / unfollowed someone (and who: the newest follows)
+#    · liked something (X keeps likes private now, so it's the count)
+#    · suspended / gone / back (TheRoaringAI coming back is this one)
+#  followers going up and down is noise, so only round milestones are posted.
+#  the websites (theroaringai.com, tsukionsol.xyz, the Mr. Wizard page) keep
+#  their 30-second watcher; tsukionsol.xyz is added to it.
+#  RADAR_TO = dm | group | both (default dm: your DM only) · RADAR_HANDLES · RADAR_SEC
+#  /radar shows what it's watching, the last changes, /radar test fakes one.
+#  the first look after a deploy is a baseline: nothing is posted for it.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v77"
+V77_ON = os.environ.get("RADAR", "on").lower() not in ("0", "off", "false", "no")
+V77_HANDLES = [h.strip().lstrip("@") for h in os.environ.get(
+    "RADAR_HANDLES", "TheRoaringKitty,tsukionsolana,TheRoaringAI").split(",") if h.strip()][:20]
+V77_SEC = max(5, int(os.environ.get("RADAR_SEC", "15") or 15))
+V77_TO = os.environ.get("RADAR_TO", "dm").lower()           # your DM only, unless you say otherwise
+V77_NAMES = {"theroaringkitty": ("😼", "Roaring Kitty"), "tsukionsolana": ("🐈‍⬛", "Tsuki"),
+             "theroaringai": ("🤖", "TheRoaringAI"), "ryancohen": ("🎮", "Ryan Cohen"), "gamestop": ("🕹", "GameStop")}
+V77_FIELDS = ["name", "username", "description", "location", "url", "entities", "profile_image_url",
+              "profile_banner_url", "pinned_tweet_id", "public_metrics", "verified", "verified_type",
+              "protected", "most_recent_tweet_id"]
+V77_MILESTONES = (1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000)
+
+if "TG_RELAY_NAMES" in globals():
+    TG_RELAY_NAMES.setdefault("theroaringai", ("🤖", "TheRoaringAI"))
+if "_V75_P0" in globals():
+    _V75_P0 = re.compile(_V75_P0.pattern + r"|^job_v77_")       # the radar is essential: it never pauses
+
+
+def _v77_label(handle: str) -> tuple[str, str]:
+    return V77_NAMES.get((handle or "").lower(), ("👁", "@" + (handle or "?")))
+
+
+def _v77_state() -> dict:
+    try:
+        return json.loads(kv_get("v77_radar", "{}") or "{}")
+    except Exception:
+        return {}
+
+
+def _v77_save(st: dict):
+    kv_set("v77_radar", json.dumps(st, ensure_ascii=False))
+
+
+def _v77_url(u) -> str:
+    """the website link as a person would type it (X wraps it in t.co)."""
+    try:
+        for e in ((u.get("entities") or {}).get("url") or {}).get("urls") or []:
+            if e.get("expanded_url"):
+                return e["expanded_url"]
+    except Exception:
+        pass
+    return u.get("url") or ""
+
+
+def v77_snapshot(u: dict) -> dict:
+    pm = u.get("public_metrics") or {}
+    return {"id": str(u.get("id") or ""), "username": u.get("username") or "", "name": u.get("name") or "",
+            "bio": u.get("description") or "", "location": u.get("location") or "", "url": _v77_url(u),
+            "pfp": re.sub(r"_normal(\.\w+)$", r"_400x400\1", u.get("profile_image_url") or ""),
+            "banner": u.get("profile_banner_url") or "", "pinned": str(u.get("pinned_tweet_id") or ""),
+            "verified": bool(u.get("verified")), "vtype": u.get("verified_type") or "",
+            "locked": bool(u.get("protected")), "last": str(u.get("most_recent_tweet_id") or ""),
+            "posts": pm.get("tweet_count"), "following": pm.get("following_count"),
+            "followers": pm.get("followers_count"), "likes": pm.get("like_count"),
+            "media": pm.get("media_count"), "status": "active"}
+
+
+def v77_diff(old: dict, new: dict) -> list[dict]:
+    """what changed between two looks, as a list of {kind, ...}. pure: no X calls."""
+    out = []
+    if not old:
+        return out
+    if old.get("status") != new.get("status"):
+        out.append({"kind": "status", "was": old.get("status"), "now": new.get("status")})
+        if new.get("status") != "active":
+            return out
+    if old.get("status") != "active":
+        return out
+    for f, kind in (("username", "handle"), ("name", "name"), ("bio", "bio"), ("location", "location"),
+                    ("url", "link"), ("pfp", "pfp"), ("banner", "banner"), ("pinned", "pinned")):
+        if (old.get(f) or "") != (new.get(f) or ""):
+            out.append({"kind": kind, "was": old.get(f) or "", "now": new.get(f) or ""})
+    if (old.get("verified"), old.get("vtype")) != (new.get("verified"), new.get("vtype")):
+        out.append({"kind": "badge", "was": old.get("vtype") or ("verified" if old.get("verified") else "none"),
+                    "now": new.get("vtype") or ("verified" if new.get("verified") else "none")})
+    if old.get("locked") != new.get("locked"):
+        out.append({"kind": "locked", "now": new.get("locked")})
+    po, pn = old.get("posts"), new.get("posts")
+    if (new.get("last") and new.get("last") != old.get("last")) or (po is not None and pn is not None and pn > po):
+        out.append({"kind": "post", "tid": new.get("last") if new.get("last") != old.get("last") else "",
+                    "n": (pn - po) if (po is not None and pn is not None) else None})
+    elif po is not None and pn is not None and pn < po:
+        out.append({"kind": "deleted", "n": po - pn})
+    for f, kind in (("following", "following"), ("likes", "likes")):
+        a, b = old.get(f), new.get(f)
+        if a is not None and b is not None and a != b:
+            out.append({"kind": kind, "was": a, "now": b})
+    a, b = old.get("followers"), new.get("followers")
+    if a is not None and b is not None:
+        for m in V77_MILESTONES:
+            if a < m <= b:
+                out.append({"kind": "milestone", "now": m})
+    return out
+
+
+# ── reading X ───────────────────────────────────────────────────────────────
+def _v77_fields() -> list:
+    bad = set(json.loads(kv_get("v77_bad_fields", "[]") or "[]"))
+    return [f for f in V77_FIELDS if f not in bad]
+
+
+def v77_look() -> dict:
+    """{handle_lower: snapshot}. one request for every watched account."""
+    import tweepy
+    client = _x_client()
+    st = _v77_state()
+    ids = st.get("_ids") or {}
+    want = [h for h in V77_HANDLES if h.lower() not in ids]
+    fields = _v77_fields()
+
+    def call(**kw):
+        try:
+            return client.get_users(user_fields=fields, user_auth=True, **kw)
+        except tweepy.errors.BadRequest as e:
+            m = re.findall(r"\b(profile_banner_url|most_recent_tweet_id|verified_type)\b", str(e))
+            if m:                                           # a field this API tier doesn't know: drop it, once
+                kv_set("v77_bad_fields", json.dumps(sorted(set(json.loads(kv_get("v77_bad_fields", "[]") or "[]")) | set(m))))
+                return client.get_users(user_fields=[f for f in fields if f not in m], user_auth=True, **kw)
+            raise
+
+    out = {}
+    if want:                                                # the first look: handles → ids (ids survive a rename)
+        r = call(usernames=want)
+        for u in r.data or []:
+            ids[u.username.lower()] = str(u.id)
+        for e in getattr(r, "errors", None) or []:
+            h = str(e.get("value") or "").lower()
+            if h:
+                out[h] = {"status": "suspended" if "suspend" in str(e).lower() else "gone"}
+        st["_ids"] = ids
+        _v77_save(st)
+    known = {v: k for k, v in ids.items()}
+    if known:
+        r = call(ids=list(known))
+        for u in r.data or []:
+            out[known.get(str(u.id), u.username.lower())] = v77_snapshot(u.data if hasattr(u, "data") else dict(u))
+        for e in getattr(r, "errors", None) or []:
+            h = known.get(str(e.get("value") or e.get("resource_id") or ""))
+            if h:
+                out[h] = {"status": "suspended" if "suspend" in str(e).lower() else "gone"}
+    return out
+
+
+def v77_post_detail(tid: str) -> dict:
+    """the new post: its text, what kind it is, who it answers or quotes."""
+    if not tid:
+        return {}
+    r = _x_client().get_tweet(tid, user_auth=True,
+                              tweet_fields=["created_at", "referenced_tweets", "note_tweet", "attachments", "author_id"],
+                              expansions=["referenced_tweets.id.author_id"], user_fields=["username"])
+    t = r.data
+    if not t:
+        return {}
+    nt = getattr(t, "note_tweet", None) or {}
+    text = (nt.get("text") if isinstance(nt, dict) else None) or t.text or ""
+    refs = getattr(t, "referenced_tweets", None) or []
+    users = {str(u.id): u.username for u in ((r.includes or {}).get("users") or [])}
+    tweets = {str(x.id): x for x in ((r.includes or {}).get("tweets") or [])}
+    kind, other = "post", ""
+    for ref in refs:
+        if ref.type in ("replied_to", "quoted", "retweeted"):
+            kind = {"replied_to": "reply", "quoted": "quote", "retweeted": "repost"}[ref.type]
+            rt = tweets.get(str(ref.id))
+            other = users.get(str(getattr(rt, "author_id", "")), "") if rt else ""
+            break
+    return {"tid": str(t.id), "text": text, "kind": kind, "other": other,
+            "created": getattr(t, "created_at", None), "media": bool(getattr(t, "attachments", None))}
+
+
+def v77_new_follows(uid: str, n: int) -> list:
+    """the newest accounts they follow (X lists follows newest first)."""
+    try:
+        r = _x_client().get_users_following(uid, max_results=max(1, min(10, n)), user_auth=True,
+                                            user_fields=["username", "name"])
+        return [(u.username, u.name) for u in (r.data or [])][:n]
+    except Exception as e:
+        log.info(f"radar follows: {e}")
+        return []
+
+
+# ── telling people ──────────────────────────────────────────────────────────
+def _v77_q(s: str) -> str:
+    s = (s or "").strip()
+    return f"<blockquote>{_v73_html.escape(s[:700])}</blockquote>" if s else "<i>(empty)</i>"
+
+
+def v77_message(handle: str, ch: dict, snap: dict, extra: dict | None = None) -> tuple[str, str, str]:
+    """(html, photo url or '', button url) for one change."""
+    emoji, name = _v77_label(handle)
+    h = snap.get("username") or handle
+    prof = f"https://x.com/{h}"
+    k = ch["kind"]
+    E = _v73_html.escape
+    head = f"{emoji} <b>{E(name)}</b>"
+    photo, link = "", prof
+    if k == "pfp":
+        body, photo = f"{head} changed the profile picture\n\n<a href=\"{E(ch['was'])}\">the old one</a> → the new one above", ch["now"]
+    elif k == "banner":
+        body, photo = f"{head} changed the banner\n\n<a href=\"{E(ch['was'])}\">the old one</a> → the new one above", (ch["now"] + "/1500x500" if ch["now"] and "/1500x500" not in ch["now"] else ch["now"])
+    elif k == "bio":
+        body = f"{head} changed the bio\n\n<b>Before</b>\n{_v77_q(ch['was'])}\n<b>Now</b>\n{_v77_q(ch['now'])}"
+    elif k == "name":
+        body = f"{head} changed the display name\n\n{E(ch['was'])} → <b>{E(ch['now'])}</b>"
+    elif k == "handle":
+        body = f"{head} changed the @handle\n\n@{E(ch['was'])} → <b>@{E(ch['now'])}</b>"
+    elif k == "location":
+        body = f"{head} changed the location\n\n{E(ch['was']) or '(none)'} → <b>{E(ch['now']) or '(none)'}</b>"
+    elif k == "link":
+        body = f"{head} changed the website link\n\n{E(ch['was']) or '(none)'} → <b>{E(ch['now']) or '(none)'}</b>"
+        link = ch["now"] if str(ch["now"]).startswith("http") else prof
+    elif k == "pinned":
+        if ch["now"]:
+            d = (extra or {}).get("pinned") or {}
+            body = f"{head} pinned a post\n\n{_v77_q(d.get('text', ''))}"
+            link = f"https://x.com/{h}/status/{ch['now']}"
+        else:
+            body = f"{head} unpinned their pinned post"
+    elif k == "badge":
+        body = f"{head}'s badge changed\n\n{E(str(ch['was']))} → <b>{E(str(ch['now']))}</b>"
+    elif k == "locked":
+        body = f"{head} {'<b>locked</b> the account (posts are private now)' if ch['now'] else '<b>unlocked</b> the account'}"
+    elif k == "post":
+        d = (extra or {}).get("post") or {}
+        what = {"reply": f"replied to @{E(d.get('other') or '?')}", "quote": f"quoted @{E(d.get('other') or '?')}",
+                "repost": f"reposted @{E(d.get('other') or '?')}"}.get(d.get("kind"), "just posted")
+        body = f"{head} {what}\n\n{_v77_q(d.get('text', ''))}" if d else f"{head} posted something new"
+        if d.get("tid"):
+            link = f"https://x.com/{h}/status/{d['tid']}"
+    elif k == "deleted":
+        body = f"{head} deleted {'a post' if ch.get('n') == 1 else str(ch.get('n')) + ' posts'}\n\n<i>The post count went down. X doesn't say which one</i>"
+    elif k == "following":
+        diff = ch["now"] - ch["was"]
+        who = (extra or {}).get("follows") or []
+        names = "\n".join(f"→ @{E(u)} ({E(n)})" for u, n in who)
+        body = (f"{head} {'followed' if diff > 0 else 'unfollowed'} {abs(diff)} account{'s' if abs(diff) != 1 else ''}"
+                + (f"\n\n{names}" if names and diff > 0 else "") + f"\n\n<i>Following: {ch['was']:,} → {ch['now']:,}</i>")
+    elif k == "likes":
+        diff = ch["now"] - ch["was"]
+        body = (f"{head} {'liked' if diff > 0 else 'un-liked'} {abs(diff)} post{'s' if abs(diff) != 1 else ''}"
+                f"\n\n<i>Likes are private on X now, so it's the count only: {ch['was']:,} → {ch['now']:,}</i>")
+    elif k == "milestone":
+        body = f"{head} just passed <b>{ch['now']:,}</b> followers"
+    elif k == "status":
+        now = ch["now"]
+        body = (f"🚨 {head} is <b>back</b> on X" if now == "active" else
+                f"{head} is <b>{'suspended' if now == 'suspended' else 'gone'}</b> on X (it was {E(str(ch['was']))})")
+    else:
+        body = f"{head}: something changed ({E(k)})"
+    stamp = datetime.now(PROJECT_TZ).strftime("%a %-d %b, %-I:%M:%S%p").replace("AM", "am").replace("PM", "pm")
+    return body + f"\n\n<i>{stamp} ET</i>", photo, link
+
+
+import contextvars as _v77_cv
+_V77_EXACT = _v77_cv.ContextVar("v77_exact", default=False)
+_v77_caps_prev = v71_caps
+
+
+def v71_caps(text: str) -> str:   # noqa: F811
+    """a radar alert quotes bios & posts exactly as written: no house capitals on those."""
+    return text if _V77_EXACT.get() else _v77_caps_prev(text)
+
+
+_v77_own_prev = v74_own_x_note
+
+
+def v74_own_x_note(text: str) -> bool:   # noqa: F811
+    """radar alerts are about RK / Tsuki / TheRoaringAI, never the bot's own activity."""
+    return False if _V77_EXACT.get() else _v77_own_prev(text)
+
+
+async def v77_send(app, handle: str, html_: str, photo: str = "", link: str = ""):
+    tok = _V77_EXACT.set(True)
+    try:
+        await _v77_send(app, handle, html_, photo, link)
+    finally:
+        _V77_EXACT.reset(tok)
+
+
+async def _v77_send(app, handle: str, html_: str, photo: str = "", link: str = ""):
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("Open on X" if "x.com" in link else "Open", url=link)]]) if link else None
+    chats = []
+    if V77_TO in ("group", "both") and TARGET_CHAT_ID:
+        chats.append(TARGET_CHAT_ID)
+    if V77_TO in ("dm", "both"):
+        dm = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+        if dm and dm not in chats:
+            chats.append(dm)
+    for chat in chats:
+        try:
+            if photo:
+                await app.bot.send_photo(chat_id=chat, photo=photo, caption=html_[:1020], parse_mode="HTML", reply_markup=kb)
+            else:
+                await app.bot.send_message(chat_id=chat, text=html_[:4000], parse_mode="HTML", reply_markup=kb,
+                                           disable_web_page_preview=True)
+        except Exception as e:
+            log.warning(f"radar send ({chat}): {e}")
+            try:
+                await app.bot.send_message(chat_id=chat, text=re.sub(r"<[^>]+>", "", html_)[:4000], reply_markup=kb,
+                                           disable_web_page_preview=True)
+            except Exception:
+                pass
+
+
+def _v77_log(handle: str, ch: dict):
+    rows = json.loads(kv_get("v77_log", "[]") or "[]")
+    rows.append({"t": time.time(), "h": handle, "k": ch["kind"],
+                 "s": str(ch.get("now") if ch.get("now") is not None else ch.get("n") or "")[:120]})
+    kv_set("v77_log", json.dumps(rows[-60:], ensure_ascii=False))
+
+
+# ── the job ─────────────────────────────────────────────────────────────────
+_V77_BUSY = threading.Lock()
+
+
+async def job_v77_radar(app):
+    if not (V77_ON and X_ENABLED) or kv_get("v77_off") == "1":
+        return
+    if not _V77_BUSY.acquire(blocking=False):
+        return
+    try:
+        until = float(kv_get("v77_backoff", "0") or 0)
+        if time.time() < until:
+            return
+        try:
+            now = await asyncio.to_thread(v77_look)
+        except Exception as e:
+            s = str(e)
+            if "429" in s or "Too Many" in s:
+                kv_set("v77_backoff", str(time.time() + 120))
+            log.info(f"radar look: {e}")
+            kv_set("v77_err", f"{datetime.now(PROJECT_TZ).strftime('%-I:%M%p')} {s[:160]}")
+            return
+        st = _v77_state()
+        snaps = st.get("snaps") or {}
+        kv_set("v77_seen_at", str(time.time()))
+        for h, snap in now.items():
+            old = snaps.get(h)
+            if "id" not in snap and old and old.get("status") == "active":
+                snap = dict(old, status=snap["status"])         # suspended/gone: keep the last known profile
+            elif "id" not in snap:
+                snap = {**(old or {}), "status": snap["status"]}
+            changes = v77_diff(old or {}, snap) if old else []
+            snaps[h] = snap
+            for ch in changes:
+                extra = {}
+                try:
+                    if ch["kind"] == "post":
+                        tid = ch.get("tid") or ""
+                        if tid and V77_TO != "dm" and kv_get(f"xalerted:{tid}"):
+                            continue                              # the post watcher already told the group
+                        d = await asyncio.to_thread(v77_post_detail, tid) if tid else {}
+                        if tid and V77_TO != "dm":
+                            kv_set(f"xalerted:{tid}", "1")        # DM-only: the group relay still posts it
+                        extra["post"] = d
+                    elif ch["kind"] == "pinned" and ch.get("now"):
+                        extra["pinned"] = await asyncio.to_thread(v77_post_detail, ch["now"])
+                    elif ch["kind"] == "following" and ch["now"] > ch["was"]:
+                        extra["follows"] = await asyncio.to_thread(v77_new_follows, snap.get("id", ""), min(5, ch["now"] - ch["was"]))
+                except Exception as e:
+                    log.info(f"radar detail {h} {ch['kind']}: {e}")
+                html_, photo, link = v77_message(snap.get("username") or h, ch, snap, extra)
+                await v77_send(app, snap.get("username") or h, html_, photo, link)
+                _v77_log(snap.get("username") or h, ch)
+                log.info(f"radar: @{h} {ch['kind']}")
+        st["snaps"] = snaps
+        _v77_save(st)
+    finally:
+        _V77_BUSY.release()
+
+
+async def cmd_radar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] in ("on", "off"):
+        kv_set("v77_off", "1" if a[0] == "off" else "")
+    if a and a[0] == "test":
+        snap = {"username": "TheRoaringKitty", "status": "active"}
+        html_, photo, link = v77_message("TheRoaringKitty", {"kind": "bio", "was": "(the old bio)", "now": "(the new bio)"}, snap)
+        await v77_send(ctx.application, "TheRoaringKitty", "🧪 TEST, nothing changed\n\n" + html_, "", link)
+        return
+    st = _v77_state()
+    snaps = st.get("snaps") or {}
+    seen = float(kv_get("v77_seen_at", "0") or 0)
+    lines = [f"📡 <b>radar</b> · {'ON' if V77_ON and kv_get('v77_off') != '1' else 'OFF'} · every {V77_SEC}s · alerts to {V77_TO}",
+             f"last look: {int(time.time() - seen)}s ago" if seen else "no look yet", ""]
+    for h in V77_HANDLES:
+        s = snaps.get(h.lower()) or {}
+        lines.append(f"· @{_v73_html.escape(h)}: {s.get('status', 'waiting')}"
+                     + (f" · {s.get('posts', '?')} posts · following {s.get('following', '?')}" if s.get("status") == "active" else ""))
+    rows = json.loads(kv_get("v77_log", "[]") or "[]")[-8:]
+    if rows:
+        lines += ["", "<b>last changes</b>"] + [
+            f"· {datetime.fromtimestamp(r['t'], PROJECT_TZ).strftime('%-d %b %-I:%M%p').lower()} @{_v73_html.escape(r['h'])} {r['k']}" for r in rows]
+    if kv_get("v77_err"):
+        lines += ["", f"last error: {_v73_html.escape(kv_get('v77_err'))}"]
+    sites = _sw_urls() if "_sw_urls" in globals() else []
+    if sites:
+        lines += ["", "<b>websites</b> (every 30s, to your DM): " + ", ".join(_v73_html.escape(_sw_host(u)) for u in sites)]
+    lines += ["", "/radar off · /radar on · /radar test · /sitewatch add <url>"]
+    await msg.reply_text("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True)
+
+
+def _v77_add_sites():
+    """tsuki's own site joins theroaringai.com & the Mr. Wizard page, once."""
+    try:
+        if kv_get("v77_sites_added"):
+            return
+        urls = _sw_urls()
+        for u in ("https://www.tsukionsol.xyz/",):
+            if not any(_sw_host(u) == _sw_host(x) for x in urls):
+                urls.append(u)
+        _sw_set_urls(urls)
+        kv_set("v77_sites_added", "1")
+    except Exception as e:
+        log.info(f"radar sites: {e}")
+
+
+_v77_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v77_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("radar", cmd_radar))
+    _v77_add_sites()
+    if not V77_ON:
+        return
+    scheduler.add_job(job_v77_radar, "interval", seconds=V77_SEC, args=[app], max_instances=1, coalesce=True,
+                      misfire_grace_time=V77_SEC)
+    log.info(f"{BOT_VERSION}: radar every {V77_SEC}s on {', '.join('@' + h for h in V77_HANDLES)} → {V77_TO}")
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v78 · THE MIRROR ENGINE + X-SAFE (8 Nov 2026)
+#  1. the mirror engine: at the exact ET minute a tsuki / roaring kitty /
+#     roaring ai post turns 125 (or 122, or 104) weeks old, @tsukiverseai
+#     quote-posts the original: "125 weeks ago this minute, tsuki posted this."
+#     the record comes from the site canon (every x.com source link), the post
+#     time comes from the tweet id itself, so it is exact to the minute.
+#     zero model calls. a quote carries no link, so it is the cheap $0.015 post.
+#     MIRROR=off stops it · MIRROR_CLOCKS=125,122,104 · MIRROR_PER_DAY=3
+#     MIRROR_GAP_MIN=45 · MIRROR_QUIET=2-6 (no posts 2:00–6:59am ET)
+#     /mirror shows the next ones, /mirror test previews one in your DM,
+#     /mirror off / on pauses it.
+#  2. x-safe (on by default): the account only replies to people who tag it or
+#     reply to it. no replies under tsuki's posts, no prowling strangers'
+#     posts or cashtags. X removed ~42,000 AI reply-bot accounts in 2026 for
+#     exactly that; originals and quote posts are what grow an automated
+#     account safely. X_SAFE=off brings the old behaviour back.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v78"
+
+_V78_OFFS = ("0", "off", "false", "no")
+V78_XSAFE = os.environ.get("X_SAFE", "on").lower() not in _V78_OFFS
+V78_MIRROR = os.environ.get("MIRROR", "on").lower() not in _V78_OFFS
+V78_CLOCKS = [int(x) for x in re.findall(r"\d+", os.environ.get("MIRROR_CLOCKS", "125,122,104"))] or [125]
+V78_PER_DAY = max(0, int(os.environ.get("MIRROR_PER_DAY", "3") or 3))
+V78_GAP_MIN = max(0, int(os.environ.get("MIRROR_GAP_MIN", "45") or 45))
+V78_GRACE_MIN = max(1, int(os.environ.get("MIRROR_GRACE_MIN", "4") or 4))
+_q = re.findall(r"\d+", os.environ.get("MIRROR_QUIET", "2-6"))
+V78_QUIET = (int(_q[0]), int(_q[1])) if len(_q) >= 2 else None
+V78_HANDLES = {"tsukionsolana": "tsuki", "theroaringkitty": "roaring kitty", "theroaringai": "the roaring ai"}
+_V78_SIGNOFFS = ("the calendar keeps its own receipts.", "same clock. different year.", "tick tock.",
+                 "watching the clock so you don't have to.", "the minute hand remembers.")
+
+# ── x-safe ───────────────────────────────────────────────────────────────────
+if V78_XSAFE:
+    if _v75_env_unset("LEAN_TSUKI_REPLIES"):
+        V75_VIP_DAY = 0                            # no replies under tsuki's posts
+    if _v75_env_unset("JINX_TSUKI_REPLY"):
+        JINX_TSUKI_REPLY = False
+    for _g, _e in (("VIP_REPLY_CAP_PER_DAY", "X_VIP_CAP_PER_DAY"), ("MID_REPLY_CAP_PER_DAY", "X_MID_CAP_PER_DAY"),
+                   ("CASHTAG_CAP_PER_DAY", "X_CASHTAG_CAP_PER_DAY"), ("GME_CAP_PER_DAY", "X_GME_CAP_PER_DAY")):
+        if _v75_env_unset(_e) and _g in globals():
+            globals()[_g] = 0
+    _v78_prowl_prev = job_x_prowl
+
+    async def job_x_prowl(app):                   # noqa: F811
+        """x-safe: no replies to people who didn't tag the bot."""
+        return None
+
+
+# ── the record: every tsuki / RK / RWA post the canon links to ──────────────
+def v78_snow_et(tid) -> datetime | None:
+    try:
+        ms = (int(tid) >> 22) + 1288834974657
+    except (TypeError, ValueError):
+        return None
+    return datetime.fromtimestamp(ms / 1000, timezone.utc).astimezone(PROJECT_TZ)
+
+
+def v78_posts() -> list[dict]:
+    """[{id, handle, who, at (ET datetime), title, slug}] oldest first, one per post id."""
+    out, seen = [], set()
+    for e in v73_record():
+        title = re.sub(r"\s+", " ", str(e.get("title") or "")).strip()
+        for s in (e.get("sources") or []):
+            m = re.match(r"https?://(?:x|twitter)\.com/([A-Za-z0-9_]+)/status/(\d+)", str((s or {}).get("url") or ""))
+            if not m:
+                continue
+            h, tid = m.group(1).lower(), m.group(2)
+            if h not in V78_HANDLES or tid in seen:
+                continue
+            at = v78_snow_et(tid)
+            if not at:
+                continue
+            seen.add(tid)
+            out.append({"id": tid, "handle": h, "who": V78_HANDLES[h], "at": at, "title": title,
+                        "slug": str(e.get("slug") or "")})
+    return sorted(out, key=lambda r: r["at"])
+
+
+def v78_target(at: datetime, weeks: int) -> datetime:
+    """same ET wall-clock minute, `weeks` weeks later (DST-proof: the lore counts in ET)."""
+    d = at.date() + timedelta(days=7 * weeks)
+    return datetime(d.year, d.month, d.day, at.hour, at.minute, tzinfo=PROJECT_TZ)
+
+
+def _v78_fmt(dt: datetime) -> str:
+    return dt.strftime("%a %-d %b %Y, %-I:%M%p").lower().replace("am", "am et").replace("pm", "pm et")
+
+
+def v78_text(p: dict, weeks: int, quoted: bool = True) -> str:
+    t = v78_target(p["at"], weeks)
+    seed = int(hashlib.md5(f"{p['id']}-{weeks}".encode()).hexdigest(), 16)
+    head = f"{weeks} weeks ago this minute, {p['who']} posted this."
+    if not quoted:
+        ttl = re.sub(r"^[“\"']|[”\"']$", "", p["title"][:140]).strip()
+        head = f"{weeks} weeks ago this minute, from {p['who']}: {ttl[:1].lower() + ttl[1:]}"
+    return (f"{head}\n\n{_v78_fmt(p['at'])}\n→ {_v78_fmt(t)}\n\n"
+            f"same weekday. same minute. {7 * weeks} days.\n{_V78_SIGNOFFS[seed % len(_V78_SIGNOFFS)]}")
+
+
+def v78_upcoming(now: datetime | None = None, days: int = 14) -> list[tuple]:
+    """[(target, weeks, post)] from now for `days` days, soonest first."""
+    now = now or datetime.now(PROJECT_TZ)
+    end = now + timedelta(days=days)
+    rows = []
+    for p in v78_posts():
+        for w in V78_CLOCKS:
+            t = v78_target(p["at"], w)
+            if now - timedelta(minutes=V78_GRACE_MIN) <= t <= end:
+                rows.append((t, w, p))
+    return sorted(rows, key=lambda r: (r[0], V78_CLOCKS.index(r[1])))
+
+
+def _v78_quiet(t: datetime) -> bool:
+    if not V78_QUIET:
+        return False
+    a, b = V78_QUIET
+    return a <= t.hour <= b
+
+
+def v78_due(now: datetime | None = None) -> tuple | None:
+    """the one mirror to post right now, or None. one post per minute at most,
+    the 125-week clock beats 122 beats 104 when two land together."""
+    now = now or datetime.now(PROJECT_TZ)
+    day = now.date().isoformat()
+    if int(kv_get(f"v78_n:{day}", "0") or 0) >= V78_PER_DAY:
+        return None
+    last = float(kv_get("v78_last", "0") or 0)
+    if last and time.time() - last < V78_GAP_MIN * 60:
+        return None
+    for t, w, p in v78_upcoming(now, days=0):
+        if not (t <= now <= t + timedelta(minutes=V78_GRACE_MIN)):
+            continue
+        if _v78_quiet(t) or kv_get(f"v78_done:{p['id']}:{w}"):
+            continue
+        if v73_unsafe(p["title"]):
+            continue
+        return (t, w, p)
+    return None
+
+
+async def _v78_dm(app, html_: str, link: str = ""):
+    dm = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+    if not dm:
+        return
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("Open on X", url=link)]]) if link else None
+    try:
+        await app.bot.send_message(chat_id=dm, text=html_[:4000], parse_mode="HTML", reply_markup=kb,
+                                   disable_web_page_preview=True)
+    except Exception as e:
+        log.info(f"v78 dm: {e}")
+
+
+async def job_v78_mirror(app):
+    if not (V78_MIRROR and X_ENABLED) or kv_get("v78_off") == "1":
+        return
+    hit = v78_due()
+    if not hit:
+        return
+    t, w, p = hit
+    kv_set(f"v78_done:{p['id']}:{w}", "1")         # claimed first: a slow post can't double-fire
+    tid = v73_post(v78_text(p, w, quoted=True), quote=p["id"])
+    if not tid:                                    # the original is gone (suspended / deleted): say it in words
+        tid = v73_post(v78_text(p, w, quoted=False))
+    if not tid:
+        kv_set("v78_err", f"{datetime.now(PROJECT_TZ):%-d %b %-I:%M%p} {LAST_X_ERROR or 'post failed'}"[:300])
+        return
+    day = datetime.now(PROJECT_TZ).date().isoformat()
+    kv_set(f"v78_n:{day}", str(int(kv_get(f"v78_n:{day}", "0") or 0) + 1))
+    kv_set("v78_last", str(time.time()))
+    log_ = json.loads(kv_get("v78_log", "[]") or "[]")
+    log_.append({"t": time.time(), "w": w, "h": p["handle"], "id": p["id"], "tid": tid})
+    kv_set("v78_log", json.dumps(log_[-40:]))
+    link = f"https://x.com/i/status/{tid}"
+    await _v78_dm(app, f"🪞 <b>mirror posted</b> · {w} weeks\n{_v73_html.escape(p['who'])}: "
+                       f"{_v73_html.escape(p['title'][:160])}", link)
+
+
+async def cmd_mirror(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    if not _v73_maker(update):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a and a[0] in ("on", "off"):
+        kv_set("v78_off", "1" if a[0] == "off" else "")
+    up = v78_upcoming(days=14)
+    if a and a[0] == "test":
+        if not up:
+            await msg.reply_text("nothing on the mirror clocks in the next 14 days.")
+            return
+        t, w, p = up[0]
+        await msg.reply_text(f"🧪 preview (nothing posted). it would quote x.com/{p['handle']}/status/{p['id']} "
+                             f"at {_v78_fmt(t)}:\n\n{v78_text(p, w)}", disable_web_page_preview=True)
+        return
+    on = V78_MIRROR and kv_get("v78_off") != "1"
+    day = datetime.now(PROJECT_TZ).date().isoformat()
+    lines = [f"🪞 <b>mirror engine</b> · {'ON' if on else 'OFF'} · clocks {', '.join(map(str, V78_CLOCKS))} weeks · "
+             f"{kv_get(f'v78_n:{day}', '0') or 0}/{V78_PER_DAY} today · x-safe {'on' if V78_XSAFE else 'off'}",
+             f"{len(v78_posts())} posts on the record", "", "<b>next 14 days</b>"]
+    for t, w, p in up[:10]:
+        flag = " (quiet hours, skipped)" if _v78_quiet(t) else ""
+        lines.append(f"· {_v78_fmt(t)} · {w}w · {_v73_html.escape(p['who'])}: {_v73_html.escape(p['title'][:70])}{flag}")
+    if not up:
+        lines.append("· nothing lands in the next 14 days")
+    if kv_get("v78_err"):
+        lines += ["", f"last error: {_v73_html.escape(kv_get('v78_err'))}"]
+    await msg.reply_text("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True)
+
+
+# the mirror is an original post: it pauses with the other originals (85% of the budget), never with the extras
+_V75_P1 = re.compile(r"^(job_jinx_tick|job_v69_codex_week|job_v69_inbox|job_v76_gme_take|job_v76_site_sync|job_v78_mirror)$")
+
+_v78_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v78_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("mirror", cmd_mirror))
+    if V78_MIRROR:
+        scheduler.add_job(job_v78_mirror, "cron", minute="*", timezone=ny_tz, args=[app],
+                          max_instances=1, coalesce=True, misfire_grace_time=120)
+    log.info(f"{BOT_VERSION}: mirror engine {'on' if V78_MIRROR else 'off'} (clocks {V78_CLOCKS}, "
+             f"{V78_PER_DAY}/day) · x-safe {'on' if V78_XSAFE else 'off'}")
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v78 · part 2: SEND THE CHAT TO THE SITE
+#  · 9:05am ET in the Telegram group: today's clocks (posts turning exactly
+#    125 / 122 / 104 / 52 weeks old today, already-landed or later today) and
+#    the day's Tsukidle number, with buttons to tsukiverse.xyz/today and /daily.
+#    SITE_DOORS=off stops it. Telegram only (a link on X costs $0.20).
+#  · Sunday 6:10pm ET, your DM: the Kitty Codex calls that landed this week,
+#    with a ready "caller of the week" post and a one-tap Post on X button.
+#    Nothing is posted for you. CODEX_WEEKLY=off stops it.
+# ══════════════════════════════════════════════════════════════════════════════
+V78_DOORS = os.environ.get("SITE_DOORS", "on").lower() not in _V78_OFFS
+V78_CODEX_WEEKLY = os.environ.get("CODEX_WEEKLY", "on").lower() not in _V78_OFFS
+V78_DAILY_LAUNCH = date(2026, 11, 8)
+V78_DOOR_CLOCKS = [125, 122, 104, 52]
+
+
+def v78_today_clocks(d: date | None = None) -> list[tuple]:
+    """[(weeks, post)] for posts whose same-minute mirror lands on day d (ET)."""
+    d = d or datetime.now(PROJECT_TZ).date()
+    out = []
+    for p in v78_posts():
+        for w in V78_DOOR_CLOCKS:
+            if p["at"].date() + timedelta(days=7 * w) == d:
+                out.append((w, p))
+    return sorted(out, key=lambda r: (r[1]["at"].hour * 60 + r[1]["at"].minute, V78_DOOR_CLOCKS.index(r[0])))
+
+
+def v78_doors_text(now: datetime | None = None) -> str:
+    now = now or datetime.now(PROJECT_TZ)
+    n = (now.date() - V78_DAILY_LAUNCH).days + 1
+    hits = v78_today_clocks(now.date())
+    lines = [f"🕰 <b>today on the clocks</b> · {now:%a %-d %b}".lower()]
+    if hits:
+        for w, p in hits[:4]:
+            t = p["at"]
+            lines.append(f"· {w} weeks: {_v73_html.escape(p['who'])}, {t:%-I:%M%p} et · {_v73_html.escape(p['title'][:70])}".replace("AM", "am").replace("PM", "pm"))
+    else:
+        lines.append("· a quiet day on the clocks. the week's mirrors are on the site.")
+    lines += ["", f"🎯 <b>tsukidle #{n}</b> is live. one moment from the record, guess the date. six tries."]
+    return "\n".join(lines)
+
+
+async def job_v78_doors(app):
+    if not V78_DOORS or not TARGET_CHAT_ID:
+        return
+    day = datetime.now(PROJECT_TZ).date().isoformat()
+    if kv_get(f"v78_doors:{day}"):
+        return
+    kv_set(f"v78_doors:{day}", "1")
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🕰 today's clocks", url=f"{SITE_URL}/today/"),
+                                InlineKeyboardButton("🎯 play tsukidle", url=f"{SITE_URL}/daily/")]])
+    try:
+        await app.bot.send_message(chat_id=TARGET_CHAT_ID, text=v78_doors_text(), parse_mode="HTML",
+                                   reply_markup=kb, disable_web_page_preview=True)
+    except Exception as e:
+        log.info(f"v78 doors: {e}")
+
+
+_V78_CODEX = {"t": 0.0, "url": "", "key": ""}
+
+
+def _v78_codex_cfg() -> tuple[str, str]:
+    url, key = os.environ.get("CODEX_SUPABASE_URL", "").strip(), os.environ.get("CODEX_ANON_KEY", "").strip()
+    if url and key:
+        return url.rstrip("/") + "/", key
+    if _V78_CODEX["url"] and time.time() - _V78_CODEX["t"] < 86400:
+        return _V78_CODEX["url"], _V78_CODEX["key"]
+    try:   # the site's own public config (the anon key is public by design)
+        js = httpx.get(f"{SITE_URL}/codex/assets/config.js", timeout=12).text
+        u = re.search(r"supabaseUrl:\s*'([^']+)'", js)
+        k = re.search(r"supabaseAnonKey:\s*'([^']+)'", js)
+        if u and k:
+            _V78_CODEX.update(t=time.time(), url=u.group(1).rstrip("/") + "/", key=k.group(1))
+    except Exception as e:
+        log.info(f"v78 codex config: {e}")
+    return _V78_CODEX["url"], _V78_CODEX["key"]
+
+
+def v78_codex_landed(days: int = 7) -> list[dict]:
+    url, key = _v78_codex_cfg()
+    if not (url and key):
+        return []
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    q = (f"theories?select=id,title,status_at,author:profiles(handle,x_handle)&status=eq.called&hidden=eq.false"
+         f"&status_at=gte.{since}&order=status_at.desc&limit=10")
+    try:
+        r = httpx.get(url + q, headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=12)
+        return r.json() if r.status_code == 200 and isinstance(r.json(), list) else []
+    except Exception as e:
+        log.info(f"v78 codex: {e}")
+        return []
+
+
+def v78_caller_post(rows: list[dict]) -> str:
+    top = rows[0]
+    h = (top.get("author") or {}).get("x_handle") or (top.get("author") or {}).get("handle") or ""
+    who = f"@{h}" if h else "a sleuth"
+    more = f"\n\n{len(rows) - 1} more call{'s' if len(rows) != 2 else ''} landed this week." if len(rows) > 1 else ""
+    return (f"caller of the week: {who}\n\nthey logged it in the kitty codex before it happened:\n“{top.get('title', '')[:150]}”"
+            f"\n\nit landed.{more}\n\nreceipts, not vibes. log yours #KittyCodex")
+
+
+async def job_v78_codex_weekly(app):
+    if not V78_CODEX_WEEKLY:
+        return
+    wk = datetime.now(PROJECT_TZ).strftime("%G-%V")
+    if kv_get(f"v78_cw:{wk}"):
+        return
+    kv_set(f"v78_cw:{wk}", "1")
+    rows = v78_codex_landed(7)
+    if not rows:
+        await _v78_dm(app, "🧾 <b>kitty codex, this week</b>\nno calls landed this week. a good week to remind the chat "
+                           "to log calls BEFORE things happen: tsukiverse.xyz/codex")
+        return
+    text = v78_caller_post(rows)
+    link = "https://x.com/intent/post?" + urllib.parse.urlencode({"text": text})
+    lines = ["🧾 <b>kitty codex: calls that landed this week</b>"] + [
+        f"· @{_v73_html.escape((r.get('author') or {}).get('handle') or '?')}: {_v73_html.escape(r.get('title', '')[:90])}" for r in rows]
+    lines += ["", "ready to post (tap to open X with it filled in):", f"<pre>{_v73_html.escape(text)}</pre>"]
+    await _v78_dm(app, "\n".join(lines), link if len(link) < 2000 else "")
+
+
+_v78b_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v78b_register_prev(app, scheduler, ny_tz)
+    scheduler.add_job(job_v78_doors, "cron", hour=9, minute=5, timezone=ny_tz, args=[app],
+                      max_instances=1, coalesce=True, misfire_grace_time=3600)
+    scheduler.add_job(job_v78_codex_weekly, "cron", day_of_week="sun", hour=18, minute=10, timezone=ny_tz, args=[app],
+                      max_instances=1, coalesce=True, misfire_grace_time=3600)
+    log.info(f"{BOT_VERSION}: site doors {'on' if V78_DOORS else 'off'} (9:05am ET) · codex weekly {'on' if V78_CODEX_WEEKLY else 'off'}")
+
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
