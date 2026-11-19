@@ -30679,6 +30679,2415 @@ async def cmd_welcome(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa:
     await _v67_cmd_welcome(update, ctx)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  v81 · NEWS FIRST (19 Nov 2026)
+#  the account was posting old lore while the day's news went by. from here it
+#  posts mostly what just happened, with lore still in the mix, and far fewer
+#  deck pictures.
+#
+#  1. the flash. about a minute after the radar (v77) sees a new post from
+#     TheRoaringKitty, tsukionsolana, TheRoaringAI, ryancohen or GameStop, the
+#     account quote-posts it with a short headline:
+#         BREAKING: ROARING KITTY IS BACK 🚨🚨🚨
+#         First post in 666 days.
+#         $GME
+#     every number is counted from the record: the post timeline first, then
+#     the site canon's x.com links (post ids decoded to times), then the
+#     radar's own last look. over 30 days quiet = "IS BACK" + the day count,
+#     over 3 days = the day count. another watched account inside 90 minutes
+#     = "24 minutes after Roaring Kitty posted." text under 140 characters is
+#     quoted, links stripped. it ends on that account's cashtags.
+#     replies, quotes & reposts get a flash only from RK, Tsuki & TheRoaringAI.
+#     never: a model call, a link, a post older than 20 minutes, a post that was
+#     deleted inside the minute, anything that fails v73_unsafe. shadow mode
+#     sends it to your DM with a post button.
+#     FLASH=off · FLASH_PER_DAY=8 · FLASH_PER_HANDLE=3 · FLASH_GAP_SEC=90
+#     FLASH_DELAY_SEC=60 · FLASH_MAX_AGE_MIN=20 · FLASH_HANDLES · FLASH_TAGS
+#     the flash job is an essential in the v75 budget (_V75_P0).
+#  2. the ranked board. every planned slot lists everything it could post,
+#     scores it and posts the best one (the next two if the best can't be
+#     written, then the old path):
+#       main-account posts  weight × 10 × freshness (halves every 8h) + engagement
+#                           RK 10 · Tsuki 9 · TheRoaringAI 9 · Cohen 7 · GameStop 6 · Larry Cheng 3
+#       today's filings     70 (a buy, 13D, 8-K, 10-Q, 10-K) or 30
+#       headlines           50, halving every 5h (saved from announce_breaking)
+#       other moving posts  50+ engagement, under 12h old, on topic
+#       lore lanes          tsuki 22 · tin 20 · kitty 18 · drop 15 · thesis 10, × the learned lane weight
+#     anything already covered (tp: x: filing: head:) is skipped.
+#     the mix: while there's news, lore may be 4 of the last 10 (LORE_SHARE=0.4);
+#     past that its scores are cut to 35%. after 4 news posts in a row with no
+#     lore in 24h, the best lore lane goes next unless something 60+ just
+#     landed. the same lore lane never goes twice running. LORE_SCORES="drop=24"
+#     moves a lane up or down the board.
+#     news is written short: line 1 says what happened, who & when (ET); then
+#     one or two short lines on what it means. NEWS_FIRST=off or /desk off
+#     brings v80 back. urgent tsuki quotes, hub & update slots keep their path.
+#  3. fewer decks. a picture rides along only when the post lines up two or
+#     more things (a front-run pair, a recap). DECKS=always · DECKS=off
+#  4. /desk (maker): the board right now, the last 6 picks, the mix, today's
+#     flashes, the last error. /desk on|off · /desk flash on|off · /desk test <handle>
+#  5. the Wizard profile (UID 855): an avatar or "Last active" change comes to
+#     your DM with the new avatar attached, its size & ratio. the picture is
+#     also re-checked every 5 minutes in case it changes under the same address.
+#  and a fix: since v75 stripped links, a "quote post" went out as plain words
+#  with nothing quoted. a trailing x.com post link is now sent as a real quote
+#  (no link, so it's still the cheap post). X_QUOTES=off turns that off.
+#  and buttons with their own prefix now sit ahead of the catch-all button
+#  handler: v76's "Publish read" / "Skip" buttons were behind it & did nothing.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v81"
+import math as _v81_math
+import contextvars as _v81_cv
+
+_V81_OFFS = ("0", "off", "false", "no", "none")
+
+
+def _v81_int(name: str, default: int, low: int = 0) -> int:
+    try:
+        return max(low, int(os.environ.get(name, "") or default))
+    except ValueError:
+        return default
+
+
+V81_FLASH = os.environ.get("FLASH", "on").lower() not in _V81_OFFS
+V81_FLASH_PER_DAY = _v81_int("FLASH_PER_DAY", 8)
+V81_FLASH_PER_HANDLE = _v81_int("FLASH_PER_HANDLE", 3)
+V81_FLASH_GAP = _v81_int("FLASH_GAP_SEC", 90)
+V81_FLASH_DELAY = _v81_int("FLASH_DELAY_SEC", 60)
+V81_FLASH_MAX_AGE = _v81_int("FLASH_MAX_AGE_MIN", 20, 1) * 60
+V81_FLASH_LOOKUPS = _v81_int("FLASH_LOOKUPS_PER_HANDLE", 8)      # post reads a day for the two flash-only accounts
+V81_FLASH_BACK_DAYS = 30                                          # quiet longer than this = "IS BACK"
+V81_FLASH_COUNT_DAYS = 3                                          # quiet longer than this = the day count
+V81_FLASH_AFTER_MIN = 90
+V81_FLASH_QUOTE_MAX = 140
+V81_FLASH_HANDLES = [h.strip().lstrip("@") for h in os.environ.get(
+    "FLASH_HANDLES", "TheRoaringKitty,tsukionsolana,TheRoaringAI,ryancohen,GameStop").split(",") if h.strip()][:12]
+V81_FLASH_FULL = {"theroaringkitty", "tsukionsolana", "theroaringai"}      # replies, quotes & reposts count for these
+V81_WHO = {
+    "theroaringkitty": ("ROARING KITTY", "Roaring Kitty", "$GME"),
+    "tsukionsolana": ("TSUKI", "Tsuki", "$TSUKI"),
+    "theroaringai": ("THE ROARING AI", "The Roaring AI", "$RWA"),
+    "ryancohen": ("RYAN COHEN", "Ryan Cohen", "$GME"),
+    "gamestop": ("GAMESTOP", "GameStop", "$GME"),
+    "larryvc": ("LARRY CHENG", "Larry Cheng", "$GME"),
+}
+for _v81p in os.environ.get("FLASH_TAGS", "").split(";"):          # FLASH_TAGS="tsukionsolana=$TSUKI $GME;ryancohen=$GME"
+    if "=" in _v81p:
+        _v81h, _v81t = _v81p.split("=", 1)
+        _v81h = _v81h.strip().lstrip("@").lower()
+        _v81t = " ".join(x for x in _v81t.split() if re.fullmatch(r"\$[A-Za-z]{2,8}", x))
+        if _v81h:
+            _v81w = V81_WHO.get(_v81h) or (("@" + _v81h).upper(), "@" + _v81h, "")
+            V81_WHO[_v81h] = (_v81w[0], _v81w[1], _v81t)
+
+V81_NEWS_FIRST = os.environ.get("NEWS_FIRST", "on").lower() not in _V81_OFFS
+try:
+    V81_LORE_SHARE = min(1.0, max(0.0, float(os.environ.get("LORE_SHARE", "0.4") or 0.4)))
+except ValueError:
+    V81_LORE_SHARE = 0.4
+V81_WEIGHT = {"theroaringkitty": 10, "roaringkitty": 10, "tsukionsolana": 9, "theroaringai": 9,
+              "ryancohen": 7, "gamestop": 6, "larryvc": 3}
+V81_LORE_SCORE = {"tsuki": 22, "tin": 20, "kitty": 18, "drop": 15, "thesis": 10}
+for _v81p in os.environ.get("LORE_SCORES", "").split(","):         # LORE_SCORES="drop=24,thesis=16" moves a lane up or down
+    if "=" in _v81p:
+        _v81h, _v81t = (x.strip().lower() for x in _v81p.split("=", 1))
+        try:
+            if _v81h in V81_LORE_SCORE:
+                V81_LORE_SCORE[_v81h] = max(0.0, float(_v81t))
+        except ValueError:
+            pass
+V81_HALF_POST, V81_HALF_HEAD = 8.0, 5.0
+V81_NEWS_KEYS = ("tp:", "x:", "filing:", "head:")
+V81_DECKS = (os.environ.get("DECKS", "pairs") or "pairs").strip().lower()
+V81_DECKS = "always" if V81_DECKS in ("always", "on", "all", "every") else "off" if V81_DECKS in _V81_OFFS else "pairs"
+V81_QUOTES = os.environ.get("X_QUOTES", "on").lower() not in _V81_OFFS
+V81_WIZ = os.environ.get("WIZARD_DM", "on").lower() not in _V81_OFFS
+V81_WIZ_CHECK = _v81_int("WIZARD_AVATAR_CHECK_MIN", 5, 2) * 60
+
+if "_V75_P0" in globals():
+    _V75_P0 = re.compile(_V75_P0.pattern + r"|^job_v81_flash$|^v81_flash_callback$")      # the flash is an essential
+
+
+# ── small things ────────────────────────────────────────────────────────────
+def _v81_json(key: str, default):
+    try:
+        v = json.loads(kv_get(key, "") or "null")
+    except Exception:
+        v = None
+    return default if v is None else v
+
+
+def _v81_note(msg: str):
+    """the last thing that went wrong (or was held), for /desk."""
+    kv_set("v81_err", f"{datetime.now(PROJECT_TZ).strftime('%-d %b %-I:%M%p').lower()} ET · {str(msg)[:260]}")
+    log.info(f"v81: {msg}")
+
+
+def _v81_who(handle: str) -> tuple:
+    h = (handle or "").lower()
+    return V81_WHO.get(h) or (("@" + h).upper(), "@" + h, "")
+
+
+def _v81_et_day(ts: float) -> date:
+    return datetime.fromtimestamp(ts, PROJECT_TZ).date()
+
+
+def _v81_xlen(t: str) -> int:
+    """the length X counts: most symbols & every emoji weigh two."""
+    n = 0
+    for ch in t or "":
+        o = ord(ch)
+        n += 1 if (o <= 4351 or 8192 <= o <= 8205 or 8208 <= o <= 8223 or 8242 <= o <= 8247) else 2
+    return n
+
+
+def v81_flash_on() -> bool:
+    v = kv_get("v81_flash", "")
+    return V81_FLASH and (v != "off")
+
+
+def v81_desk_on() -> bool:
+    v = kv_get("v81_desk", "")
+    return bool(globals().get("V61_ON")) and ((v == "on") if v in ("on", "off") else V81_NEWS_FIRST)
+
+
+# ── the fix: a quote post is a real quote again ─────────────────────────────
+_V81_STATUS_URL = re.compile(r"\s*https?://(?:www\.|mobile\.)?(?:x|twitter)\.com/(?:[A-Za-z0-9_]{1,15}|i)/status/(\d{6,25})(?:[/?#]\S*)?\s*$")
+_v81_req_prev = _v61_tw.client.BaseClient.request
+
+
+def _v81_request(self, method, route, params=None, json=None, user_auth=False):
+    """text that ends on an x.com post link → the same text quoting that post (no link, so it's the cheap post).
+    if X won't take the quote (the post is gone, quoting is closed) the words still go out alone, as before."""
+    is_tweet = method == "POST" and str(route).rstrip("/") == "/2/tweets" and isinstance(json, dict)
+    if is_tweet and V81_QUOTES and isinstance(json.get("text"), str) and not json.get("quote_tweet_id") \
+            and not json.get("reply") and not json.get("poll"):
+        m = _V81_STATUS_URL.search(json["text"])
+        body = json["text"][:m.start()].rstrip() if m else ""
+        if m and body and not re.search(r"https?://", body):
+            try:
+                return _v81_req_prev(self, method, route, params=params, json=dict(json, text=body, quote_tweet_id=m.group(1)),
+                                     user_auth=user_auth)
+            except (_v61_tw.errors.Forbidden, _v61_tw.errors.BadRequest, _v61_tw.errors.NotFound) as e:
+                log.info(f"v81: X wouldn't take the quote of {m.group(1)} ({e}); sending the words alone")
+    return _v81_req_prev(self, method, route, params=params, json=json, user_auth=user_auth)
+
+
+_v61_tw.client.BaseClient.request = _v81_request
+
+_v81_line_ends_prev = v72_line_ends
+
+
+def v72_line_ends(text: str) -> str:   # noqa: F811
+    """a flash keeps its lines exactly as written ("First post in 666 days.")."""
+    return text if _V77_EXACT.get() else _v81_line_ends_prev(text)
+
+
+# ── 1. the flash ────────────────────────────────────────────────────────────
+# the radar looks at ryancohen & GameStop too, but only for a new post: no DM, no profile alerts for them.
+V81_FLASH_ONLY = set()
+if V81_FLASH and "V77_HANDLES" in globals():
+    _v81_have = {h.lower() for h in V77_HANDLES}
+    for _v81h in V81_FLASH_HANDLES:
+        if _v81h.lower() not in _v81_have and len(V77_HANDLES) < 20:
+            V77_HANDLES.append(_v81h)
+            V81_FLASH_ONLY.add(_v81h.lower())
+            _v81_have.add(_v81h.lower())
+    for _v81h, _v81w in V81_WHO.items():
+        V77_NAMES.setdefault(_v81h, ("👁", _v81w[1]))
+
+_v81_diff_prev = v77_diff
+
+
+def v77_diff(old: dict, new: dict) -> list[dict]:   # noqa: F811
+    """the flash-only accounts never reach the radar's DM alerts (or its paid post lookups)."""
+    h = str((new or {}).get("username") or (old or {}).get("username") or "").lower()
+    return [] if h in V81_FLASH_ONLY else _v81_diff_prev(old, new)
+
+
+_v81_send_prev = v77_send
+
+
+async def v77_send(app, handle: str, html_: str, photo: str = "", link: str = ""):   # noqa: F811
+    if (handle or "").lower() in V81_FLASH_ONLY:
+        return
+    await _v81_send_prev(app, handle, html_, photo, link)
+
+
+_V81_DETAIL: dict = {}
+_v81_detail_prev = v77_post_detail
+
+
+def v77_post_detail(tid: str) -> dict:   # noqa: F811
+    """the radar reads a new post once; the flash a minute later reuses that read."""
+    k = str(tid or "")
+    hit = _V81_DETAIL.get(k)
+    if hit and time.time() - hit[0] < 1800:
+        return dict(hit[1])
+    d = _v81_detail_prev(tid)
+    if d:
+        if len(_V81_DETAIL) > 200:
+            _V81_DETAIL.clear()
+        _V81_DETAIL[k] = (time.time(), dict(d))
+    return d
+
+
+def v81_post_lean(tid: str) -> dict:
+    """a new post from a flash-only account: its text & kind, nothing expanded (one $0.005 read)."""
+    k = str(tid or "")
+    hit = _V81_DETAIL.get(k)
+    if hit and time.time() - hit[0] < 1800:
+        return dict(hit[1])
+    r = _x_client().get_tweet(tid, user_auth=True, tweet_fields=["created_at", "referenced_tweets", "note_tweet"])
+    t = r.data
+    if not t:
+        return {}
+    nt = getattr(t, "note_tweet", None) or {}
+    text = (nt.get("text") if isinstance(nt, dict) else None) or t.text or ""
+    kind = "post"
+    for ref in getattr(t, "referenced_tweets", None) or []:
+        if ref.type in ("replied_to", "quoted", "retweeted"):
+            kind = {"replied_to": "reply", "quoted": "quote", "retweeted": "repost"}[ref.type]
+            break
+    d = {"tid": str(t.id), "text": text, "kind": kind, "other": "", "created": getattr(t, "created_at", None), "media": False}
+    _V81_DETAIL[k] = (time.time(), dict(d))
+    return d
+
+
+def _v81_newer(a, b) -> bool:
+    try:
+        return int(a) > int(b or 0)
+    except (TypeError, ValueError):
+        return False
+
+
+def v81_flash_enqueue(handle: str, tid: str, prev: str = "") -> bool:
+    h, tid = (handle or "").lower(), str(tid or "")
+    if not (h and tid.isdigit()) or kv_get(f"v81_flashed:{tid}"):
+        return False
+    q = _v81_json("v81_flash_q", [])
+    if any(x.get("tid") == tid for x in q):
+        return False
+    q.append({"h": h, "tid": tid, "prev": str(prev or ""), "t": time.time(), "tries": 0})
+    kv_set("v81_flash_q", json.dumps(q[-30:]))
+    return True
+
+
+_v81_radar_prev = job_v77_radar
+
+
+async def job_v77_radar(app):   # noqa: F811
+    """the radar's look, then: whose newest post id moved forward? those go on the flash queue."""
+    before = {h: (s or {}).get("last") for h, s in ((_v77_state().get("snaps") or {}).items())}
+    await _v81_radar_prev(app)
+    if not v81_flash_on():
+        return
+    try:
+        want = {h.lower() for h in V81_FLASH_HANDLES}
+        for h, s in ((_v77_state().get("snaps") or {}).items()):
+            if h not in want or h not in before or (s or {}).get("status") != "active":
+                continue                                        # a first look is a baseline, never a flash
+            last = str(s.get("last") or "")
+            if last and last != str(before.get(h) or "") and _v81_newer(last, before.get(h)):
+                if v81_flash_enqueue(h, last, before.get(h) or ""):
+                    log.info(f"v81: @{h} posted ({last}); flash in {V81_FLASH_DELAY}s")
+    except Exception as e:
+        _v81_note(f"flash queue: {e}")
+
+
+# the record: when did this account last post?
+def v81_canon_times(handle: str) -> list:
+    """every post of theirs the site canon links to, as epoch seconds (the time is inside the post id)."""
+    out = []
+    try:
+        for e in v73_record():
+            for s in (e.get("sources") or []):
+                m = re.match(r"https?://(?:www\.)?(?:x|twitter)\.com/([A-Za-z0-9_]+)/status/(\d+)", str((s or {}).get("url") or ""))
+                if m and m.group(1).lower() == handle:
+                    dt = v73_snow_time(m.group(2))
+                    if dt:
+                        out.append(dt.timestamp())
+    except Exception as e:
+        log.info(f"v81 canon: {e}")
+    return out
+
+
+def v81_last_before(handle: str, before_ts: float, prev_tid: str = "", skip_tid: str = "") -> tuple:
+    """(epoch of their newest post before `before_ts`, where that came from) or (None, '').
+    the post timeline first, then the site canon, then what the radar last saw."""
+    h = (handle or "").lower()
+    best, src = None, ""
+    try:
+        con = db()
+        row = con.execute("SELECT MAX(ts) FROM post_timeline WHERE lower(handle)=? AND ts < ? AND tweet_id != ?",
+                          (h, before_ts - 1, str(skip_tid or ""))).fetchone()
+        con.close()
+        if row and row[0]:
+            best, src = float(row[0]), "the post timeline"
+    except Exception as e:
+        log.info(f"v81 timeline: {e}")
+    for t in v81_canon_times(h):
+        if t < before_ts - 1 and (best is None or t > best):
+            best, src = t, "the site canon"
+    dt = v73_snow_time(prev_tid) if str(prev_tid or "").isdigit() else None
+    if dt and dt.timestamp() < before_ts - 1 and (best is None or dt.timestamp() > best):
+        best, src = dt.timestamp(), "the radar's last look"
+    return best, src
+
+
+def _v81_seen() -> list:
+    return [r for r in _v81_json("v81_seen", []) if time.time() - r.get("t", 0) < 48 * 3600]
+
+
+def _v81_seen_add(handle: str, tid: str, ts: float, kind: str, text: str):
+    rows = [r for r in _v81_seen() if r.get("tid") != tid]
+    rows.append({"h": handle, "tid": tid, "t": ts, "k": kind, "x": (text or "")[:500]})
+    kv_set("v81_seen", json.dumps(rows[-80:], ensure_ascii=False))
+
+
+def v81_after(handle: str, new_ts: float) -> tuple | None:
+    """(minutes, Name) when another watched account posted inside the last 90 minutes."""
+    h = (handle or "").lower()
+    want = {x.lower() for x in V81_FLASH_HANDLES} - {h}
+    best = None
+    for r in _v81_seen():
+        if r.get("h") in want and (r.get("k") == "post" or r.get("h") in V81_FLASH_FULL):
+            gap = new_ts - float(r.get("t") or 0)
+            if 0 < gap <= V81_FLASH_AFTER_MIN * 60 and (best is None or gap < best[0]):
+                best = (gap, r["h"])
+    try:
+        con = db()
+        rows = con.execute("SELECT lower(handle), ts, text FROM post_timeline WHERE ts > ? AND ts < ?",
+                           (new_ts - V81_FLASH_AFTER_MIN * 60, new_ts)).fetchall()
+        con.close()
+        for hh, ts, text in rows:
+            t = (text or "").strip()
+            if hh not in want or (hh not in V81_FLASH_FULL and (t.startswith("RT @") or t.startswith("@"))):
+                continue
+            gap = new_ts - float(ts)
+            if 0 < gap and (best is None or gap < best[0]):
+                best = (gap, hh)
+    except Exception:
+        pass
+    return (int(best[0] // 60), _v81_who(best[1])[1]) if best else None
+
+
+_V81_SHARE_MOVE = re.compile(r"\b(?:shares?|stock|price)\b[^.]{0,60}\b(?:surg|soar|jump|plung|fall|fell|drop|rise|rose|rall|tumbl|sink|sank|slump|"
+                             r"climb|gain|slid|spik|tank|pop)\w*|\b\d+(?:\.\d+)?\s?%", re.I)
+
+
+def v81_flash_quote(d: dict) -> str:
+    """their words, when there are few enough of them and nothing in them the account shouldn't repeat."""
+    if (d.get("kind") or "post") == "repost":
+        return ""
+    t = re.sub(r"https?://\S+", "", d.get("text") or "")
+    if d.get("kind") == "reply":
+        t = re.sub(r"^(?:\s*@\w{1,15})+\s*", "", t)
+    t = re.sub(r"\s+", " ", html.unescape(t)).strip().strip("“”\"")
+    if not t or len(t) >= V81_FLASH_QUOTE_MAX or "@" in t:
+        return ""
+    if v73_unsafe(t) or _V73_PRICE.search(t) or re.search(r"\breceipts?\b|\blandlord\b", t, re.I) \
+            or ("_V76_POLITICS" in globals() and _V76_POLITICS.search(t)):
+        return ""
+    return t
+
+
+def v81_flash_text(handle: str, d: dict, new_ts: float, last_ts: float | None = None, after: tuple | None = None,
+                   quote: bool = True) -> str:
+    NAME, _name, tags = _v81_who(handle)
+    kind, other = d.get("kind") or "post", (d.get("other") or "").lstrip("@")
+    if other.lower() == (handle or "").lower():
+        kind = "post"                                           # a thread, or quoting himself: it's a post
+    days = (_v81_et_day(new_ts) - _v81_et_day(last_ts)).days if last_ts else None
+    verb = {"reply": "REPLIED TO", "quote": "QUOTED", "repost": "REPOSTED"}.get(kind)
+    bare = {"reply": "REPLIED", "quote": "QUOTED A POST", "repost": "REPOSTED"}.get(kind)
+    lines = []
+    if days is not None and days > V81_FLASH_BACK_DAYS:
+        lines.append(f"BREAKING: {NAME} IS BACK 🚨🚨🚨")
+        lines.append(f"First post in {days:,} days.")
+        if verb:
+            lines.append({"reply": "A reply", "quote": "A quote", "repost": "A repost"}[kind] + (f" to @{other}." if kind == "reply" and other
+                         else f" of @{other}." if other else "."))
+    else:
+        lines.append(f"JUST IN: {NAME} JUST " + ((f"{verb} @{other}" if other else bare) if verb else "POSTED") + " 🚨")
+        if days is not None and days > V81_FLASH_COUNT_DAYS:
+            lines.append(f"First post in {days:,} days.")
+    if after:
+        m, who = after
+        lines.append((f"{m} minute{'' if m == 1 else 's'} after" if m >= 1 else "Less than a minute after") + f" {who} posted.")
+    q = v81_flash_quote(dict(d, kind=kind)) if quote else ""
+    if q:
+        lines.append(f"“{q}”")
+    if tags:
+        lines.append(tags)
+    return "\n".join(lines)
+
+
+def v81_flash_build(handle: str, d: dict, new_ts: float, last_ts: float | None, after: tuple | None) -> str:
+    """the headline that may go out: with their words if that's safe & fits, else without, else nothing."""
+    for quote, aft in ((True, after), (False, after), (False, None)):
+        t = v81_flash_text(handle, d, new_ts, last_ts, aft, quote=quote)
+        if _v81_xlen(t) <= 280 and not v73_unsafe(t) and not re.search(r"https?://|www\.", t):
+            return t
+    return ""
+
+
+def _v81_flash_day() -> dict:
+    d = _v81_json(f"v81_flash_n:{datetime.now(PROJECT_TZ).date()}", {})
+    d.setdefault("n", 0)
+    d.setdefault("h", {})
+    d.setdefault("looks", {})
+    return d
+
+
+def _v81_flash_count(handle: str, field: str = "h"):
+    d = _v81_flash_day()
+    if field == "h":
+        d["n"] += 1
+    d[field][handle] = d[field].get(handle, 0) + 1
+    kv_set(f"v81_flash_n:{datetime.now(PROJECT_TZ).date()}", json.dumps(d))
+
+
+def _v81_flash_log(handle: str, tid: str, mode: str, text: str = "", why: str = "", new_id: str = ""):
+    rows = _v81_json("v81_flash_log", [])
+    rows.append({"t": time.time(), "h": handle, "tid": tid, "mode": mode, "x": text[:300], "why": why[:160], "id": new_id})
+    kv_set("v81_flash_log", json.dumps(rows[-40:], ensure_ascii=False))
+    if mode == "skipped":
+        log.info(f"v81 flash @{handle} {tid} skipped: {why}")
+
+
+def v81_flash_room(handle: str) -> str:
+    """'' when one more flash may go today, else why not."""
+    d = _v81_flash_day()
+    if d["n"] >= V81_FLASH_PER_DAY:
+        return f"today's {V81_FLASH_PER_DAY} flashes are used"
+    if d["h"].get(handle, 0) >= V81_FLASH_PER_HANDLE:
+        return f"@{handle} already had {V81_FLASH_PER_HANDLE} flashes today"
+    return ""
+
+
+def _v81_flash_send(text: str, quote_tid: str) -> str:
+    """out to X exactly as written. the quote first; the words alone if the post can't be quoted."""
+    tok = _V77_EXACT.set(True)
+    try:
+        new = v73_post(text, quote=quote_tid)
+        if not new and "budget" not in (LAST_X_ERROR or "").lower() and "limit" not in (LAST_X_ERROR or "").lower():
+            new = v73_post(text)
+        return new
+    finally:
+        _V77_EXACT.reset(tok)
+
+
+async def _v81_dm(app, text: str, kb=None):
+    chat = _jinx_owner_chat()
+    if not chat:
+        return
+    try:
+        await app.bot.send_message(chat_id=chat, text=text[:4000], reply_markup=kb, disable_web_page_preview=True)
+    except Exception as e:
+        log.info(f"v81 dm: {e}")
+
+
+async def v81_flash_one(app, it: dict) -> str:
+    """one queued post → posted | shadow | skipped | retry."""
+    h, tid = it["h"], it["tid"]
+    created = v73_snow_time(tid)
+    new_ts = created.timestamp() if created else time.time()
+    if time.time() - new_ts > V81_FLASH_MAX_AGE:
+        _v81_flash_log(h, tid, "skipped", why=f"older than {V81_FLASH_MAX_AGE // 60} minutes")
+        return "skipped"
+    why = v81_flash_room(h)
+    if why:
+        _v81_flash_log(h, tid, "skipped", why=why)
+        return "skipped"
+    now_last = str(((_v77_state().get("snaps") or {}).get(h) or {}).get("last") or "")
+    if now_last and _v81_newer(tid, now_last):
+        _v81_flash_log(h, tid, "skipped", why="the post was gone again before the minute was up")
+        return "skipped"
+    lean = h in V81_FLASH_ONLY
+    if lean and str(tid) not in _V81_DETAIL:
+        if _v81_flash_day()["looks"].get(h, 0) >= V81_FLASH_LOOKUPS:
+            _v81_flash_log(h, tid, "skipped", why=f"@{h}: today's {V81_FLASH_LOOKUPS} post lookups are used")
+            return "skipped"
+        _v81_flash_count(h, "looks")
+    try:
+        d = await asyncio.to_thread(v81_post_lean if lean else v77_post_detail, tid)
+    except Exception as e:
+        d = {}
+        _v81_note(f"flash @{h}: couldn't read the post ({e})")
+    if not d:
+        return "retry"
+    kind = d.get("kind") or "post"
+    if (d.get("other") or "").lower() == h:
+        kind = "post"
+    d = dict(d, kind=kind)
+    _v81_seen_add(h, tid, new_ts, kind, d.get("text") or "")
+    if kind != "post" and h not in V81_FLASH_FULL:
+        _v81_flash_log(h, tid, "skipped", why=f"a {kind}: only RK, Tsuki & TheRoaringAI get a flash for those")
+        return "skipped"
+    theirs = d.get("text") or ""
+    if _off_limits(theirs) or ("_V76_POLITICS" in globals() and _V76_POLITICS.search(theirs)):
+        _v81_flash_log(h, tid, "skipped", why="the post is on an off-limits subject")
+        return "skipped"
+    last_ts, _src = await asyncio.to_thread(v81_last_before, h, new_ts, it.get("prev", ""), tid)
+    text = v81_flash_build(h, d, new_ts, last_ts, v81_after(h, new_ts))
+    if not text:
+        _v81_flash_log(h, tid, "skipped", why="the headline didn't pass the safety check")
+        return "skipped"
+    kv_set(f"v81_flashed:{tid}", "1")
+    link = f"https://x.com/{h}/status/{tid}"
+    if jinx_shadow():
+        fid = hashlib.md5(f"{tid}{time.time()}".encode()).hexdigest()[:10]
+        kv_set(f"v81_fsh:{fid}", json.dumps({"h": h, "tid": tid, "text": text, "t": time.time()}, ensure_ascii=False))
+        _v81_flash_count(h)
+        kv_set("v81_flash_last", str(time.time()))
+        _v81_flash_log(h, tid, "shadow", text)
+        await _v81_dm(app, f"⚡ flash · draft (shadow mode, not posted)\n\n{text}\n\nquoting: {link}",
+                      InlineKeyboardMarkup([[InlineKeyboardButton("post it ✅", callback_data=f"v81:fp:{fid}"),
+                                             InlineKeyboardButton("bin it 🗑", callback_data=f"v81:fb:{fid}")]]))
+        return "shadow"
+    new = await asyncio.to_thread(_v81_flash_send, text, tid)
+    if not new:
+        kv_set(f"v81_flashed:{tid}", "")
+        _v81_note(f"flash @{h} didn't post: {LAST_X_ERROR or 'X said no'}")
+        _v81_flash_log(h, tid, "skipped", text, why=LAST_X_ERROR or "X said no")
+        return "skipped"
+    _v81_flash_count(h)
+    kv_set("v81_flash_last", str(time.time()))
+    _v81_flash_log(h, tid, "posted", text, new_id=new)
+    await _v81_dm(app, f"⚡ flash posted\n\n{text}\n\nhttps://x.com/i/status/{new}")
+    return "posted"
+
+
+_V81_FLASH_BUSY = threading.Lock()
+
+
+async def job_v81_flash(app):
+    """every 15 seconds: the oldest queued post that has waited its minute goes out."""
+    if not X_ENABLED or not _V81_FLASH_BUSY.acquire(blocking=False):
+        return
+    try:
+        q = _v81_json("v81_flash_q", [])
+        if not q:
+            return
+        if not v81_flash_on():
+            kv_set("v81_flash_q", "[]")
+            return
+        now = time.time()
+        due = sorted((x for x in q if now - float(x.get("t") or 0) >= V81_FLASH_DELAY), key=lambda x: int(x["tid"]))
+        if not due:
+            return
+        it = due[0]
+        created = v73_snow_time(it["tid"])
+        fresh = bool(created) and now - created.timestamp() <= V81_FLASH_MAX_AGE
+        if fresh and now - float(kv_get("v81_flash_last", "0") or 0) < V81_FLASH_GAP:
+            return                                             # the 90 seconds between flashes
+        kv_set("v81_flash_q", json.dumps([x for x in q if x.get("tid") != it["tid"]]))
+        res = await v81_flash_one(app, it)
+        if res == "retry" and int(it.get("tries") or 0) < 3:
+            it["tries"] = int(it.get("tries") or 0) + 1
+            kv_set("v81_flash_q", json.dumps(_v81_json("v81_flash_q", []) + [it]))
+    except Exception as e:
+        _v81_note(f"flash: {e}")
+    finally:
+        _V81_FLASH_BUSY.release()
+
+
+async def v81_flash_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if not (update.effective_user and _is_maker(update.effective_user)):
+        await q.answer("that one's juju's button")
+        return
+    _, act, fid = ((q.data or "").split(":", 2) + ["", ""])[:3]
+    try:
+        it = json.loads(kv_get(f"v81_fsh:{fid}", "") or "null")
+    except Exception:
+        it = None
+    if not it:
+        await q.answer("that draft expired")
+        return
+    kv_set(f"v81_fsh:{fid}", "")
+    base = (q.message.text or "") if q.message else ""
+    if act == "fb":
+        await q.answer("binned")
+        tail = "\n\n🗑 binned"
+    else:
+        created = v73_snow_time(it["tid"])
+        if created and time.time() - created.timestamp() > V81_FLASH_MAX_AGE:
+            await q.answer(f"the post is over {V81_FLASH_MAX_AGE // 60} minutes old now: a flash that late isn't a flash", show_alert=True)
+            tail = "\n\n⌛ too old to flash"
+        else:
+            new = await asyncio.to_thread(_v81_flash_send, it["text"], it["tid"])
+            if new:
+                _v81_flash_log(it["h"], it["tid"], "posted", it["text"], new_id=new)
+                await q.answer("posted")
+                tail = f"\n\n✅ https://x.com/i/status/{new}"
+            else:
+                await q.answer("X said no, see /desk")
+                _v81_note(f"flash @{it['h']} didn't post: {LAST_X_ERROR or 'X said no'}")
+                tail = "\n\n⚠️ didn't post"
+    try:
+        await q.edit_message_text(base + tail, disable_web_page_preview=True)
+    except Exception:
+        pass
+
+
+# ── 2. the ranked board ─────────────────────────────────────────────────────
+_V81_PICK = _v81_cv.ContextVar("v81_pick", default=None)
+_V81_LORE = _v81_cv.ContextVar("v81_lore", default=False)
+V81_NEWS_CODES = ("N01", "N02", "N03", "N04")
+V81_NEWS_BRIEF = ("NEWS, written short. line 1 says what happened, flat: who did what & when (the ET time in FACTS). "
+                  "then one or two short lines: what it means, or the one detail to notice. no list unless FACTS hold "
+                  "three separate things. nothing before the news, no old lore retold, no sign-off line.")
+_V81_TOPIC = re.compile(r"\$gme\b|\bgme\b|gamestop|ryan cohen|\bcohen\b|roaring kitty|keith gill|\bdfv\b|tsuki|\$rwa\b|roaring ?ai|"
+                        r"tokeni[sz]ed (?:stock|equit|share)|robinhood chain|power to the players|\bpsa\b|trading cards?|collectibles?|\bebay\b", re.I)
+
+if "DECK_CODES" in globals() and "_c" in globals():
+    for _v81code, _v81lane, _v81name, _v81how, _v81from in (
+            ("N01", "kitty", "the report", "news, short. line 1: what happened, flat, with who & when (ET). then one short line on what it means.", "K01"),
+            ("N02", "kitty", "the report & the detail", "news, short. line 1: what happened, flat, with who & when (ET). then one or two short "
+                                                        "lines on the detail most people will scroll past.", "J23"),
+            ("N03", "tsuki", "the tsuki report", "news, short. line 1: what tsuki did, flat, with when (ET). then one short line on what it means.", "T01"),
+            ("N04", "tsuki", "the tsuki report & the detail", "news, short. line 1: what tsuki did, flat, with when (ET). then one or two short "
+                                                              "lines on the detail to notice.", "J29")):
+        _v81ex = (DECK_CODES.get(_v81from) or {}).get("ex") or ""
+        if _v81code not in DECK_CODES and _v81ex:
+            DECK_CODES[_v81code] = _c(_v81code, _v81lane, _v81name, _v81how, _v81ex, gap=0)
+            if "_V62_NEEDS" in globals():
+                _V62_NEEDS[_v81code] = "news"                   # only ever picked when the board asks for it
+
+if "V79_AIR" in globals():
+    V79_AIR["news"] = ("2 or 3 short lines with a blank line between them. line 1 is the report itself (who, what, when in ET), "
+                       "nothing before it")
+    _v81_shape_prev = v79_pick_shape
+
+    def v79_pick_shape(lane: str, code: str = "", taken: tuple = (), rnd=None) -> dict:   # noqa: F811
+        if code in V81_NEWS_CODES:
+            r = rnd or random
+            return {"air": "news", "case": "caps", "emoji": 1 if r.random() < 0.15 else 0,
+                    "end": "ticker" if r.random() < 0.2 else "stop"}
+        return _v81_shape_prev(lane, code, taken, rnd)
+
+    _v81_shape_problem_prev = v79_shape_problem
+
+    def v79_shape_problem(text: str, sh: dict) -> str:   # noqa: F811
+        if (sh or {}).get("air") != "news":
+            return _v81_shape_problem_prev(text, sh)
+        lines = [l for l in (text or "").strip().split("\n") if l.strip()]
+        if len(lines) < 2:
+            return "a news post is 2 or 3 short lines: the report, then what it means"
+        if len(lines) > 5 or len(text) > 270:
+            return "too long for a news post"
+        if v79_fp(text)["emoji"] > (2 if sh.get("emoji") else 0):
+            return "more emoji than the shape allows"
+        return ""
+
+
+def _v81_fresh(age_h: float, half: float) -> float:
+    return 0.5 ** (max(0.0, age_h) / half)
+
+
+def _v81_eng(eng) -> float:
+    try:
+        return round(min(25.0, 5.0 * _v81_math.log10(1 + max(0, float(eng or 0)))), 1)
+    except Exception:
+        return 0.0
+
+
+def _v81_marks(name: str, hours: float) -> dict:
+    cut = time.time() - hours * 3600
+    return {k: v for k, v in _v81_json(name, {}).items() if isinstance(v, (int, float, list)) and
+            (v[1] if isinstance(v, list) else v) > cut}
+
+
+def _v81_mark(name: str, key: str, hours: float = 24):
+    """offered (a shadow draft went to the DM) or failed (it couldn't be written): don't serve it straight back."""
+    rows = _v81_marks(name, hours)
+    if name == "v81_failed":
+        n = (rows.get(key) or [0, 0])[0] + 1
+        rows[key] = [n, time.time()]
+    else:
+        rows[key] = time.time()
+    kv_set(name, json.dumps(rows))
+
+
+def _v81_covered(key: str, tid: str = "") -> bool:
+    if tid and (_jinx_used("tp:" + tid, 30) or _jinx_used("x:" + tid, 30)):
+        return True
+    if key and _jinx_used(key, 30):
+        return True
+    if key in _v81_marks("v81_offered", 12):
+        return True
+    return (_v81_marks("v81_failed", 24).get(key) or [0])[0] >= 2
+
+
+def _v81_blocked_topic(text: str) -> bool:
+    return bool(_off_limits(text or "") or ("_V76_POLITICS" in globals() and _V76_POLITICS.search(text or "")))
+
+
+def v81_heads() -> list:
+    return [r for r in _v81_json("v81_heads", []) if time.time() - r.get("t", 0) < 24 * 3600]
+
+
+def v81_head_save(title: str, link: str = "", via: str = "", on_x: bool = False):
+    clean, source = (title or "").strip(), ""
+    if " - " in clean:
+        head, tail = clean.rsplit(" - ", 1)
+        if len(tail) <= 30:
+            clean, source = head.strip(), tail.strip()
+    if not clean:
+        return
+    key = "head:" + hashlib.md5(clean.lower().encode()).hexdigest()[:12]
+    rows = [r for r in v81_heads() if r.get("key") != key]
+    rows.append({"key": key, "title": clean[:300], "source": source or (via or "").lstrip("@"), "t": time.time()})
+    kv_set("v81_heads", json.dumps(rows[-30:], ensure_ascii=False))
+    if on_x:
+        _jinx_mark_used(key)                                    # the breaking desk already put it on X
+
+
+_v81_breaking_prev = announce_breaking
+
+
+async def announce_breaking(app, title: str, link: str, via: str = "", alternates: list | None = None) -> bool:   # noqa: F811
+    """the news watcher's door. every headline it lets through is saved for the board."""
+    dk = f"x_posts:{datetime.now(PROJECT_TZ).date()}"
+    before = kv_get(dk, "0")
+    ok = await _v81_breaking_prev(app, title, link, via=via, alternates=alternates)
+    if ok:
+        try:
+            v81_head_save(title, link, via, on_x=kv_get(dk, "0") != before)
+        except Exception as e:
+            log.info(f"v81 headline: {e}")
+    return ok
+
+
+def v81_news_candidates(now: float | None = None) -> list:
+    """everything recent the account could post about, each with a score and the reason for it."""
+    now = now or time.time()
+    out = {}
+
+    def put(c):
+        if c["key"] not in out or c["score"] > out[c["key"]]["score"]:
+            out[c["key"]] = c
+
+    # the main accounts: what the watchers stored, what the sweep saw moving, what the radar just caught
+    rows = {}
+    try:
+        con = db()
+        for tid, h, ts, text, url in con.execute(
+                "SELECT tweet_id, lower(handle), ts, text, url FROM post_timeline WHERE ts > ?", (now - 48 * 3600,)).fetchall():
+            if h in V81_WEIGHT:
+                rows[str(tid)] = {"id": str(tid), "h": h, "t": float(ts), "x": (text or "").strip(), "eng": 0, "url": url or ""}
+        con.close()
+    except Exception as e:
+        log.info(f"v81 board timeline: {e}")
+    moving = []
+    try:
+        moving = _jinx_moving(48)
+    except Exception:
+        pass
+    for m in moving:
+        h = (m.get("h") or "").lower()
+        if h in V81_WEIGHT:
+            r = rows.setdefault(str(m["id"]), {"id": str(m["id"]), "h": h, "t": float(m.get("t") or now), "x": (m.get("x") or "").strip(),
+                                               "eng": 0, "url": m.get("url") or ""})
+            r["eng"] = max(r["eng"], int(m.get("eng") or 0))
+    for s in _v81_seen():
+        if s.get("h") in V81_WEIGHT and s.get("k") in ("post", "quote"):
+            rows.setdefault(str(s["tid"]), {"id": str(s["tid"]), "h": s["h"], "t": float(s["t"]), "x": (s.get("x") or "").strip(),
+                                            "eng": 0, "url": ""})
+    flashed = {r.get("tid"): r for r in _v81_json("v81_flash_log", []) if r.get("mode") in ("posted", "shadow")}
+    for tid, r in rows.items():
+        t = r["x"]
+        if t.startswith("RT @") or t.startswith("@"):
+            continue
+        age = (now - r["t"]) / 3600
+        h = "theroaringkitty" if r["h"] == "roaringkitty" else r["h"]
+        key = ("tp:" if h == "tsukionsolana" else "x:") + tid
+        if age < 0 or age > 48 or _v81_covered(key, tid) or _v81_blocked_topic(t):
+            continue
+        w, fr, eb = V81_WEIGHT[h], _v81_fresh(age, V81_HALF_POST), _v81_eng(r["eng"])
+        put({"cls": "news", "lane": "tsuki" if h in ("tsukionsolana", "theroaringai") else "kitty", "key": key,
+             "score": round(w * 10 * fr + eb, 1),
+             "why": f"{_v81_who(h)[1]} posted {age:.1f}h ago · {w}×10 × {fr:.2f} fresh + {eb:g} engagement",
+             "src": {"type": "post", "h": h, "id": tid, "t": r["t"], "x": t, "url": r["url"] or f"https://x.com/{h}/status/{tid}",
+                     "flash": (flashed.get(tid) or {}).get("x", "")}})
+    # today's GameStop filings
+    try:
+        for r in _desk_today():
+            txt = f"{r.get('form', '')} {r.get('who', '')} {r.get('what', '')}".strip()
+            key = "filing:" + str(r.get("acc", txt))
+            if not txt or _jinx_used(key, 10) or _v81_covered(key):
+                continue
+            big = bool(re.search(r"bought|purchase", txt, re.I) or _V53_MATERIAL.search(txt) or re.search(r"13D|8-K|10-Q|10-K", txt))
+            put({"cls": "news", "lane": "kitty", "key": key, "score": 70.0 if big else 30.0,
+                 "why": "filed today: " + txt[:70] + (" · a buy, 13D, 8-K, 10-Q or 10-K" if big else " · a routine form"),
+                 "src": {"type": "filing", "txt": txt}})
+    except Exception as e:
+        log.info(f"v81 board filings: {e}")
+    # headlines the news watcher let through
+    for r in v81_heads():
+        title = r.get("title") or ""
+        if _v81_covered(r["key"]) or _v81_blocked_topic(title) or v73_unsafe(title) or _V81_SHARE_MOVE.search(title):
+            continue
+        age = (now - r["t"]) / 3600
+        fr = _v81_fresh(age, V81_HALF_HEAD)
+        put({"cls": "news", "lane": "tsuki" if re.search(r"tsuki", title, re.I) else "kitty", "key": r["key"],
+             "score": round(50 * fr, 1), "why": f"headline {age:.1f}h ago · 50 × {fr:.2f} fresh · {title[:60]}",
+             "src": {"type": "head", "title": title, "source": r.get("source") or "", "t": r["t"]}})
+    # other posts that are moving
+    try:
+        for m in _jinx_moving(12):
+            h, tid, t = (m.get("h") or "").lower(), str(m.get("id") or ""), (m.get("x") or "").strip()
+            if h in V81_WEIGHT or h in ("bigboyjuju", "tsukiverseai", kv_get("x_me_handle", "") or "-") or int(m.get("eng") or 0) < 50:
+                continue
+            if not tid or t.startswith("RT @") or t.startswith("@") or not _V81_TOPIC.search(t):
+                continue
+            key = "x:" + tid
+            if _v81_covered(key, tid) or _v81_blocked_topic(t) or _V81_SHARE_MOVE.search(t):
+                continue
+            age = (now - float(m.get("t") or now)) / 3600
+            fr, eb = _v81_fresh(age, V81_HALF_POST), _v81_eng(m.get("eng"))
+            put({"cls": "news", "lane": "tsuki" if re.search(r"tsuki|\$rwa\b", t, re.I) else "kitty", "key": key,
+                 "score": round(25 * fr + eb, 1), "why": f"@{h}'s post is moving ({int(m.get('eng') or 0)} engagement, {age:.1f}h old)",
+                 "src": {"type": "post", "h": h, "id": tid, "t": float(m.get("t") or now), "x": t,
+                         "url": m.get("url") or f"https://x.com/{h}/status/{tid}", "flash": ""}})
+    except Exception as e:
+        log.info(f"v81 board moving: {e}")
+    return sorted(out.values(), key=lambda c: -c["score"])
+
+
+def v81_picks() -> list:
+    return _v81_json("v81_picks", [])
+
+
+def _v81_pick_add(cls: str, lane: str, key: str, text: str, score=None, why: str = "", live: bool = True):
+    rows = v81_picks()
+    rows.append({"t": time.time(), "cls": cls, "lane": lane, "key": key, "x": (text or "")[:90], "score": score,
+                 "why": (why or "")[:120], "live": bool(live)})
+    kv_set("v81_picks", json.dumps(rows[-60:], ensure_ascii=False))
+
+
+def v81_lore_candidates(picks: list | None = None) -> list:
+    picks = v81_picks() if picks is None else picks
+    learned = _v81_json("jinx_kind_w", {})
+    today = datetime.now(PROJECT_TZ).date()
+    done = {}
+    for p in picks:
+        if p.get("cls") == "lore" and _v81_et_day(p.get("t", 0)) == today:
+            done[p.get("lane")] = done.get(p.get("lane"), 0) + 1
+    out = []
+    for lane, base in V81_LORE_SCORE.items():
+        if lane not in globals().get("V61_LANES", ()):
+            continue
+        cap = (globals().get("JINX_KINDS", {}).get(lane) or (0, 9))[1]
+        if done.get(lane, 0) >= cap:
+            continue                                            # that lane's had its posts for today
+        try:
+            w = float(learned.get(lane, 1.0))
+        except (TypeError, ValueError):
+            w = 1.0
+        out.append({"cls": "lore", "lane": lane, "key": "", "score": round(base * w, 1),
+                    "why": f"lore lane · {base} × {w:.2f} learned", "src": {"type": "lane"}})
+    return out
+
+
+def v81_rank(now: float | None = None) -> dict:
+    """the board: every candidate, scored, with the mix rules applied. the first row is what gets posted."""
+    now = now or time.time()
+    picks = v81_picks()
+    news = v81_news_candidates(now)
+    lore = v81_lore_candidates(picks)
+    last10 = picks[-10:]
+    lore_n = sum(1 for p in last10 if p.get("cls") == "lore")
+    allowed = int(round(V81_LORE_SHARE * 10))
+    notes = []
+    if news and lore_n >= allowed:
+        for c in lore:
+            c["score"] = round(c["score"] * 0.35, 1)
+            c["why"] += " · cut to 35%: lore has had its share"
+        notes.append(f"lore is {lore_n} of the last {len(last10)}: its scores are cut to 35% while there's news")
+    last = picks[-1] if picks else None
+    if last and last.get("cls") == "lore":
+        lore = [c for c in lore if c["lane"] != last.get("lane")]              # never the same lore lane twice running
+    board = sorted(news + lore, key=lambda c: -c["score"])
+    last4 = picks[-4:]
+    lore_24h = any(p.get("cls") == "lore" and now - p.get("t", 0) < 86400 for p in picks)
+    if len(last4) == 4 and all(p.get("cls") == "news" for p in last4) and not lore_24h and lore:
+        if any(c["cls"] == "news" and c["score"] >= 60 for c in board):
+            notes.append("lore is due (4 news in a row, none in 24h) but something 60+ just landed, so news goes")
+        else:
+            best = max(lore, key=lambda c: c["score"])
+            best["why"] += " · goes first: 4 news in a row, no lore in 24h"
+            board = [best] + [c for c in board if c is not best]
+            notes.append("lore goes next: 4 news posts in a row and no lore in 24 hours")
+    return {"board": board, "news": sum(1 for p in last10 if p.get("cls") == "news"), "lore": lore_n, "of": len(last10), "notes": notes}
+
+
+_v81_used_prev = _jinx_used
+
+
+def _jinx_used(key: str, days: int = 21) -> bool:   # noqa: F811
+    """while the board is building a lore post, the day's news reads as taken, so the lane hands back lore."""
+    if _V81_LORE.get() and str(key).startswith(("tp:", "x:", "filing:", "roundup:", "week:")):
+        return True
+    return _v81_used_prev(key, days)
+
+
+async def v81_news_mat(c: dict) -> dict | None:
+    s, lane, header = c.get("src") or {}, c["lane"], date_context()
+    codes = ["N03", "N04"] if lane == "tsuki" else ["N01", "N02"]
+    if not all(x in DECK_CODES for x in codes):
+        return None
+    if s.get("type") == "post":
+        when = v73_when(datetime.fromtimestamp(s["t"], timezone.utc))
+        name, txt = _v81_who(s["h"])[1], s.get("x") or ""
+        extra = ""
+        try:
+            extra = build_lore_context(txt[:200])[:1200] if txt else ""
+        except Exception:
+            pass
+        facts = (header + f"\n{name} (@{s['h']}) posted at {when}, {_v61_ago(s['t'])}: "
+                 + (f"\"{txt[:500]}\"" if txt else "(a picture or clip, no words)")
+                 + "\nyou can't see pictures or clips: never describe what's in one."
+                 + (f"\nyour own headline on it already went out ({s['flash'].splitlines()[0]}): don't repeat the headline, add the detail."
+                    if s.get("flash") else "")
+                 + (f"\n\nWHAT THE RECORD HOLDS THAT TOUCHES IT:\n{extra}" if extra else ""))
+        return {"lane": lane, "codes": codes, "key": c["key"], "url": s.get("url"), "facts": facts,
+                "brief": V81_NEWS_BRIEF + f" you're quote-posting @{s['h']}'s post, so it sits right under yours: never repeat its words back."}
+    if s.get("type") == "filing":
+        base = await v49_facts()
+        return {"lane": lane, "codes": codes, "key": c["key"],
+                "facts": header + f"\nGameStop filing today: {s['txt']}\n\n" + (base.get("text") or "")[:2500],
+                "brief": V81_NEWS_BRIEF + " a GameStop filing landed today: say what it is in plain words. never what the stock will do."}
+    if s.get("type") == "head":
+        when = v73_when(datetime.fromtimestamp(s["t"], timezone.utc))
+        return {"lane": lane, "codes": codes, "key": c["key"],
+                "facts": header + f"\nHEADLINE" + (f" ({s['source']})" if s.get("source") else "") + f", out {when}: {s['title']}",
+                "brief": V81_NEWS_BRIEF + " it's a headline (in FACTS): report it in your own plain words & name the outlet if FACTS do. "
+                                          "add nothing the headline doesn't say."}
+    return None
+
+
+async def v81_try(app, c: dict) -> str:
+    """write & publish one row of the board. '' when it couldn't be written."""
+    lane = c["lane"]
+    if c["cls"] == "news":
+        mat = await v81_news_mat(c)
+    else:
+        tok = _V81_LORE.set(True)
+        try:
+            mat = await v61_material(lane, None)
+        finally:
+            _V81_LORE.reset(tok)
+    if not mat:
+        return ""
+    text, why = await v61_write(mat.get("lane", lane), mat)
+    if not text:
+        log.info(f"v81 board: {c['cls']} {lane} {c.get('key', '')} couldn't be written: {why}")
+        _v53_note_held(f"ai-{lane}", why or "nothing good enough")
+        if c.get("key"):
+            _v81_mark("v81_failed", c["key"])
+        return ""
+    tok = _V81_PICK.set(c)
+    try:
+        await _jinx_publish(app, text, lane, mat)
+    finally:
+        _V81_PICK.reset(tok)
+    return text
+
+
+_v81_run_prev = _jinx_run_slot
+
+
+async def _jinx_run_slot(app, slot: dict) -> str:   # noqa: F811
+    kind = slot.get("kind", "")
+    if not v81_desk_on() or kind in ("update", "hub") or slot.get("tp") or slot.get("parent"):
+        return await _v81_run_prev(app, slot)                  # urgent tsuki quotes, hub & update slots keep their path
+    try:
+        board = v81_rank()["board"]
+    except Exception as e:
+        _v81_note(f"the board couldn't be built ({e}): the planned {kind} lane goes instead")
+        return await _v81_run_prev(app, slot)
+    for c in board[:3]:
+        try:
+            text = await v81_try(app, c)
+        except Exception as e:
+            _v81_note(f"board row {c['cls']} {c['lane']}: {e}")
+            text = ""
+        if text:
+            return text
+    if board:
+        _v81_note(f"the top {min(3, len(board))} on the board couldn't be written: the planned {kind} lane went instead")
+    return await _v81_run_prev(app, slot)
+
+
+_v81_publish_prev = _jinx_publish
+
+
+async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, reply_to: str = "",   # noqa: F811
+                        force_live: bool = False, **k) -> str | None:
+    """every original that goes out (or goes to your DM as a draft) is logged as news or lore: that's the mix."""
+    url = await _v81_publish_prev(app, text, kind, mat, reply_to=reply_to, force_live=force_live, **k)
+    try:
+        shadow = jinx_shadow() and not force_live
+        if (url or shadow) and not reply_to and kind != "update":
+            c = _V81_PICK.get() or {}
+            key = str((mat or {}).get("key") or "")
+            cls = c.get("cls") or ("news" if key.startswith(V81_NEWS_KEYS + ("roundup:", "week:")) else
+                                   "lore" if kind in V81_LORE_SCORE else "")
+            again = any(p.get("x") == (text or "")[:90] and time.time() - p.get("t", 0) < 48 * 3600 for p in v81_picks()[-12:])
+            if cls and not again:
+                _v81_pick_add(cls, c.get("lane") or kind, key, text, c.get("score"), c.get("why", ""), live=bool(url))
+            if shadow and key:
+                _v81_mark("v81_offered", key, 12)
+    except Exception as e:
+        log.info(f"v81 pick log: {e}")
+    return url
+
+
+# ── 3. fewer decks ──────────────────────────────────────────────────────────
+_v81_card_prev = _v57_card_for_event
+
+
+def _v57_card_for_event(e: dict) -> str:   # noqa: F811
+    """a picture only when the post lines up two or more things. one old post on its own goes out as words."""
+    if V81_DECKS == "off":
+        return ""
+    if V81_DECKS == "pairs" and not _V57_PAIRS.get((e or {}).get("d", "")):
+        return ""
+    return _v81_card_prev(e)
+
+
+if V81_DECKS == "off":
+    DECKS_ENABLED = False                                       # the desk's slide decks too
+
+_V81_PIC_LINE = re.compile(r"\s*[^.:]*\b(?:picture|image)\b[^.]*\battached\b[^.]*\.?|\s*[^.:]*\battached\b[^.]*\b(?:picture|image)\b[^.]*\.?", re.I)
+
+
+def v81_strip_pic(mat: dict | None) -> dict | None:
+    """no picture on the post → nothing in the brief saying there is one."""
+    if mat and not mat.get("image"):
+        if isinstance(mat.get("brief"), str):
+            mat["brief"] = _V81_PIC_LINE.sub("", mat["brief"]).strip()
+        if isinstance(mat.get("facts"), str):
+            mat["facts"] = re.sub(r"\n?THE IMAGE ATTACHED[^\n]*", "", mat["facts"])
+    return mat
+
+
+_v81_mat_prev = v61_material
+
+
+async def v61_material(lane: str, slot: dict | None = None) -> dict | None:   # noqa: F811
+    return v81_strip_pic(await _v81_mat_prev(lane, slot))
+
+
+# ── 4. /desk ────────────────────────────────────────────────────────────────
+_V81_ALIAS = {"rk": "theroaringkitty", "kitty": "theroaringkitty", "roaringkitty": "theroaringkitty", "tsuki": "tsukionsolana",
+              "rwa": "theroaringai", "roaringai": "theroaringai", "cohen": "ryancohen", "rc": "ryancohen", "gme": "gamestop"}
+
+
+def v81_desk_report() -> str:
+    r = v81_rank()
+    shadow = jinx_shadow()
+    lines = [f"📋 the desk · news first {'ON' if v81_desk_on() else 'OFF (v80 behaviour)'} · decks: {V81_DECKS}"
+             + (" · shadow mode: posts come to you as drafts" if shadow else ""), "", "THE BOARD RIGHT NOW (the top row posts at the next slot)"]
+    for i, c in enumerate(r["board"][:10], 1):
+        lines.append(f"{i}. {c['score']:g} · {c['cls']} · {c['lane']} · {c['why']}")
+    if not r["board"]:
+        lines.append("nothing on it")
+    lines += ["· " + n for n in r["notes"]]
+    picks = v81_picks()[-6:]
+    lines += ["", "LAST 6 PICKS"]
+    for p in reversed(picks):
+        when = datetime.fromtimestamp(p["t"], PROJECT_TZ).strftime("%a %-I:%M%p").lower()
+        lines.append(f"· {when} · {p['cls']} · {p['lane']}" + (f" · {p['score']:g}" if isinstance(p.get("score"), (int, float)) else "")
+                     + ("" if p.get("live", True) else " · draft") + f" · {(p.get('x') or '').splitlines()[0][:60] if p.get('x') else ''}")
+    if not picks:
+        lines.append("none yet")
+    lines += ["", f"THE MIX: {r['news']} news, {r['lore']} lore in the last {r['of']} · lore may be {int(round(V81_LORE_SHARE * 10))} of 10 while there's news"]
+    d = _v81_flash_day()
+    per = ", ".join(f"{_v81_who(h)[1]} {n}/{V81_FLASH_PER_HANDLE}" for h, n in d["h"].items())
+    state = "ON" if v81_flash_on() else ("OFF (FLASH=off in Railway)" if not V81_FLASH else "OFF")
+    lines += ["", f"FLASH {state}: {d['n']} of {V81_FLASH_PER_DAY} today" + (f" ({per})" if per else "")
+              + f" · {len(_v81_json('v81_flash_q', []))} waiting"]
+    if "most_recent_tweet_id" in _v81_json("v77_bad_fields", []):
+        lines.append("⚠️ X isn't giving the radar post ids on this API plan, so the flash can't see new posts")
+    if not (globals().get("V77_ON") and kv_get("v77_off") != "1"):
+        lines.append("⚠️ the radar is off, so the flash has nothing to watch (/radar on)")
+    for f in _v81_json("v81_flash_log", [])[-3:]:
+        when = datetime.fromtimestamp(f["t"], PROJECT_TZ).strftime("%a %-I:%M%p").lower()
+        lines.append(f"· {when} @{f['h']} {f['mode']}" + (f": {f['why']}" if f.get("why") else f": {(f.get('x') or '').splitlines()[0][:60]}"))
+    lines += ["", "last error: " + (kv_get("v81_err", "") or "none"), "",
+              "/desk on · /desk off · /desk flash on · /desk flash off · /desk test <handle>"]
+    return "\n".join(lines)
+
+
+def v81_flash_preview(handle: str) -> str:
+    h = _V81_ALIAS.get(handle, handle)
+    snap = (_v77_state().get("snaps") or {}).get(h) or {}
+    now = time.time()
+    last_ts, src = v81_last_before(h, now, snap.get("last") or "")
+    text = v81_flash_build(h, {"kind": "post", "text": "", "other": ""}, now, last_ts, v81_after(h, now))
+    count = (f"their last post on record: {v73_when(datetime.fromtimestamp(last_ts, timezone.utc), year=True)} (from {src})"
+             if last_ts else "no earlier post of theirs on record, so no day count")
+    return (f"🧪 if @{h} posted right now, the flash would read:\n\n{text or '(nothing: it failed the safety check)'}\n\n{count}"
+            + ("" if h in {x.lower() for x in V81_FLASH_HANDLES} else f"\n\n@{h} isn't on the flash list (FLASH_HANDLES)."))
+
+
+async def cmd_desk(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        await msg.reply_text("maker only 🐈‍⬛")
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a[:1] == ["flash"] and a[1:2] and a[1] in ("on", "off"):
+        kv_set("v81_flash", a[1])
+        await msg.reply_text("⚡ flash is on" if v81_flash_on() else
+                             ("⚡ flash is off" if V81_FLASH else "⚡ flash is off in Railway (FLASH=off). change it there to turn it on"))
+        return
+    if a[:1] == ["test"]:
+        h = (a[1] if len(a) > 1 else "theroaringkitty").lstrip("@")
+        try:
+            out = await asyncio.to_thread(v81_flash_preview, h)
+        except Exception as e:
+            out = f"couldn't build the preview: {e}"
+        await msg.reply_text(out, disable_web_page_preview=True)
+        return
+    if a[:1] and a[0] in ("on", "off"):
+        kv_set("v81_desk", a[0])
+    try:
+        out = await asyncio.to_thread(v81_desk_report)
+    except Exception as e:
+        out = f"the desk couldn't be read: {e}"
+    await msg.reply_text(out[:4000], disable_web_page_preview=True)
+
+
+# ── 5. the wizard profile (UID 855) ─────────────────────────────────────────
+def _v81_img_info(path: str) -> tuple:
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            return im.size[0], im.size[1], (im.format or "png").lower()
+    except Exception:
+        return 0, 0, ""
+
+
+async def v81_wizard_dm(app, lines: list, avatar_url: str) -> bool:
+    """what changed on the Mr. Wizard profile, to your DM, with the avatar as it is now."""
+    chat = _sw_alert_chat()
+    if not chat:
+        return False
+    path = await _wiz_fetch_avatar(avatar_url) if avatar_url else None
+    w, h, fmt = _v81_img_info(path) if path else (0, 0, "")
+    cap = "🧙 Mr. Wizard · wizardcards.com · UID 855\n\n" + "\n".join(lines)
+    if w and h:
+        cap += f"\n\nthe avatar now: {w}×{h} (ratio {w / h:.3f})"
+    elif avatar_url:
+        cap += "\n\n(the avatar couldn't be fetched: open the profile)"
+    cap += "\n" + _sw_stamp()
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🧙 open the profile", url=WIZARD_URL)]])
+    if path and w:
+        name = "wizard-avatar." + ("jpg" if fmt == "jpeg" else fmt or "png")
+        for how in ("photo", "document"):
+            try:
+                with open(path, "rb") as f:
+                    if how == "photo":
+                        await app.bot.send_photo(chat_id=chat, photo=f, filename=name, caption=cap[:1000], reply_markup=kb)
+                    else:
+                        await app.bot.send_document(chat_id=chat, document=f, filename=name, caption=cap[:1000], reply_markup=kb)
+                return True
+            except Exception as e:
+                log.info(f"v81 wizard dm ({how}): {e}")
+    try:
+        await app.bot.send_message(chat_id=chat, text=cap[:4000], reply_markup=kb, disable_web_page_preview=True)
+        return True
+    except Exception as e:
+        log.info(f"v81 wizard dm: {e}")
+        return False
+
+
+_v81_wiz_prev = _wizard_after_change
+
+
+async def _wizard_after_change(app, old: dict, new: dict):   # noqa: F811
+    try:
+        old, new = old or {}, new or {}
+        lines = []
+        a, b = old.get("avatar") or "", new.get("avatar") or ""
+        if "avatar" in new and a != b:
+            lines.append(f"🖼 the avatar changed: {a.rsplit('/', 1)[-1] or '(none)'} → {b.rsplit('/', 1)[-1] or '(none)'}" + (f"\n{b}" if b else ""))
+        la, lb = old.get("last active") or "", new.get("last active") or ""
+        if "last active" in new and la != lb:
+            lines.append(f"⏱ last active: {la or '(none)'} → {lb or '(none)'}")
+        if lines and V81_WIZ:
+            await v81_wizard_dm(app, lines, b)
+    except Exception as e:
+        log.info(f"v81 wizard: {e}")
+    await _v81_wiz_prev(app, old, new)
+
+
+async def v81_wizard_avatar_check(app):
+    """the same address can serve a new picture. every few minutes the picture itself is compared."""
+    st = _v81_json("v81_wiz_av", {})
+    now = time.time()
+    if now - float(st.get("t") or 0) < V81_WIZ_CHECK:
+        return
+    st["t"] = now
+    av = ((_sw_state(WIZARD_URL).get("facts") or {}).get("fields") or {}).get("avatar") or ""
+    path = await _wiz_fetch_avatar(av) if av else None
+    if path:
+        try:
+            with open(path, "rb") as f:
+                md5 = hashlib.md5(f.read()).hexdigest()
+        except Exception:
+            md5 = ""
+        if md5:
+            if st.get("url") == av and st.get("md5") and st["md5"] != md5:
+                await v81_wizard_dm(app, ["🖼 the avatar picture changed (same address, new image)", av], av)
+            st.update(url=av, md5=md5)
+    kv_set("v81_wiz_av", json.dumps(st))
+
+
+_v81_sw_prev = sw_check_url
+
+
+async def sw_check_url(app, client, u: str, force_assets: bool = False) -> list:   # noqa: F811
+    sent = await _v81_sw_prev(app, client, u, force_assets)
+    if V81_WIZ and "wizardcards" in (u or ""):
+        try:
+            await v81_wizard_avatar_check(app)
+        except Exception as e:
+            log.info(f"v81 wizard avatar: {e}")
+    return sent
+
+
+def _v81_add_wizard():
+    """the profile is on the site watcher's list (it has been since v45; this puts it back if it was ever removed)."""
+    try:
+        if kv_get("v81_wizard_added"):
+            return
+        urls = _sw_urls()
+        if WIZARD_URL not in urls:
+            _sw_set_urls([WIZARD_URL] + urls)
+        kv_set("v81_wizard_added", "1")
+    except Exception as e:
+        log.info(f"v81 wizard watch: {e}")
+
+
+# what the account knows about it. the avatar & the post are on the record; what they mean is the community's read.
+V81_LORE = """
+THE GOLD FRAMES (19 November 2026. the avatar and the post are documented; what they mean is a community read)
+- 19 November 2026: the Mr. Wizard avatar on wizardcards.com (the account with UID 855) changed to the Wizard logo in a gold frame on a red background. The picture is 400×468, a width-to-height ratio of 0.855.
+- The same day Roaring Kitty posted Cat Mario in a gold frame on a red background. That picture is 1160×1357, the same ratio, 0.855.
+- The read: two gold frames on red on one day, both cut to 0.855, the number on the Mr. Wizard account. Nobody has shown the 2026 activity on that account is Keith. It is the community's read, and you say so.
+"""
+if "Wizard logo in a gold frame" not in TSUKI_LORE:
+    TSUKI_LORE = TSUKI_LORE.rstrip() + "\n" + V81_LORE
+if not any(d == date(2026, 11, 19) and "gold frame" in w for d, w in LORE_DATES):
+    LORE_DATES.append((date(2026, 11, 19), "the wizard avatar turns to the wizard logo in a gold frame on red, 400×468. "
+                                           "RK posts cat mario in a gold frame on red, 1160×1357. both 0.855"))
+    LORE_DATES.sort(key=lambda r: r[0])
+
+
+# ── wiring ──────────────────────────────────────────────────────────────────
+def _v81_buttons_first(app):
+    """a button with its own prefix has to sit ahead of the catch-all button handler, or it never fires."""
+    try:
+        hs = app.handlers[0]
+        catch = next((i for i, h in enumerate(hs) if isinstance(h, CallbackQueryHandler) and getattr(h, "pattern", None) is None), None)
+        if catch is None:
+            return
+        late = [h for h in hs[catch + 1:] if isinstance(h, CallbackQueryHandler) and getattr(h, "pattern", None) is not None]
+        for h in late:
+            hs.remove(h)
+        for h in reversed(late):
+            hs.insert(catch, h)
+    except Exception as e:
+        log.info(f"v81 buttons: {e}")
+
+
+_v81_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v81_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("desk", cmd_desk))
+    app.add_handler(CallbackQueryHandler(v81_flash_callback, pattern=r"^v81:"))
+    _v81_buttons_first(app)
+    _v81_add_wizard()
+    if V81_FLASH:
+        scheduler.add_job(job_v81_flash, "interval", seconds=15, args=[app], max_instances=1, coalesce=True, misfire_grace_time=15)
+    log.info(f"{BOT_VERSION}: news first {'on' if v81_desk_on() else 'off'} · flash {'on' if v81_flash_on() else 'off'} "
+             f"({V81_FLASH_PER_DAY}/day, {V81_FLASH_PER_HANDLE}/account, on {', '.join('@' + h for h in V81_FLASH_HANDLES)}) · "
+             f"decks {V81_DECKS} · lore share {V81_LORE_SHARE:g}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v82 · THE WIRE & THE REACTION (20 Nov 2026)
+#  news now reads like the two accounts juju pointed at: @ReesePolitics (a wire
+#  service for $GME) and @ShaunFitzzzy (the fan in the room). lore posts keep
+#  the v79 voice.
+#
+#  1. the wire. a filing or a headline goes out as ONE sentence, no line
+#     breaks: who did what, the exact number, the form or outlet it came from,
+#     $GME inside the sentence. the size of the news sets the rest: 70+ on the
+#     board opens "BREAKING:", 45+ opens "JUST IN:", and the sirens go 0 to 3.
+#     the prefix & the sirens are added by the code, never by the model.
+#  2. the reaction. a new post from a main account gets either a 3 to 10 word
+#     first-person reaction ("HE'S BACK!!!!!") or one pointed remark that opens
+#     on a small human word (Wow / So / Lmao). CAPS & !!! only when it's big.
+#     a flash from RK, TheRoaringAI, Cohen or GameStop books a slot 4 to 9
+#     minutes later, so the reaction lands while the post is still new
+#     (REACT_PER_DAY=4). WIRE=off brings back the v81 news writer.
+#  3. funny words instead of swearing. the rule is still damn & hell only. when
+#     a moment calls for more, the account has stand-ins (holy guacamole, son
+#     of a biscuit, sweet baby cheeses, crikey, strewth...). one per post at
+#     most, and the same one can't come back for 5 days. FUNNY_WORDS adds more.
+#  4. politics, filings only. a politician can be named when the fact is a GME
+#     holding in an SEC filing or official disclosure, and nothing else
+#     political is in the sentence. elections, parties, votes, policy and
+#     opinions stay off-limits. POLITICS_FILINGS=off closes it again.
+#  5. the 13F watcher. every 20 minutes (weekdays, 6am to 11pm ET) it reads SEC
+#     EDGAR for new 13F filings that hold GameStop, reads the holdings table,
+#     compares it to the same fund's last quarter, and puts what matters on the
+#     board: a new position or an add of 250,000+ shares (60 if it's 1,000,000+
+#     or a name people know, else 40), a cut of 1,000,000+ (30), a big change
+#     in puts or calls (35). the post is built from the filing's own numbers by
+#     the code, with no model call. at most 4 a day (F13_PER_DAY). SEC data is
+#     free. F13=off stops it. /desk 13f shows what it found, /desk 13f now runs it.
+#  and three fixes:
+#   - a post written as one paragraph (the v79 "para" shape, the wire, the
+#     reaction) was being re-broken into one sentence per line on its way to X.
+#     it now goes out the way it was written.
+#   - X refuses a post with more than one cashtag, so a flash never carries
+#     two (a quoted line with a cashtag in it is dropped, FLASH_TAGS keeps one).
+#   - the opener / closing-emoji repeat checks no longer throw out a wire post
+#     for starting "BREAKING:" or ending on a siren twice in a week.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v82"
+import contextvars as _v82_cv
+
+V82_WIRE = os.environ.get("WIRE", "on").lower() not in _V81_OFFS
+V82_F13 = os.environ.get("F13", "on").lower() not in _V81_OFFS
+V82_F13_EVERY = _v81_int("F13_EVERY_MIN", 20, 5)
+V82_F13_PER_DAY = _v81_int("F13_PER_DAY", 4)
+V82_F13_MIN = _v81_int("F13_MIN_SHARES", 250_000, 1)
+V82_F13_BIG = _v81_int("F13_BIG_SHARES", 1_000_000, 1)
+V82_F13_BATCH = _v81_int("F13_BATCH", 25, 1)
+V82_F13_DAYS = _v81_int("F13_LOOKBACK_DAYS", 4, 1)
+V82_F13_MAX_BYTES = 250_000_000
+V82_REACT_PER_DAY = _v81_int("REACT_PER_DAY", 4)
+V82_FUNNY_REST = _v81_int("FUNNY_REST_DAYS", 5, 1)
+V82_POL_FILINGS = os.environ.get("POLITICS_FILINGS", "on").lower() not in _V81_OFFS
+V82_FUNNY = ["holy guacamole", "holy smokes", "holy moly", "sweet baby cheeses", "son of a biscuit", "what in the tarnation",
+             "shut the front door", "great googly moogly", "good grief", "mother of pearl", "cheese & crackers",
+             "well butter my biscuit", "jumping jellybeans", "fudge", "freaking", "frkkn", "heck", "sheesh", "crikey", "strewth"]
+for _v82w in os.environ.get("FUNNY_WORDS", "").split(","):
+    _v82w = re.sub(r"\s+", " ", _v82w).strip().lower()
+    if _v82w and _v82w not in V82_FUNNY and not _has_profanity(_v82w):
+        V82_FUNNY.append(_v82w)
+V81_NEWS_KEYS = tuple(V81_NEWS_KEYS) + ("f13:",)
+
+_V82_FILINGS_OK = _v82_cv.ContextVar("v82_filings_ok", default=False)
+_V82_WIRE_CV = _v82_cv.ContextVar("v82_wire", default=False)
+
+
+def v82_wire_on() -> bool:
+    return V82_WIRE and kv_get("v82_wire", "") != "off"
+
+
+# ── fix: a paragraph goes out as a paragraph ────────────────────────────────
+_V82_KEPT: set = set()
+
+
+def v82_keep_layout(text: str):
+    """remember that this text's layout is on purpose, so the formatter doesn't put every sentence on its own line."""
+    k = _v79_key(text)
+    if len(k) < 4:
+        return
+    _V82_KEPT.add(k)
+    try:
+        rows = _v81_json("v82_keep", [])
+        if k not in rows:
+            kv_set("v82_keep", json.dumps((rows + [k])[-80:]))
+    except Exception:
+        pass
+
+
+def v82_kept(text: str) -> bool:
+    k = _v79_key(text)
+    if len(k) < 4:
+        return False
+    if k in _V82_KEPT:
+        return True
+    if k in _v81_json("v82_keep", []):
+        _V82_KEPT.add(k)
+        return True
+    return False
+
+
+_v82_enforce_prev = enforce_x_format
+
+
+def enforce_x_format(text: str, signoff: bool = True, limit: int | None = None) -> str:   # noqa: F811
+    if signoff or not v82_kept(text):
+        return _v82_enforce_prev(text, signoff=signoff, limit=limit)
+    t = (text or "").strip()
+    t = re.sub(r"[ \t]*[—–][ \t]*", ", ", t)
+    t = re.sub(r"[ \t]{3,}", "  ", t)
+    t = re.sub(r"[ \t]+\n", "\n", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return _one_cashtag(_trim_to(t, limit or X_POST_LIMIT), keep_first=True)
+
+
+# ── 4. politics, filings only ───────────────────────────────────────────────
+_V82_POL_WHO = re.compile(r"\b(?:(?:former\s+)?(?:vice\s+)?president|senator|sen\.|rep\.|congress(?:man|woman)|governor|speaker|"
+                          r"donald(?:\s+j\.?)?\s+trump(?:\s+jr\.?)?|trump|biden|harris|vance|pelosi|white\s*house|congress|senate)", re.I)
+_V82_POL_TALK = re.compile(r"\belect\w*|\bvot(?:e|es|ed|ing|er|ers)\b|\bcampaign\w*|\bdemocrat\w*|\brepublican\w*|\bgop\b|\bmaga\b|"
+                           r"\bliberal\w*|\bconservative\w*|\bleft[- ]wing|\bright[- ]wing|\bpolic(?:y|ies)\b|\btariff\w*|\bimpeach\w*|"
+                           r"\bmidterm\w*|\bpoll(?:s|ing)?\b|\bpart(?:y|ies|isan)\b|\badministration\b|\bregime\b|\bwoke\b|\bpatriot\w*", re.I)
+_V82_FILING_FACT = re.compile(r"\b13F|\bform\s*(?:3|4|5|144|278)\b|\b13[DG]\b|\bfiling|\bfiled\b|\bfiles\b|\bdisclos\w+|\bSEC\b|\bEDGAR\b|"
+                              r"periodic transaction|\bOGE\b|\bSTOCK Act\b", re.I)
+_V82_GME_RX = re.compile(r"\$GME\b|\bGME\b|gamestop", re.I)
+_v82_pol_rx = _V76_POLITICS if "_V76_POLITICS" in globals() else re.compile(r"\btrump\b|\bbiden\b|\belection\w*", re.I)
+
+
+def v82_politics_blocked(text: str) -> bool:
+    """True when the text is politics. a politician named in a GME filing fact, with nothing else political in it, is not."""
+    t = text or ""
+    if not (_v82_pol_rx.search(t) or _V82_POL_TALK.search(t) and _V82_POL_WHO.search(t)):
+        return False
+    if not V82_POL_FILINGS:
+        return True
+    rest = _V82_POL_WHO.sub(" ", t)
+    if _v82_pol_rx.search(rest) or _V82_POL_TALK.search(rest):
+        return True                                             # an election, a party, a vote, a policy: still out
+    return not (_V82_FILING_FACT.search(t) and _V82_GME_RX.search(t))
+
+
+class _V82Politics:
+    """the v76 politics check, with the one exception switched on only while the board, the flash or the wire is working."""
+    def __init__(self, rx):
+        self._rx, self.pattern = rx, rx.pattern
+
+    def search(self, t):
+        m = self._rx.search(t or "")
+        if m and _V82_FILINGS_OK.get() and not v82_politics_blocked(t):
+            return None
+        return m
+
+
+_V76_POLITICS = _V82Politics(_v82_pol_rx)
+
+
+def _v81_blocked_topic(text: str) -> bool:   # noqa: F811
+    return bool(_off_limits(text or "") or v82_politics_blocked(text or ""))
+
+
+# ── 3. funny words instead of swearing ──────────────────────────────────────
+def _v82_funny_rx(w: str):
+    return re.compile(r"(?<![a-z])" + re.escape(w).replace(r"\&", "(?:&|and)").replace(r"\ ", r"\s+") + r"(?![a-z])", re.I)
+
+
+_V82_FUNNY_RX = {w: _v82_funny_rx(w) for w in V82_FUNNY}
+
+
+def v82_funny_in(text: str) -> list:
+    return [w for w, rx in _V82_FUNNY_RX.items() if rx.search(text or "")]
+
+
+def v82_funny_rested() -> list:
+    used = _v81_json("v82_funny", {})
+    cut = time.time() - V82_FUNNY_REST * 86400
+    return [w for w in V82_FUNNY if float(used.get(w, 0) or 0) < cut]
+
+
+def v82_funny_note(text: str):
+    found = v82_funny_in(text)
+    if found:
+        used = _v81_json("v82_funny", {})
+        for w in found:
+            used[w] = time.time()
+        kv_set("v82_funny", json.dumps(used))
+
+
+def v82_funny_problem(text: str) -> str:
+    found = v82_funny_in(text)
+    if len(found) > 1:
+        return "two stand-in words in one post. one at most"
+    rested = set(v82_funny_rested())
+    for w in found:
+        if w not in rested:
+            return f"\"{w}\" went out in the last {V82_FUNNY_REST} days. another one, or none"
+    return ""
+
+
+V82_CHARACTER = ("SWEARING: never, beyond damn & hell. when a moment calls for more, use ONE silly stand-in instead (" + ", ".join(V82_FUNNY[:12])
+                 + "...). one per post at most, and never the same one twice in a week.\n"
+                   "THE ONE EXCEPTION ON POLITICS: when an SEC filing or an official disclosure shows a politician holding or buying GME, "
+                   "you may report that fact with their name, exactly as the filing has it. nothing else about them: no opinion, no election, "
+                   "party, vote or policy talk.")
+if "DECK_CHARACTER" in globals() and "THE ONE EXCEPTION ON POLITICS" not in DECK_CHARACTER:
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V82_CHARACTER
+    JINX_CHARACTER = DECK_CHARACTER
+
+_v82_repeats_prev = v79_repeats
+
+
+def v79_repeats(text: str, kind: str = "post") -> str:   # noqa: F811
+    """a wire post may open "BREAKING:" or end on a siren as often as the news does. fixed phrases still rest."""
+    if not _V82_WIRE_CV.get() or kind in ("reply", "roast"):
+        return _v82_repeats_prev(text, kind)
+    week = [r.get("x") or "" for r in _jinx_posts() if r.get("k") not in ("reply", "roast")
+            and time.time() - r.get("t", 0) < V79_FIXED_DAYS * 86400]
+    for name, rx in _V79_FIXED.items():
+        if rx.search(text or "") and any(rx.search(x) for x in week):
+            return f"\"{name}\" was already used this week"
+    return ""
+
+
+_v82_problem_prev = _jinx_problem
+
+
+def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+    why = _v82_problem_prev(text, facts, kind)
+    if why == "off-limits subject or price talk" and _V82_FILINGS_OK.get() and _V82_POL_WHO.search(text or "") \
+            and _V82_POL_WHO.search(facts or "") and not v82_politics_blocked(text) and not _off_limits(text or ""):
+        why = _v82_problem_prev(_V82_POL_WHO.sub("the filer", text), facts, kind)      # every other rule still has to pass
+    if not why and kind not in ("reply", "roast"):
+        why = v82_funny_problem(text)
+    return why
+
+
+# ── 1 & 2. the wire & the reaction ──────────────────────────────────────────
+if "DECK_CODES" in globals() and "_c" in globals():
+    for _v82code, _v82name, _v82how, _v82ex in (
+            ("W01", "the wire", "one sentence, no line breaks: who did what, the exact number, the form or outlet it's from.",
+             "BREAKING: [who] buys [the exact number] more $GME shares for [the exact amount], according to [the form] 🚨🚨"),
+            ("W13", "the 13F wire", "a fund's 13F holding of GME, built from the filing's own numbers.",
+             "[fund] adds [the exact number] $GME shares in latest 13F, now holding [the exact number]"),
+            ("R01", "the reaction", "3 to 10 words, first person, the fan who just saw it.", "I was not ready for this today"),
+            ("R02", "the pointed remark", "one or two sentences, opens on a small human word, one pointed observation.",
+             "Wow, [the detail] on the same day as [the other thing in FACTS] $GME")):
+        if _v82code not in DECK_CODES:
+            DECK_CODES[_v82code] = _c(_v82code, "wire", _v82name, _v82how, _v82ex, gap=0)
+
+_V82_ANY_EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿\U0001F1E6-\U0001F1FF️‍\U0001F3FB-\U0001F3FF]+")
+_V82_PREFIX = re.compile(r"^\s*(?:🚨\s*)*(?:BREAKING(?:\s+NEWS)?|JUST\s+IN|NEW|LATEST|ALERT|UPDATE)\s*[:!\-]+\s*", re.I)
+
+
+def v82_wire_dress(score: float) -> tuple:
+    """(prefix, sirens) for a piece of news this size."""
+    prefix = "BREAKING: " if score >= 70 else "JUST IN: " if score >= 45 else ""
+    return prefix, 3 if score >= 90 else 2 if score >= 70 else 1 if score >= 45 else 0
+
+
+def v82_clean(text: str, style: str, score: float = 0) -> str:
+    t = (text or "").strip()
+    if len(t) > 1 and t[0] in "\"“" and t[-1] in "\"”":
+        t = t[1:-1].strip()
+    t = re.sub(r"#\w+", "", t)
+    t = re.sub(r"\s*[—–]\s*", ", ", t)
+    if style in ("wire", "remark"):
+        t = re.sub(r"\s+", " ", t).strip()
+    else:
+        t = "\n".join(l.strip() for l in t.split("\n") if l.strip())
+        t = re.sub(r"\n", "\n\n", t) if t.count("\n") == 1 else re.sub(r"\s*\n\s*", " ", t)
+    if style == "wire":
+        prefix, sirens = v82_wire_dress(score)
+        t = _V82_PREFIX.sub("", _V82_ANY_EMOJI.sub("", t)).strip()
+        t = re.sub(r"\s{2,}", " ", t).rstrip(" .")
+        if t:
+            t = prefix + t[0].upper() + t[1:] + (" " + "🚨" * sirens if sirens else "")
+    else:
+        t = re.sub(r"\.$", "", t)
+    return t.strip()
+
+
+def v82_style_problem(text: str, style: str) -> str:
+    t = (text or "").strip()
+    tags = re.findall(r"\$[A-Za-z]{2,6}\b", t)
+    if len(tags) > X_MAX_CASHTAGS:
+        return "more than one cashtag"
+    if style == "ready":
+        return "too long" if _v81_xlen(t) > 275 else ""
+    if style == "wire":
+        if "\n" in t or len(t) > 250:
+            return "the wire is one sentence on one line, under 250 characters"
+        if len(re.findall(r"[.!?](?:\s|$)", re.sub(r"\b[A-Z]\.", "", _V82_ANY_EMOJI.sub("", t)))) > 2:
+            return "the wire is one sentence (a one or two word kicker after it is fine)"
+    elif style == "remark":
+        if "\n" in t or len(t) > 210:
+            return "the remark is one or two sentences on one line, under 210 characters"
+    else:
+        words = re.findall(r"[A-Za-z0-9$'’]+", t)
+        if not 2 <= len(words) <= 12 or len(t) > 110 or t.count("\n\n") > 1:
+            return "the reaction is 3 to 10 words"
+        if len(_V79_EMOJI.findall(t)) > 1:
+            return "one emoji at most on a reaction"
+    return ""
+
+
+V82_HOW = {
+    "wire": ("THE WIRE. you're a newswire for people who hold GME.\n"
+             "- ONE sentence, no line breaks: who did what, the exact number, where it's from (the form, or the outlet).\n"
+             "- {tag} goes inside the sentence, once, where the name would be. no other cashtag.\n"
+             "- numbers exactly as FACTS have them, commas included. never round one, never add one.\n"
+             "- don't write BREAKING, JUST IN or any emoji: those are added for you.\n"
+             "- {kicker}\n"
+             "- no opinion on what the stock does next, no advice, no question.\n"
+             "shape only (the brackets are filled from FACTS): [who] buys [the exact number] more {tag} shares for [the exact amount], according to [the form]"),
+    "remark": ("THE POINTED REMARK. you're quote-posting the post in FACTS, so it sits right under yours.\n"
+               "- one or two sentences on ONE line. it opens on a small human word (Wow / So / Lmao / Hold on / Wait / Okay), then makes "
+               "ONE pointed observation: the detail, the timing, the number most people will scroll past.\n"
+               "- never repeat the post's words back, never explain it.\n"
+               "- {tag} once at most. {emoji}\n"
+               "shape only: Wow, [the detail] on the same day as [the other thing in FACTS] {tag}"),
+    "react": ("THE REACTION. you're quote-posting the post in FACTS, so it sits right under yours. you're the fan who just saw it.\n"
+              "- 3 to 10 words. first person, blurted, not composed. it's about the moment, never a summary.\n"
+              "- {case}\n"
+              "- no cashtag needed. {emoji}\n"
+              "- if the moment calls for a swear, use ONE of these instead: {funny}. never a real one.\n"
+              "the feel, not the words: \"I was not ready for this today\" · \"well that's one way to end a quiet week\" · \"kitty watch tonight then\""),
+}
+
+
+def v82_prompt(style: str, lane: str, mat: dict, st: dict, why: str = "") -> str:
+    tag = "$TSUKI" if lane == "tsuki" else "$GME"
+    big = float(st.get("score") or 0) >= 90
+    how = V82_HOW[style].format(
+        tag=tag,
+        kicker=("it may end on a one or two word kicker after the sentence (Wow / Again / Noted)." if st.get("kicker") else "no kicker: it ends when the fact ends."),
+        emoji=("one emoji at most." if st.get("emoji") else "no emoji."),
+        case=("this one is big: CAPS and !!! are right." if big else "all lowercase, no full stop." if st.get("case") == "lower" else "plain capitals. no CAPS, no !!!"),
+        funny=", ".join(random.sample(v82_funny_rested() or V82_FUNNY, min(5, len(v82_funny_rested() or V82_FUNNY)))))
+    return (f"WRITE ONE X POST. {how}\n\nWHAT IT'S ABOUT: {mat.get('brief', '')}\n\n"
+            f"FACTS (the only source of names, numbers, dates & times):\n{mat['facts']}\n\n{_jinx_recent_block(12)}\n\n"
+            + (f"LAST TIME THESE WERE THROWN OUT: {why}\n\n" if why else "")
+            + "write 3 drafts that differ from each other. return JSON only: {\"drafts\": [\"...\", \"...\", \"...\"]}")
+
+
+def v82_check(text: str, style: str, facts: str, lane: str) -> str:
+    """'' when this draft may go out."""
+    p = v82_style_problem(text, style)
+    if p:
+        return p
+    tok = _V82_WIRE_CV.set(style in ("wire", "ready"))
+    tok2 = _V82_FILINGS_OK.set(True)
+    try:
+        p = _jinx_problem(text, facts, lane)
+    finally:
+        _V82_WIRE_CV.reset(tok)
+        _V82_FILINGS_OK.reset(tok2)
+    if p:
+        return p
+    if v73_unsafe(_V82_POL_WHO.sub("the filer", text) if not v82_politics_blocked(text) else text):
+        return "fails the safety check"
+    if style not in ("wire", "ready"):
+        return _jinx_similar(text)
+    return ""
+
+
+def _v82_styles() -> list:
+    return _v81_json("v82_styles", [])
+
+
+def v82_pick_style(c: dict) -> dict:
+    """which of the three a board row is written as."""
+    s, score = c.get("src") or {}, float(c.get("score") or 0)
+    if s.get("type") != "post":
+        return {"style": "wire", "score": score, "kicker": random.random() < 0.3}
+    last = next((x for x in reversed(_v82_styles()) if x in ("react", "remark")), "")
+    txt = s.get("x") or ""
+    style = "react" if len(txt) < 40 else ("remark" if last == "react" else "react" if last == "remark" else random.choice(["react", "remark"]))
+    return {"style": style, "score": score, "emoji": random.random() < 0.25,
+            "case": "lower" if (score < 90 and random.random() < 0.4) else "caps"}
+
+
+async def v82_write(lane: str, mat: dict) -> tuple:
+    st = mat["v82"]
+    style = st["style"]
+    if style == "ready":                                        # built from a filing's own numbers: nothing to write
+        text = st["text"]
+        p = v82_check(text, "ready", mat["facts"], lane)
+        if p:
+            return None, p
+        mat["code"], mat["shape"] = "W13", {"air": "one", "case": "caps", "emoji": 1, "end": "stop"}
+        return text, ""
+    system = DECK_CHARACTER + "\n\n" + _jinx_learned_block()
+    why = ""
+    for _ in range(2):
+        try:
+            raw = await asyncio.to_thread(_jinx_llm, system, v82_prompt(style, lane, mat, st, why), JINX_MODEL, 500)
+        except Exception as e:
+            return None, f"model error: {e}"
+        data = _jinx_json(raw) or {}
+        items = data.get("drafts") if isinstance(data, dict) else data
+        bad = []
+        for it in items or []:
+            d = it.get("text") if isinstance(it, dict) else it
+            if not isinstance(d, str):
+                continue
+            d = v82_clean(d, style, st.get("score") or 0)
+            if style == "react" and st.get("case") == "lower" and float(st.get("score") or 0) < 90:
+                d = v79_lower(d)
+            p = v82_check(d, style, mat["facts"], lane) if d else "empty"
+            if not p:
+                if style == "react" and d == v79_lower(d):
+                    v79_keep_lower(d)
+                mat["code"] = {"wire": "W01", "react": "R01", "remark": "R02"}[style]
+                mat["shape"] = {"air": "one", "case": "lower" if d == v79_lower(d) else "caps",
+                                "emoji": 1 if _V79_EMOJI.search(d) else 0, "end": "stop"}
+                return d, ""
+            bad.append(p)
+        why = "; ".join(dict.fromkeys(bad))[:400] or "nothing came back"
+    return None, why
+
+
+_v82_news_mat_prev = v81_news_mat
+
+
+async def v81_news_mat(c: dict) -> dict | None:   # noqa: F811
+    s = c.get("src") or {}
+    if s.get("type") == "f13":
+        it = s.get("item") or {}
+        return {"lane": "kitty", "codes": None, "key": c["key"], "facts": date_context() + "\n" + (it.get("facts") or ""),
+                "brief": "a fund's 13F holding of GameStop, straight from the filing.",
+                "v82": {"style": "ready", "text": it.get("text") or "", "score": c.get("score")}}
+    mat = await _v82_news_mat_prev(c)
+    if mat and v82_wire_on():
+        mat["v82"] = v82_pick_style(c)
+        if mat["v82"]["style"] == "wire":
+            mat["brief"] = ("a GameStop filing landed today." if s.get("type") == "filing" else
+                            "a headline (in FACTS). name the outlet if FACTS do. add nothing the headline doesn't say.")
+        else:
+            mat["brief"] = f"@{s.get('h', '')} just posted (in FACTS)." + (" your own headline on it already went out, so this isn't the announcement."
+                                                                           if s.get("flash") else "")
+    return mat
+
+
+_v82_write_prev = v61_write
+
+
+async def v61_write(lane: str, mat: dict) -> tuple[str | None, str]:   # noqa: F811
+    if (mat or {}).get("v82"):
+        return await v82_write(lane, mat)
+    return await _v82_write_prev(lane, mat)
+
+
+_v82_try_prev = v81_try
+
+
+async def v81_try(app, c: dict) -> str:   # noqa: F811
+    tok = _V82_FILINGS_OK.set(True)
+    try:
+        return await _v82_try_prev(app, c)
+    finally:
+        _V82_FILINGS_OK.reset(tok)
+
+
+_v82_publish_prev = _jinx_publish
+
+
+async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, reply_to: str = "",   # noqa: F811
+                        force_live: bool = False, **k) -> str | None:
+    m = mat or {}
+    st = m.get("v82") or {}
+    try:
+        if st or (m.get("shape") or {}).get("air") == "para":
+            v82_keep_layout(text)                               # it goes out the way it was written
+    except Exception:
+        pass
+    url = await _v82_publish_prev(app, text, kind, mat, reply_to=reply_to, force_live=force_live, **k)
+    try:
+        if url or (jinx_shadow() and not force_live):
+            v82_funny_note(text)
+            if st.get("style"):
+                kv_set("v82_styles", json.dumps((_v82_styles() + [st["style"]])[-12:]))
+    except Exception as e:
+        log.info(f"v82 publish note: {e}")
+    return url
+
+
+# a flash books the reaction: a slot a few minutes later, which the board fills with whatever is hottest (that post).
+def v82_urgent(reason: str, delay_min: tuple = (4, 9)) -> bool:
+    day = datetime.now(PROJECT_TZ).date()
+    n = int(kv_get(f"v82_urgent:{day}", "0") or 0)
+    if n >= V82_REACT_PER_DAY or not v81_desk_on():
+        return False
+    plan = _jinx_plan_get()
+    now = time.time()
+    if any(s.get("v82") and not s.get("done") and s["t"] - now < 15 * 60 for s in plan):
+        return False                                            # one is already on its way
+    plan.append({"t": now + random.randint(delay_min[0] * 60, delay_min[1] * 60), "kind": "kitty", "urgent": True,
+                 "v82": reason[:60], "done": False})
+    _jinx_plan_save(plan)
+    kv_set(f"v82_urgent:{day}", str(n + 1))
+    return True
+
+
+_v82_flash_one_prev = v81_flash_one
+
+
+async def v81_flash_one(app, it: dict) -> str:   # noqa: F811
+    tok = _V82_FILINGS_OK.set(True)
+    try:
+        res = await _v82_flash_one_prev(app, it)
+    finally:
+        _V82_FILINGS_OK.reset(tok)
+    try:
+        if res in ("posted", "shadow") and it.get("h") != "tsukionsolana" and v82_wire_on():     # tsuki has her own quote slot
+            v82_urgent(f"flash @{it.get('h')}")
+    except Exception as e:
+        log.info(f"v82 urgent: {e}")
+    return res
+
+
+# fix: never two cashtags on a flash
+_v82_flash_quote_prev = v81_flash_quote
+
+
+def v81_flash_quote(d: dict) -> str:   # noqa: F811
+    q = _v82_flash_quote_prev(d)
+    return "" if (q and X_MAX_CASHTAGS <= 1 and re.search(r"\$[A-Za-z]{1,8}\b", q)) else q
+
+
+if X_MAX_CASHTAGS <= 1:
+    for _v82h, _v82w in list(V81_WHO.items()):
+        if len(_v82w[2].split()) > 1:
+            V81_WHO[_v82h] = (_v82w[0], _v82w[1], _v82w[2].split()[0])
+
+
+# ── 5. the 13F watcher ──────────────────────────────────────────────────────
+V82_F13_NAMES = {
+    "BANK OF AMERICA": "Bank of America", "MORGAN STANLEY": "Morgan Stanley", "CITADEL": "Citadel", "SUSQUEHANNA": "Susquehanna",
+    "JANE STREET": "Jane Street", "VANGUARD": "Vanguard", "BLACKROCK": "BlackRock", "STATE STREET": "State Street",
+    "D. E. SHAW": "D.E. Shaw", "D E SHAW": "D.E. Shaw", "DE SHAW": "D.E. Shaw", "RENAISSANCE TECHNOLOGIES": "Renaissance Technologies",
+    "VIRTU": "Virtu", "ROBINHOOD": "Robinhood", "GOLDMAN SACHS": "Goldman Sachs", "JPMORGAN": "JPMorgan", "UBS ": "UBS",
+    "POINT72": "Point72", "MILLENNIUM MANAGEMENT": "Millennium", "TWO SIGMA": "Two Sigma", "SCION ASSET": "Scion Asset Management",
+    "CHARLES SCHWAB": "Charles Schwab", "FIDELITY": "Fidelity", "FMR LLC": "Fidelity", "WELLS FARGO": "Wells Fargo",
+    "BARCLAYS": "Barclays", "DEUTSCHE BANK": "Deutsche Bank", "HIGHBRIDGE": "Highbridge Capital Management", "OPTIVER": "Optiver",
+    "BALYASNY": "Balyasny", "GEODE CAPITAL": "Geode Capital", "NORGES BANK": "Norges Bank", "INVESCO": "Invesco",
+    "NORTHERN TRUST": "Northern Trust", "BERKSHIRE HATHAWAY": "Berkshire Hathaway", "GMT CAPITAL": "GMT Capital",
+}
+_V82_CAPS_KEEP = {"LLC", "LP", "LLP", "L.P.", "L.L.C.", "PLC", "AG", "SA", "SAS", "BV", "B.V.", "NV", "N.A.", "USA", "UBS", "HBK", "CSS",
+                  "SIG", "LMR", "BW", "II", "III", "IV", "GMT", "AQR", "PNC", "TD", "RBC", "BMO", "HSBC", "BNP", "ETF", "US"}
+_V82_INFO_END = re.compile(r"</(?:\w+:)?infoTable>")
+
+
+def v82_f13_name(display: str) -> tuple:
+    """("Highbridge Capital Management", known?) from EDGAR's "HIGHBRIDGE CAPITAL MANAGEMENT LLC  (CIK 0000919185)"."""
+    n = re.sub(r"\(CIK\s*\d+\)", " ", display or "")
+    n = re.sub(r"\([A-Z0-9, .\-]{1,24}\)\s*$", " ", n.rstrip())          # a ticker in brackets
+    n = re.sub(r"\s/[A-Z]{2,3}/?(?=\s|$)|\\[A-Z]{2}\\?", " ", n)          # /DE/ and the like
+    n = re.sub(r"\b(Inc|Corp|Co|Ltd|Llc|Lp|Llp|Plc)\.", r"\1", n, flags=re.I)
+    n = re.sub(r"\s+", " ", n).strip(" ,")
+    up = " " + n.upper() + " "
+    for k, v in V82_F13_NAMES.items():
+        if k in up:
+            return v, True
+    if n.upper() == n:                                          # all caps on EDGAR: give it normal capitals
+        words = []
+        for w in n.split():
+            core = w.strip(",.")
+            words.append(w if (core in _V82_CAPS_KEEP or w in _V82_CAPS_KEEP or (len(core) <= 3 and not re.search(r"[AEIOUY]", core)))
+                         else w[:1] + w[1:].lower())
+        n = " ".join(words)
+        n = re.sub(r"\b(Of|And|The|For|De|Du|La)\b", lambda m: m.group(1).lower(), n)
+        n = n[:1].upper() + n[1:]
+    return n, False
+
+
+def _v82_tag(block: str, name: str) -> str:
+    m = re.search(rf"<(?:\w+:)?{name}>\s*([^<]*?)\s*</(?:\w+:)?{name}>", block, re.I)
+    return html.unescape(m.group(1)).strip() if m else ""
+
+
+def _v82_num(s: str) -> int:
+    try:
+        return int(float((s or "0").replace(",", "")))
+    except ValueError:
+        return 0
+
+
+def v82_f13_holding(blocks: list) -> dict:
+    """the GameStop rows of one holdings table, added up: common shares (& their value), calls, puts, notes."""
+    h = {"shares": 0, "value": 0, "calls": 0, "puts": 0, "notes": 0}
+    for b in blocks or []:
+        if not re.search(r"GAMESTOP", _v82_tag(b, "nameOfIssuer"), re.I):
+            continue
+        amt, val = _v82_num(_v82_tag(b, "sshPrnamt")), _v82_num(_v82_tag(b, "value"))
+        typ, pc = _v82_tag(b, "sshPrnamtType").upper(), _v82_tag(b, "putCall").lower()
+        title, cusip = _v82_tag(b, "titleOfClass"), _v82_tag(b, "cusip").upper()
+        if pc.startswith("call"):
+            h["calls"] += amt
+        elif pc.startswith("put"):
+            h["puts"] += amt
+        elif typ == "PRN" or re.search(r"NOTE|BOND|DEB|CONV|\d%", title, re.I):
+            h["notes"] += amt
+        elif re.search(r"\bW(?:T|TS|ARRANTS?)\b|\bUNIT|\bRIGHT", title, re.I) or (cusip and not cusip.startswith("36467W10")):
+            continue                                            # warrants & anything that isn't the common stock
+        else:
+            h["shares"] += amt
+            h["value"] += val
+    return h
+
+
+def v82_f13_blocks(xml: str) -> list:
+    out, pos = [], 0
+    for m in _V82_INFO_END.finditer(xml or ""):
+        block = xml[pos:m.end()]
+        pos = m.end()
+        if "GAMESTOP" in block.upper():
+            out.append(block[-4000:])
+    return out
+
+
+async def v82_f13_table(client, cik: str, adsh: str, fname: str) -> list:
+    """the GameStop rows of a filing's holdings table. read as a stream: the big index funds' tables run to tens of MB."""
+    url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{adsh.replace('-', '')}/{fname}"
+    out, buf, n = [], "", 0
+    async with client.stream("GET", url, headers={"User-Agent": EDGAR_UA}) as r:
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code} on the holdings table")
+        async for chunk in r.aiter_text():
+            n += len(chunk)
+            buf += chunk
+            last = 0
+            for m in _V82_INFO_END.finditer(buf):
+                block = buf[last:m.end()]
+                last = m.end()
+                if "GAMESTOP" in block.upper():
+                    out.append(block[-4000:])
+            buf = buf[last:]
+            if len(buf) > 400_000:
+                buf = buf[-40_000:]
+            if n > V82_F13_MAX_BYTES:
+                break
+    return out
+
+
+async def v82_f13_search(client, **params) -> list:
+    """EDGAR full-text search for 13F holdings tables that name GameStop."""
+    out, start = [], 0
+    while start < 800:
+        q = {"q": "\"GAMESTOP\"", "forms": "13F-HR", "from": str(start), **params}
+        r = await client.get("https://efts.sec.gov/LATEST/search-index", params=q, headers={"User-Agent": EDGAR_UA})
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code} from EDGAR search")
+        j = r.json() or {}
+        hits = ((j.get("hits") or {}).get("hits")) or []
+        for h in hits:
+            s = h.get("_source") or {}
+            adsh, _, fname = str(h.get("_id") or "").partition(":")
+            if adsh and fname and (s.get("ciks") or [None])[0]:
+                out.append({"adsh": adsh, "file": fname, "cik": str(s["ciks"][0]), "name": (s.get("display_names") or [""])[0],
+                            "date": s.get("file_date") or "", "period": s.get("period_ending") or "", "form": s.get("form") or ""})
+        total = int((((j.get("hits") or {}).get("total")) or {}).get("value") or 0)
+        start += len(hits)
+        if not hits or start >= total:
+            break
+        await asyncio.sleep(0.25)
+    return out
+
+
+def _v82_prev_quarter(period: str) -> str:
+    try:
+        d = date.fromisoformat(period)
+    except ValueError:
+        return ""
+    m = ((d.month - 1) // 3) * 3                                # the month the quarter before this one ends in
+    y = d.year if m else d.year - 1
+    m = m or 12
+    return date(y, m, 31 if m in (3, 12) else 30).isoformat()
+
+
+async def v82_f13_prev(client, hit: dict) -> dict | None:
+    """the same fund's GameStop holding one quarter earlier. zeros when it filed & held none. None when that can't be told."""
+    want = _v82_prev_quarter(hit.get("period") or "")
+    if not want:
+        return None
+    rows = [h for h in await v82_f13_search(client, ciks=str(hit["cik"]).zfill(10))
+            if h["period"] == want and h["form"] == "13F-HR" and h["adsh"] != hit["adsh"]]
+    await asyncio.sleep(0.25)
+    if rows:
+        p = sorted(rows, key=lambda h: h["date"])[-1]
+        return v82_f13_holding(await v82_f13_table(client, p["cik"], p["adsh"], p["file"]))
+    r = await client.get(f"https://data.sec.gov/submissions/CIK{str(hit['cik']).zfill(10)}.json", headers={"User-Agent": EDGAR_UA})
+    if r.status_code != 200:
+        return None
+    rec = ((r.json() or {}).get("filings") or {}).get("recent") or {}
+    for form, rep in zip(rec.get("form") or [], rec.get("reportDate") or []):
+        if form == "13F-HR" and rep == want:
+            return {"shares": 0, "value": 0, "calls": 0, "puts": 0, "notes": 0}      # it filed last quarter, with no GameStop in it
+    return None
+
+
+def _v82_pct(new: int, old: int) -> str:
+    p = (new - old) / old * 100
+    s = f"{abs(p):,.2f}".rstrip("0").rstrip(".")
+    return s
+
+
+def v82_f13_item(hit: dict, cur: dict, prev: dict | None) -> dict | None:
+    """what a filing says, as a post, when it says something worth one. None otherwise."""
+    name, known = v82_f13_name(hit.get("name") or "")
+    sh, val = cur["shares"], cur["value"]
+    kind, base, text = "", 0, ""
+    floor = min(V82_F13_MIN, 100_000) if known else V82_F13_MIN
+    worth = f", worth ${val:,} at quarter end" if val else ""
+    pick = int(hashlib.md5(hit["adsh"].encode()).hexdigest(), 16)
+    if prev is not None:
+        d = sh - prev["shares"]
+        dc, dp = cur["calls"] - prev["calls"], cur["puts"] - prev["puts"]
+        if prev["shares"] == 0 and sh >= floor:
+            kind, base = "opens", 60 if (sh >= V82_F13_BIG or known) else 40
+            text = (f"{name} opens a {sh:,} share position in $GME in new 13F{worth}",
+                    f"{name} now holds {sh:,} $GME shares in new 13F{worth}. Last quarter it held none")[pick % 2]
+        elif d >= floor:
+            kind, base = "adds", 60 if (d >= V82_F13_BIG or known) else 40
+            text = (f"{name} adds {d:,} $GME shares in latest 13F, now holding {sh:,}{worth}",
+                    f"{name} raised its $GME position {_v82_pct(sh, prev['shares'])}% in new 13F, from {prev['shares']:,} shares to {sh:,}")[pick % 2]
+        elif d <= -V82_F13_BIG:
+            kind, base = "trims", 30
+            text = f"{name} cut its $GME position by {-d:,} shares in latest 13F, now holding {sh:,}"
+        elif max(abs(dc), abs(dp)) >= V82_F13_BIG:
+            kind, base = "options", 45 if known else 35
+            bits = []
+            for label, now_, was in (("calls", cur["calls"], prev["calls"]), ("puts", cur["puts"], prev["puts"])):
+                if now_ != was:
+                    bits.append(f"{label} on {now_:,} shares ({'up' if now_ > was else 'down'} from {was:,})")
+            text = f"{name} now holds $GME " + " & ".join(bits) + ", latest 13F shows"
+    elif sh >= V82_F13_BIG:
+        kind, base = "holds", 35
+        text = f"{name} reports {sh:,} $GME shares in new 13F{worth}"
+    if not kind:
+        return None
+    prefix, sirens = v82_wire_dress(base + (15 if (kind in ("opens", "adds") and max(sh if kind == "opens" else sh - prev["shares"], 0) >= 5 * V82_F13_BIG) else 0))
+    kicker = ". Wow" if (kind in ("opens", "adds") and base >= 60 and pick % 3 == 0) else ""
+    text = prefix + text + kicker + (" " + "🚨" * sirens if sirens else "")
+    p = prev or {}
+    facts = (f"13F-HR filed {hit.get('date')} by {name} (EDGAR: {hit.get('name')}), for the quarter ended {hit.get('period')}. "
+             f"GameStop common stock held: {sh:,} shares, value ${val:,} at quarter end. calls on {cur['calls']:,} shares, puts on {cur['puts']:,} shares. "
+             + (f"the quarter before: {p.get('shares', 0):,} shares, calls on {p.get('calls', 0):,}, puts on {p.get('puts', 0):,}. "
+                f"change in shares: {abs(sh - p.get('shares', 0)):,}"
+                + (f" ({_v82_pct(sh, p['shares'])}%)" if p.get("shares") else "") + "." if prev is not None else "the quarter before isn't on record."))
+    try:
+        y, m, dd = (int(x) for x in str(hit.get("date") or "").split("-"))
+        filed = datetime(y, m, dd, 17, tzinfo=PROJECT_TZ).timestamp()
+    except Exception:
+        filed = time.time()
+    return {"adsh": hit["adsh"], "cik": hit["cik"], "name": name, "kind": kind, "base": base, "text": text, "facts": facts,
+            "shares": sh, "date": hit.get("date") or "", "t": min(time.time(), filed) if hit.get("date") != str(datetime.now(PROJECT_TZ).date()) else time.time()}
+
+
+def _v82_f13_state() -> dict:
+    st = _v81_json("v82_f13", {})
+    st.setdefault("seen", {})
+    st.setdefault("items", [])
+    return st
+
+
+_V82_F13_BUSY = threading.Lock()
+
+
+async def job_v82_13f(app, force: bool = False) -> str:
+    """new 13F filings that hold GameStop → the ones worth a post, onto the board."""
+    if not (V82_F13 or force) or (kv_get("v82_f13_off") == "1" and not force):
+        return "off"
+    now = datetime.now(PROJECT_TZ)
+    if not force and (now.weekday() >= 5 or not 6 <= now.hour < 23):
+        return "EDGAR is closed"
+    if not _V82_F13_BUSY.acquire(blocking=False):
+        return "already running"
+    found, read = 0, 0
+    try:
+        st = _v82_f13_state()
+        async with httpx.AsyncClient(timeout=40, follow_redirects=True) as client:
+            hits = await v82_f13_search(client, dateRange="custom", startdt=str(now.date() - timedelta(days=V82_F13_DAYS)), enddt=str(now.date()))
+            new = sorted((h for h in hits if h["adsh"] not in st["seen"] and h["form"] == "13F-HR"), key=lambda h: h["date"], reverse=True)
+            for h in new[:V82_F13_BATCH]:
+                await asyncio.sleep(0.3)
+                try:
+                    cur = v82_f13_holding(await v82_f13_table(client, h["cik"], h["adsh"], h["file"]))
+                    read += 1
+                    known = v82_f13_name(h["name"])[1]
+                    item = None
+                    if cur["shares"] >= (min(V82_F13_MIN, 100_000) if known else V82_F13_MIN) or cur["calls"] + cur["puts"] >= V82_F13_BIG:
+                        await asyncio.sleep(0.3)
+                        item = v82_f13_item(h, cur, await v82_f13_prev(client, h))
+                    st["seen"][h["adsh"]] = time.time()
+                    if item:
+                        st["items"].append(item)
+                        found += 1
+                        if item["base"] >= 60 and time.time() - item["t"] < 3 * 3600:
+                            v82_urgent(f"13F {item['name']}", (3, 8))
+                except Exception as e:
+                    st["seen"][h["adsh"]] = time.time()          # one bad filing never blocks the rest
+                    log.info(f"v82 13F {h['adsh']}: {e}")
+            left = max(0, len(new) - V82_F13_BATCH)
+        cut = time.time() - 30 * 86400
+        st["seen"] = {k: v for k, v in st["seen"].items() if v > cut}
+        st["items"] = [i for i in st["items"] if time.time() - i.get("t", 0) < 5 * 86400][-60:]
+        st["t"], st["err"] = time.time(), ""
+        st["last"] = f"{read} read, {found} worth a post, {left} still to read"
+        kv_set("v82_f13", json.dumps(st, ensure_ascii=False))
+        return st["last"]
+    except Exception as e:
+        st = _v82_f13_state()
+        st["err"] = f"{datetime.now(PROJECT_TZ).strftime('%-d %b %-I:%M%p').lower()} ET · {str(e)[:200]}"
+        kv_set("v82_f13", json.dumps(st, ensure_ascii=False))
+        log.info(f"v82 13F watcher: {e}")
+        return "error: " + str(e)[:200]
+    finally:
+        _V82_F13_BUSY.release()
+
+
+def v82_f13_candidates(now: float | None = None) -> list:
+    now = now or time.time()
+    today = datetime.now(PROJECT_TZ).date()
+    done = sum(1 for p in v81_picks() if str(p.get("key", "")).startswith("f13:") and _v81_et_day(p.get("t", 0)) == today)
+    if done >= V82_F13_PER_DAY:
+        return []
+    out = []
+    for it in _v82_f13_state()["items"]:
+        key = "f13:" + it["adsh"]
+        age = (now - it.get("t", now)) / 3600
+        if age > 72 or _v81_covered(key) or v73_unsafe(_V82_POL_WHO.sub("the filer", it.get("text") or "")):
+            continue
+        fr = _v81_fresh(age, 24.0)
+        out.append({"cls": "news", "lane": "kitty", "key": key, "score": round(it["base"] * fr, 1),
+                    "why": f"13F: {it['name']} {it['kind']} ({it['shares']:,} shares) · {it['base']} × {fr:.2f} fresh",
+                    "src": {"type": "f13", "item": it}})
+    return out
+
+
+_v82_cands_prev = v81_news_candidates
+
+
+def v81_news_candidates(now: float | None = None) -> list:   # noqa: F811
+    tok = _V82_FILINGS_OK.set(True)
+    try:
+        rows = _v82_cands_prev(now)
+        try:
+            rows = rows + v82_f13_candidates(now)
+        except Exception as e:
+            log.info(f"v82 13F board: {e}")
+        return sorted(rows, key=lambda c: -c["score"])
+    finally:
+        _V82_FILINGS_OK.reset(tok)
+
+
+# ── /desk 13f ───────────────────────────────────────────────────────────────
+_v82_report_prev = v81_desk_report
+
+
+def v81_desk_report() -> str:   # noqa: F811
+    out = _v82_report_prev()
+    st = _v82_f13_state()
+    on = V82_F13 and kv_get("v82_f13_off") != "1"
+    line = (f"13F WATCHER {'ON' if on else 'OFF'}: " + (st.get("last") or "no run yet")
+            + (f" · last run {int((time.time() - st['t']) // 60)} min ago" if st.get("t") else "")
+            + (f" · error: {st['err']}" if st.get("err") else ""))
+    wire = f"NEWS VOICE: {'the wire & the reaction' if v82_wire_on() else 'v81 (WIRE is off)'} · stand-in words rested: {len(v82_funny_rested())} of {len(V82_FUNNY)}"
+    return out.replace("\n\nlast error:", f"\n\n{line}\n{wire}\n\nlast error:", 1).replace(
+        "/desk test <handle>", "/desk test <handle> · /desk 13f · /desk 13f now · /desk wire on|off")
+
+
+def v82_f13_report() -> str:
+    st = _v82_f13_state()
+    lines = [f"📑 13F watcher · {'ON' if (V82_F13 and kv_get('v82_f13_off') != '1') else 'OFF'} · every {V82_F13_EVERY} min, weekdays 6am to 11pm ET",
+             "last run: " + (st.get("last") or "none yet") + (f" ({int((time.time() - st['t']) // 60)} min ago)" if st.get("t") else ""),
+             f"filings read in the last 30 days: {len(st['seen'])}", ""]
+    for it in sorted(st["items"], key=lambda i: -i.get("t", 0))[:10]:
+        used = _jinx_used("f13:" + it["adsh"], 30)
+        lines.append(f"· {it.get('date')} · {it['base']} · {'posted' if used else 'on the board'}\n  {it['text']}")
+    if not st["items"]:
+        lines.append("nothing worth a post yet (a new position or an add of "
+                     f"{V82_F13_MIN:,}+ shares, a cut of {V82_F13_BIG:,}+, or a big change in puts or calls)")
+    if st.get("err"):
+        lines += ["", "last error: " + st["err"]]
+    lines += ["", "/desk 13f now · /desk 13f on · /desk 13f off"]
+    return "\n".join(lines)
+
+
+_v82_cmd_desk_prev = cmd_desk
+
+
+async def cmd_desk(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+    msg, user = update.effective_message, update.effective_user
+    a = [x.lower() for x in (ctx.args or [])]
+    if not (user and _is_maker(user)) or a[:1] not in (["13f"], ["wire"]):
+        return await _v82_cmd_desk_prev(update, ctx)
+    if a[0] == "wire":
+        if a[1:2] and a[1] in ("on", "off"):
+            kv_set("v82_wire", a[1])
+        await msg.reply_text("news voice: " + ("the wire & the reaction" if v82_wire_on() else "the v81 writer"
+                                               + ("" if V82_WIRE else " (WIRE=off in Railway)")))
+        return
+    if a[1:2] and a[1] in ("on", "off"):
+        kv_set("v82_f13_off", "1" if a[1] == "off" else "")
+    elif a[1:2] == ["now"]:
+        await msg.reply_text("reading EDGAR...")
+        res = await job_v82_13f(ctx.application, force=True)
+        await msg.reply_text("13F run: " + res)
+    await msg.reply_text(v82_f13_report()[:4000], disable_web_page_preview=True)
+
+
+_v82_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v82_register_prev(app, scheduler, ny_tz)
+    if V82_F13:
+        scheduler.add_job(job_v82_13f, "interval", minutes=V82_F13_EVERY, args=[app], max_instances=1, coalesce=True,
+                          misfire_grace_time=600, next_run_time=datetime.now(ny_tz) + timedelta(minutes=2))
+    log.info(f"{BOT_VERSION}: news voice {'wire & reaction' if v82_wire_on() else 'v81'} · 13F watcher {'on' if V82_F13 else 'off'} "
+             f"(every {V82_F13_EVERY} min, {V82_F13_PER_DAY}/day) · {len(V82_FUNNY)} stand-in words · politics: "
+             f"{'filings only' if V82_POL_FILINGS else 'all blocked'}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v83 · THE WIZARD PROFILE STAYS IN JUJU'S DM (20 Nov 2026)
+#  a change on the Mr. Wizard profile (avatar, last active, mood) goes to the
+#  maker's DM and nowhere else: no post in the tsuki chat, no X post.
+#   - wizard_announce (the group card + the X post) does nothing.
+#   - the "📣 post to the chat" button is gone from wizard alerts, and an old
+#     one on an earlier alert won't post either.
+#   - a safety net: any message to a group that is a wizard change alert is
+#     dropped, whatever sent it.
+#  your DM still gets the watcher's alert, the avatar picture (v81) and the
+#  higgsfield prompt. /wizard still answers anyone who asks for the profile.
+#  WIZARD_PUBLIC=on brings back the group card & the X post.
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v83"
+import types as _v83_types
+V83_WIZ_PUBLIC = os.environ.get("WIZARD_PUBLIC", "off").lower() in ("1", "on", "true", "yes")
+_V83_WIZ_ALERT = re.compile(r"WIZARD PROFILE CHANGED|wizardcards\.com\s*·\s*(?:Mr\.?\s*Wizard|member profile)|"
+                            r"Mr\.?\s*Wizard\s*·\s*wizardcards\.com", re.I)
+
+
+def v83_is_wizard_alert(text: str) -> bool:
+    return bool(_V83_WIZ_ALERT.search(re.sub(r"<[^>]+>", "", text or "")))
+
+
+_v83_announce_prev = wizard_announce
+
+
+async def wizard_announce(app, changes: list, new: dict):   # noqa: F811
+    """the public side of a profile change: off. the DM has already gone."""
+    if V83_WIZ_PUBLIC:
+        return await _v83_announce_prev(app, changes, new)
+    log.info("wizard: profile change kept to the maker's DM (WIZARD_PUBLIC is off)")
+
+
+# the watcher's DM alert: no "post to the chat" button on a wizard alert
+_v83_sw_send_prev = _sw_send
+
+
+async def _sw_send(app, text: str, url: str = ""):   # noqa: F811
+    if V83_WIZ_PUBLIC or "wizardcards" not in (url or "") and not v83_is_wizard_alert(text):
+        return await _v83_sw_send_prev(app, text, url)
+    chat = _sw_alert_chat()
+    if not chat:
+        log.warning("sitewatch: no maker DM chat or ADMIN_CHAT_ID to alert")
+        return
+    rows = [[InlineKeyboardButton("🔗 open", url=url or WIZARD_URL)],
+            [InlineKeyboardButton("🗄 wayback copies", url="https://web.archive.org/web/*/" + (url or WIZARD_URL))]]
+    try:
+        await app.bot.send_message(chat_id=chat, text=_sw_pretty(text)[:4000], parse_mode="HTML",
+                                   reply_markup=InlineKeyboardMarkup(rows), disable_web_page_preview=True)
+    except Exception as e:
+        log.warning(f"sitewatch wizard alert (html) failed: {e}; sending plain")
+        try:
+            await app.bot.send_message(chat_id=chat, text=text[:4000], reply_markup=InlineKeyboardMarkup(rows),
+                                       disable_web_page_preview=True)
+        except Exception as e2:
+            log.warning(f"sitewatch wizard alert failed: {e2}")
+
+
+_v83_sw_cb_prev = sitewatch_callback
+
+
+async def sitewatch_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+    """an older wizard alert's "post to the chat" button doesn't post."""
+    q = update.callback_query
+    parts = ((q.data if q else "") or "").split(":")
+    if not V83_WIZ_PUBLIC and len(parts) == 3 and parts[1] == "post":
+        a = _v81_json("sw_alert:" + parts[2], {})
+        if "wizardcards" in str(a.get("url") or "") or v83_is_wizard_alert(str(a.get("text") or "")):
+            await q.answer("wizard profile changes stay in your DM", show_alert=True)
+            return
+    return await _v83_sw_cb_prev(update, ctx)
+
+
+# the safety net: whatever sends it, a wizard change alert never reaches a group
+def _v83_wrap(name: str, field: str):
+    prev = getattr(_v71_tg.Bot, name)
+
+    async def w(self, *a, **k):
+        if not V83_WIZ_PUBLIC:
+            cid = k.get("chat_id", a[0] if a else None)
+            body = k.get(field) if isinstance(k.get(field), str) else (a[1] if field == "text" and len(a) > 1 and isinstance(a[1], str) else "")
+            try:
+                group = int(cid) < 0 or str(cid).startswith("@")
+            except (TypeError, ValueError):
+                group = str(cid or "").startswith("@")
+            if group and body and v83_is_wizard_alert(body):
+                log.info(f"wizard alert kept out of chat {cid}")
+                return None
+        return await prev(self, *a, **k)
+    w.__name__ = name
+    setattr(_v71_tg.Bot, name, w)
+
+
+for _v83n, _v83f in (("send_message", "text"), ("send_photo", "caption"), ("send_video", "caption"),
+                     ("send_animation", "caption"), ("send_document", "caption")):
+    _v83_wrap(_v83n, _v83f)
+
+
+# /wizard says where the changes go now
+class _V83Msg:
+    """a stand-in for the message /wizard replies to, so its status lines can be corrected on the way out."""
+    def __init__(self, msg):
+        self._m = msg
+
+    def __getattr__(self, k):
+        return getattr(self._m, k)
+
+    async def reply_text(self, text, *a, **k):
+        text = re.sub(r"auto-post: \w+ · your DM first, the public post \d+ min later",
+                      "profile changes go to your DM only (WIZARD_PUBLIC=on in Railway brings the chat & X posts back)", text)
+        text = text.replace("/wizard auto on|off · /wizard delay N · ", "")
+        text = text.replace("the chat would get:", "the chat would have got (it doesn't now):")
+        return await self._m.reply_text(text, *a, **k)
+
+
+_v83_cmd_wizard_prev = cmd_wizard
+
+
+async def cmd_wizard(update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # noqa: F811
+    sub = (ctx.args or [""])[0].lower() if ctx.args else ""
+    if V83_WIZ_PUBLIC:
+        return await _v83_cmd_wizard_prev(update, ctx)
+    if sub in ("auto", "delay") and _is_maker(update.effective_user):
+        await update.effective_message.reply_text("wizard profile changes go to your DM only, never the chat or X. "
+                                                  "WIZARD_PUBLIC=on in Railway brings the public posts back.")
+        return
+    proxy = _v83_types.SimpleNamespace(effective_message=_V83Msg(update.effective_message), effective_user=update.effective_user,
+                                  effective_chat=update.effective_chat, callback_query=None)
+    return await _v83_cmd_wizard_prev(proxy, ctx)
+
+
+_v83_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v83_register_prev(app, scheduler, ny_tz)
+    log.info(f"{BOT_VERSION}: wizard profile changes → {'DM, chat & X' if V83_WIZ_PUBLIC else 'your DM only'}")
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
