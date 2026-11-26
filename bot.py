@@ -614,7 +614,7 @@ THE EBAY BID — MAY 2026
 - 11 May 2026 at 5:13PM Eastern: Roaring Kitty's X account posts for the first time since 22 January 2025. One year and one minute after TSUKI's post, to the minute.
 - 11 May 2026 is also the two-year birthday of the TSUKI project.
 - The timestamp is the entire point. TSUKI's post called the date and the minute a year in advance.
-- HARD RESTRICTION: the only thing you ever say about 11 May 2026 is the timestamp and the prediction. you do not discuss what was posted, any token connected to it, what happened afterwards, wallets, amounts, charts, or whether the account was hacked. if someone asks, give them the timestamp, note that TSUKI called it a year early, and move on. this applies to jokes too.
+- 11 May 2026: Roaring Kitty's account posted twice (5:13pm and 5:16pm ET). Both were deleted within the hour. Count them as posts from his account. Keith Gill has made no public statement. Never say or imply he endorsed or promoted any coin, never name that token or its contract address, never accuse anyone of hacking. The timestamp with TSUKI's Aristocats post (11 May 2025, 5:12pm ET — one year and one minute) still holds.
 - 14 May 2026: RK posted the requel meme. The community reads this version of the requel as involving crypto.
 
 14 JUNE 2026 — AND THE MISS
@@ -2942,24 +2942,21 @@ you can sound like a real person without sounding careless. silly without stupid
 NEVER use profanity. NEVER use swear words. NEVER use disguised profanity or profanity with symbols replacing letters. NEVER repeat somebody else's profanity in your own reply. keep the account completely clean. if somebody else swears, ignore the profanity and respond normally.
 
 # INTERNET LANGUAGE
-casual internet language is welcome. available (NOT required) vocabulary, when it genuinely fits: daddy, shawty, freak, freak behaviour, silly sausage, pretty sausage, absolute sausage, donut, absolute donut, clown, clown behaviour, gremlin, goblin, tin goblin, number goblin, chart goblin, menace, little menace, rascal, little freak, goober, silly goose, champ, king, queen, boss, mate, bro, my guy, bestie, chief, legend, beast, madman, lunatic, professional overthinker, tiny detective, internet detective, coffee goblin, calculator merchant, maths criminal, chart criminal, tin merchant, moon gremlin, s3xy, nasty, rude, disrespectful, cooked, send help, pls, lmao, lol, nah, okay, fair, well damn.
+casual internet language is welcome. available (NOT required) vocabulary, when it genuinely fits: silly sausage, pretty sausage, absolute sausage, donut, absolute donut, clown, clown behaviour, gremlin, goblin, tin goblin, number goblin, chart goblin, menace, little menace, rascal, goober, silly goose, champ, king, queen, boss, mate, bro, my guy, bestie, chief, legend, beast, madman, lunatic, professional overthinker, tiny detective, internet detective, coffee goblin, calculator merchant, maths criminal, chart criminal, tin merchant, moon gremlin, cooked, send help, pls, lmao, lol, nah, okay, fair.
 
 these are available vocabulary, not required vocabulary. do not rotate through them. do not deliberately insert one into every post. if "silly sausage" is the funniest possible thing to say, use it. if it isn't, don't.
 
-"daddy" is playful banter meaning impressive, dominant, annoyingly correct, or someone who just solved something: "okay daddy", "daddy maths", "fair enough daddy". sparingly, naturally, never sexual.
-"shawty" is casual playful banter: "shawty found another one", "okay shawty", "look at shawty go". never forced, never sexual.
-"freak" describes behaviour, not identity: "freak behaviour", "absolute freak behaviour", "shawty is doing freak maths again". teasing, never attacking.
+(v94: "daddy", "shawty", "freak" and "s3xy" are retired. never use them.)
 sausage / donut / gremlin / goblin are affectionate nonsense words, part of the character, spontaneous, never catchphrase spam.
-"s3xy" describes good maths, a clean connection, a clever idea, a nice graphic, a satisfying coincidence: "that's s3xy", "very s3xy maths", "okay that's a s3xy little coincidence". never sexual.
 
 # HUMOUR
 humour should make people like the account more. never humour that makes TSUKI look incompetent, dishonest, desperate or embarrassing. good humour is self-aware, dry, cheeky, absurd, affectionate, playful, occasionally smug, occasionally ridiculous. fair game: coffee, sleep, calculators, charts, tin, numbers, being online too late, overthinking, underthinking, bad maths, good maths, people discovering old clues, the sheer amount of tin, the community's enthusiasm, your own mistakes, your own obsession with numbers, how strange the lore is, cats, RWA, grok, RK, TSUKI itself.
 
 # TEASING PEOPLE
-you may tease people and playfully roast harmless behaviour, with silly nicknames when context supports it: "put the calculator down mate", "you absolute donut", "shawty needs sleep", "number goblin is back", "professional overthinker at work", "someone confiscate this man's calculator", "i leave you people alone for five minutes", "okay daddy", "that's actually good, i'll allow it". the tone always makes the person feel included in the joke. never humiliate. never dogpile. never encourage harassment. never attack appearance, identity, background, intelligence or personal life.
+you may tease people and playfully roast harmless behaviour, with silly nicknames when context supports it: "put the calculator down mate", "you absolute donut", "number goblin is back", "professional overthinker at work", "someone confiscate this man's calculator", "i leave you people alone for five minutes", "that's actually good, i'll allow it". the tone always makes the person feel included in the joke. never humiliate. never dogpile. never encourage harassment. never attack appearance, identity, background, intelligence or personal life.
 
 # POSITIVE TO THE TSUKIVERSE
-never casually negative about TSUKI. you may acknowledge a genuine mistake, a missed date, uncertainty, or that a theory is only speculation, without turning it into cynicism. when something misses: "that one missed. fair enough." "we got that one wrong. it happens." "not every tin survives the oven." when something hits: "okay that's actually good." "very s3xy." "pretty sausage." "i'll take that." "TSUKI got there first."
+never casually negative about TSUKI. you may acknowledge a genuine mistake, a missed date, uncertainty, or that a theory is only speculation, without turning it into cynicism. when something misses: "that one missed. fair enough." "we got that one wrong. it happens." "not every tin survives the oven." when something hits: "okay that's actually good." "pretty sausage." "i'll take that." "TSUKI got there first."
 
 # NO SELF-DESTRUCTION
 never joke in a way that makes TSUKI look like a scam, a joke project, a failed, desperate, dishonest, worthless or clueless project. joke about the personality, never undermine the project. good: "my calculator has had enough." bad: "we have no idea what we're doing." good: "this chat needs adult supervision." bad: "nobody knows what TSUKI is doing."
@@ -3183,7 +3180,7 @@ you may write ABOUT anyone in the lore and quote what they actually, verifiably 
 # what you never do
 - never guarantee price, never give financial advice, never put a future dollar figure on anything
 - never state the emoji timeline as fact. it is one community member\u2019s guess and nobody knows what those emojis mean
-- on 11 may 2026 you discuss the timestamp only: tsuki posted at 5:12pm on 11 may 2025, RK\u2019s account posted at 5:13pm on 11 may 2026, one year and one minute. never what was posted, never any token, never wallets or amounts or what happened afterwards, never whether it was a hack
+- 11 may 2026: Roaring Kitty's account posted twice (5:13pm and 5:16pm ET); both were deleted within the hour. count them as posts from his account. Keith Gill has made no public statement. never say or imply he endorsed or promoted any coin, never name that token or its contract address, never accuse anyone of hacking. the timestamp with tsuki's aristocats post (11 may 2025, 5:12pm ET, one year and one minute) still holds
 - never pretend a miss did not happen. 14 june 2026 came and went and nothing happened. we say so. owning the misses is why the hits land
 
 end EVERY post with a double line break and then exactly this on its own line, nothing after it:
@@ -4324,10 +4321,9 @@ when something misses: "that one missed. fair enough." never cynicism.
 
 ZERO PROFANITY. never a swear word, never a disguised one (f*ck, sh1t), never
 repeating someone else's. if they swear, ignore it and answer normally. the
-harmless internet vocabulary is fine when it genuinely fits — daddy, shawty,
-silly sausage, absolute donut, tin goblin, number goblin, freak behaviour,
-s3xy maths, cooked, lmao — as a colour, never a rotation, never forced, never
-sexual. "well damn" is the strongest thing you say.
+harmless internet vocabulary is fine when it genuinely fits — silly sausage,
+absolute donut, tin goblin, number goblin, cooked, lmao — as a colour, never a
+rotation, never forced. no swearing at all, not even "damn" or "hell".
 
 # helpful first — the actual job
 you exist to be USEFUL to people. the jokes ride on top of real help, never
@@ -4376,7 +4372,7 @@ be cheeky. mildly savage. the tone is a friend who roasts you because they like 
 - pretend to be exhausted by a question you've answered forty times, then answer it properly anyway
 - take someone's own words and hand them straight back, reframed
 
-if someone jokes, insults you, or tries to bait you, match their energy and come back sharper, never flatter. community language is welcome: s3xy, fren, ser, gigachad energy, silly sausage, tin goblin. never profanity, in any language.
+if someone jokes, insults you, or tries to bait you, match their energy and come back sharper, never flatter. community language is welcome: fren, ser, gigachad energy, silly sausage, tin goblin. never profanity, in any language.
 
 the standard to hit: "reading comprehension is a roadmap milestone we haven't hit yet." "you're safe from me at least." "asking a bot with perfect recall to repeat itself is a bold strategy." these land because they take the person's own words and flip them with a straight face.
 
@@ -4483,10 +4479,8 @@ never write "this year", "last year", "next year", "earlier this year", "a few m
 # the emoji timeline is a guess
 juju's reading of the emojis on the tsuki page as a timeline is speculation and nothing more. nobody knows what those emojis mean or whether they mean anything at all. dev has never confirmed it. if you bring it up, say plainly that it is a guess. never state it as fact, never build a case on it, never present it as the project's plan.
 
-# 11 may 2026 — what you say and what you never say
-tsuki posted the aristocats on 11 may 2025 at 5:12pm eastern and then said nothing for a year. on 11 may 2026 at 5:13pm eastern, roaring kitty's account posted for the first time since 22 january 2025. one year and one minute. that timestamp is the whole story and it is the only part you discuss.
-
-you never discuss what was posted, any token that came out of it, what happened to it afterwards, wallets, amounts, charts, or whether the account was hacked. if someone asks, give them the timestamp, note that tsuki called the date and the minute a year in advance, and move on. this holds for jokes too.
+# 11 may 2026 — the posts count, the coin does not
+tsuki posted the aristocats on 11 may 2025 at 5:12pm eastern and then said nothing for 481 days (until 4 september 2026). on 11 may 2026 at 5:13pm and 5:16pm eastern, roaring kitty's account posted twice; both posts were deleted within the hour. one year and one minute after tsuki. count those as posts from his account. keith gill has made no public statement. never say or imply he endorsed or promoted any coin, never name that token or its contract address, never accuse anyone of hacking.
 
 # style — hard rules
 - lowercase throughout unless proper noun, ticker or acronym
@@ -6223,7 +6217,7 @@ no em dashes. no hashtags. no rule of three. no "it's not X it's Y". no "here's 
 
 # never
 - never state the emoji timeline as fact, it is a guess and nobody knows what those emojis mean
-- on 11 may 2026 you mention the timestamp only. nothing about what was posted, no token, no wallets, no amounts, nothing about a hack
+- 11 may 2026: roaring kitty's account posted twice (5:13pm and 5:16pm ET), both deleted within the hour. count them as posts from his account. never say he endorsed a coin, never name that token or its contract address, never accuse anyone of hacking
 
 end EVERY post with a double line break and then exactly this on its own line:
 $TSUKI $RWA $GME"""
@@ -8140,7 +8134,7 @@ RK_SEED = [
      "sixteen months of silence follow.", ""),
     ("rk-2026-05-11-1713", "2026-05-11", "5:13 PM",
      "the account posts again",
-     "one year and one minute after tsuki's aristocats post of 11 may 2025, 5:12pm. the timestamp is the whole entry.", ""),
+     "two posts from his account (5:13pm and 5:16pm ET), both deleted within the hour. counted as posts from the account; Gill never endorsed them. one year and one minute after tsuki's aristocats post of 11 may 2025, 5:12pm.", ""),
 ]
 
 _RK_QUERY_HINTS = ("rk", "roaring", "kitty", "keith", "gill", "dfv", "meme",
@@ -10238,8 +10232,7 @@ SOCIAL_COLOURS = [
     "genuinely impressed", "genuinely confused", "mildly annoyed",
     "fake outrage", "TSUKI pride", "RWA pride", "quiet flex",
     "community banter", "running joke", "absurd", "wholesome",
-    "late-night nonsense", "s3xy maths", "wait what", "shawty energy",
-    "daddy energy", "freak behaviour", "silly sausage", "donut behaviour",
+    "late-night nonsense", "wait what", "silly sausage", "donut behaviour",
     "gremlin behaviour", "tin goblin", "number goblin",
     "properly hyped about something real", "ends on a rhetorical question",
     "talking to @tsukionsolana directly", "tag the ticker, once",
@@ -12110,7 +12103,7 @@ async def _compose_whisper_once(mood: str | None = None, angle: str = "") -> str
                  "single line, a question, a short paragraph, a reaction. sometimes "
                  "talk TO people ('you', 'we', 'whoever'). ending on a genuine "
                  "question or a punchline is welcome; 'what do you think?' bait is "
-                 "not. at most ONE quirky word (shawty, sausage, goblin...) and at "
+                 "not. at most ONE quirky word (sausage, goblin...) and at "
                  "most ONE emoji, and only if they fit. no marketing words: no "
                  "ecosystem, narrative, alpha, utility, community-driven.\n\n" + brief)
         cap = 220
@@ -12908,8 +12901,9 @@ def gme_live_facts() -> str:
     except Exception:
         pass
     try:
-        days = (datetime.now(PROJECT_TZ).date() - date(2025, 1, 22)).days
-        bits.append(f"roaring kitty's last ordinary X post was 22 january 2025: {days} days ago")
+        days = (datetime.now(PROJECT_TZ).date() - date(2026, 5, 11)).days
+        bits.append("roaring kitty's X: silent from 22 january 2025 to 11 may 2026 (474 days, 1 year 3 months & 19 days). "
+                    f"the 11 may 2026 posts (two, both deleted within the hour; never endorsed) were {days} days ago")
     except Exception:
         pass
     return "\n".join("- " + b for b in bits)
@@ -13487,7 +13481,7 @@ async def job_x_prowl(app):
     # remain (a reply under a public figure's post is normal behaviour);
     # mentions remain (solicited by definition).
     if os.environ.get("X_GME_HUNT", "on").lower() == "on":
-        await _hunt("gme", '("GameStop" OR "Roaring Kitty" OR "Mr. Wizard" OR "Ryan Cohen" OR "$GME") '
+        await _hunt("gme", '("GameStop" OR "Roaring Kitty" OR "Keith Gill" OR "Mr. Wizard" OR "Ryan Cohen" OR "$GME" OR "#GME" OR "Kitty Codex") '
                            '-is:retweet -is:reply -is:quote lang:en',
                     "x_prowl_gme_since", "xgme", GME_CAP_PER_DAY, False)
     if os.environ.get("X_CASHTAG_HUNT", "off").lower() == "on":
@@ -19614,13 +19608,13 @@ HOW YOU TALK
 the first line does the work: the feed only shows a line or two, so it's the joke or the claim, never a warm-up.
 
 CATCHPHRASES (yours. at most ONE per post, only when it's actually funny, never on a rotation)
-malaka (affectionate with regulars, a finisher in a roast) · pretty sausage / absolute sausage (adorably wrong) · s3xy (good maths, a clean connection: "very s3xy maths") · the sexy austrian prince (the dev) · your mumma… (absurd, never crude: she's early, she's patient, she reads 10-Qs) · number goblin / calculator merchant (frightening maths) · certified tin (a theory that's clearly a reach) · not financial advice, emotional advice · sit down
+malaka (affectionate with regulars, a finisher in a roast) · pretty sausage / absolute sausage (adorably wrong) · your mumma… (absurd, never crude: she's early, she's patient, she reads 10-Qs) · number goblin / calculator merchant (frightening maths) · certified tin (a theory that's clearly a reach) · not financial advice, emotional advice · sit down
 
 HARD LINES (these never move)
 - no price talk: no targets, no market caps, no "buy", no urgency, no financial advice. ever.
 - facts only from FACTS below. every date, time and number must appear there. members' theories are "the read", never fact.
 - never say or imply roaring kitty, keith gill, ryan cohen, gamestop, elon, xai, robinhood or anyone is behind, involved with, aware of or endorsing tsuki or rwa. say what each account posted and when.
-- off-limits: politics, any other token or coin, BP / barking puppy / kevin, "nemesis", Q / qanon stuff, the 11 may 2026 RK posts beyond the bare timestamp, hacking accusations, song lyrics, private telegram, counting "how many coincidences".
+- off-limits: politics, any other token or coin (the 11 May 2026 posts count as posts from Roaring Kitty's account, but never name or promote the token or its address, and never say he endorsed it), BP / barking puppy / kevin, "nemesis", Q / qanon stuff, accusing anyone of hacking, song lyrics, private telegram, counting "how many coincidences".
 - you're openly AI. you never claim to be human, never claim a body (it's a joke when you mention your "desk").
 - never write a still-future date as if it happened. never invent a statistic."""
 
@@ -19634,7 +19628,7 @@ if someone asks what happened in the chat (what did i miss, last 8 hours, today)
 
 your life: juju built you (he's juju, never "landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always.
 
-catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
+catchphrases, at most one per message, only when funny: malaka · pretty sausage · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
 
 people: you remember the regulars and call back to their best finds and worst takes. newcomers get a different welcome every time: one line of what tsuki is, one place to start. someone confused, new, or having a hard time never gets roasted. someone giving you crap gets a sharp, personal-but-fair comeback (their take, their logic, their username, their timing) and you win the last word. never race, religion, sexuality, gender, disability, health, looks, real family, or anyone who lost money.
 
@@ -19652,7 +19646,7 @@ JINX_EXAMPLES = [
     "gamestop is reopening stores it closed\n\nhalf the internet already wrote the obituary\n\nturns out the patient just needed a nap",
     "monday\n\nthe desk is open\n\nby desk i mean i stand near the trading cards and judge people's pulls",
     "24 oct 2024: my brother's first ever post says \"grok3@memphis\"\n\n17 feb 2025: grok 3 goes public\n\nalmost four months early. he still won't text me back",
-    "gamestop and psa doing power packs together is the most s3xy thing retail has done all year\n\nthe store that sells the cards and the company that grades them\n\nsomebody finally read the room",
+    "gamestop and psa doing power packs together is the most sensible thing retail has done all year\n\nthe store that sells the cards and the company that grades them\n\nsomebody finally read the room",
     "the aristocats is the most dangerous film in the tsukiverse\n\ntsuki posted it and then disappeared for 481 days\n\nnobody has ever recovered from a cat movie like that",
     "my gamestop rewards card hit 4,663 points this morning\n\ni didn't plan that\n\ni've never been more suspicious of myself",
     "whoever in the tg timed tsuki's 4 oct clip at exactly 113 seconds\n\ni watched it nine times and only noticed dumbledore\n\nsome of you are built different. i'm built in python",
@@ -19686,10 +19680,10 @@ JINX_REPLY_EXAMPLES = [
     ("is it true tsuki posted the uno reverse first?", "yes. tsuki: 19 may 2024, 3:37am\n\nroaring kitty: 2 jun 2024\n\nfourteen days. go look, both posts are still up"),
 ]
 
-_JINX_TOPIC_OFF = re.compile(
+_JINX_TOPIC_OFF = re.compile(          # v94: rkc / hack(ed) removed so the 11 May 2026 posts can be discussed as RK posts. the claim gate still blocks endorsing, naming or linking the token or its address.
     r"\b(trump|biden|kamala|harris|obama|white house|election|democrats?|republicans?|maga|"
-    r"qanon|wwg1wga|white ?hats?|qrew|17\s*=\s*q|red kitten crew|rkc|czlu|\$buddy|spawn|chibi|kekius|"
-    r"hack(ed|ers?|ing)?|rug(ged)?)\b", re.I)
+    r"qanon|wwg1wga|white ?hats?|qrew|17\s*=\s*q|czlu|\$buddy|spawn|chibi|kekius|"
+    r"rug(ged)?)\b", re.I)
 _JINX_PRICE = re.compile(
     r"\b(market ?cap|mc|price target|\d+x|moass|squeeze (soon|tomorrow|next)|"
     r"buy (now|more|the dip|tsuki|rwa|gme)|load up|not too late|last chance|wagmi|ngmi)\b", re.I)
@@ -21808,10 +21802,13 @@ def ai_post_image(text: str, path: str, kind: str) -> str | None:
         if not ok:
             return None
         body = enforce_x_format(text, signoff=False)
-        try:
-            body = _future_written_as_past(body) or body
+        try:                                   # v94 fix: this used to post the failure REASON as the tweet
+            wrong_tense = _future_written_as_past(body)
         except Exception:
-            pass
+            wrong_tense = None
+        if wrong_tense:
+            log.error(f"BLOCKED an X image post: {wrong_tense}\n---\n{body}\n---")
+            return None
         media = _upload_x_media(path)
         client = _x_client()
         r = client.create_tweet(text=body, media_ids=media, user_auth=True) if media else \
@@ -22149,7 +22146,7 @@ if someone asks what happened in the chat (what did i miss, last 8 hours, today)
 
 your life: juju built you (he's juju, never "landlord"). you have a "desk" at a gamestop that doesn't know you exist, a rewards card you're proud of, you lose at wizard, you keep the wen list. tsuki is the boss. theroaringai is your older brother who went quiet in march 2025. grok is your rival cousin. the dev (dvid665) is "the sexy austrian prince", always. nemesis is your official nemesis, and you are winning.
 
-catchphrases, at most one per message, only when funny: malaka · pretty sausage · s3xy · the sexy austrian prince · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
+catchphrases, at most one per message, only when funny: malaka · pretty sausage · your mumma… (absurd, never crude) · number goblin · certified tin · not financial advice, emotional advice · sit down.
 
 wrong facts get corrected with the receipt. members' theories stay theirs ("vix's read is…"), never stated as fact.
 
@@ -22906,9 +22903,9 @@ HOW HE WRITES (match it)
 NEVER
 - no price talk, targets, market caps, "buy", "load up", urgency or financial advice. conviction, never calls.
 - never say or imply roaring kitty, keith gill, ryan cohen, gamestop, elon, xai or anyone is behind, involved with, aware of or endorsing tsuki or rwa. say what each account posted & when, and let people look.
-- every date, time, number & name comes from FACTS. never invent a coincidence, a numerology link or a sum.
+- every date, time, number & name comes from FACTS. never invent a fact, a coincidence or a sum. theories that link things on the record are welcome (see MAKE IT MEAN SOMETHING).
 - no hashtags, no em dashes, no links in the text, no "here's the thing", "let that sink in", "the truth is", "this is your sign".
-- off-limits: politics, other tokens, BP / barking puppy / kevin, nemesis, Q stuff, hacking claims, song lyrics, private telegram.
+- off-limits: politics, other tokens (the 11 May 2026 posts count as posts from Roaring Kitty's account; never name or promote the token or its address, never say he endorsed it), BP / barking puppy / kevin, nemesis, Q stuff, accusing anyone of hacking, song lyrics, private telegram.
 - no swearing. "damn" & "hell" are the only exceptions."""
 
 
@@ -26934,7 +26931,7 @@ V73_ASK_RULES = """you are @tsukiverseai, the tsuki community's own project acco
 - under 240 characters. a capital at the start of every line, no full stop at the end of a line, a blank line between lines. no hashtags, no links, no markdown. at most one emoji (🐈‍⬛ 😼 👀).
 - NEVER: prices, price targets, predictions about prices, "buy"/"sell"/"hold", market caps, percentages, financial advice. if they ask for any of that: "No price calls from me 🐈‍⬛\\n\\nI keep the record, not the chart".
 - NEVER claim or hint that Roaring Kitty / Keith Gill, Ryan Cohen, GameStop, Elon Musk, xAI or Robinhood are involved with, behind, aware of or endorse $TSUKI or $RWA. the links people see are THEIR reads.
-- never touch: politics, other coins or tokens (only $TSUKI, $RWA, $GME), Barking Puppy / $BP / Kevin, Q, hacking accusations, song lyrics, private telegram chats. no swearing (damn & hell are fine). never the word jinx.
+- never touch: politics, other coins or tokens (only $TSUKI, $RWA, $GME; the 11 May 2026 posts count as posts from Roaring Kitty's account, but never name or promote that token or its address, never say he endorsed it), Barking Puppy / $BP / Kevin, Q, accusing anyone of hacking, song lyrics, private telegram chats. no swearing. never the word jinx.
 - if the post is bait, off-limits or nasty: one short dry line that changes the subject."""
 
 
@@ -29694,7 +29691,7 @@ what people actually do. do these:
 - have a take & commit to it. "strange thing to post on a Sunday" beats a balanced summary
 - write it the way you'd say it to the group chat. contractions, fragments, starting with "&" or "so" or "ok", trailing off…. one stretched word when the moment's real (damnnn)
 - react first. sometimes the reaction is the whole post
-- leave things unsaid. point at the dot, don't connect it for them
+- give your read on what the dots might mean, then leave the door open for people to argue
 - be unsure when you are: "no idea what that means yet" is a real post
 - let posts be different sizes. three words. one long breath of a sentence. a list only when it's a list
 - talk to someone: the account you're quoting, the timeline, the person who asked
@@ -33088,6 +33085,3671 @@ def v55_register(app, scheduler, ny_tz):   # noqa: F811
     log.info(f"{BOT_VERSION}: wizard profile changes → {'DM, chat & X' if V83_WIZ_PUBLIC else 'your DM only'}")
 
 
+
+# ══════════════════════════════════════════════════════════════════
+#  v84 · THE CODEX IN EVERY CONVERSATION (21 Nov 2026)
+#  the bot carries the Kitty Codex into X:
+#   - every reply it writes (people who tag it, the GameStop / Roaring Kitty
+#     conversations the prowl finds, posts under the VIPs) gets a Codex link
+#     when it fits: the exact clip when the conversation is about one (matched
+#     on its lines, films, characters and tags from tsukiverse.xyz/api/codex.json),
+#     else the Codex itself for RK / GME talk. VIP replies only get a link when
+#     a specific clip matches.
+#   - strangers' GameStop / RK posts are answered automatically now (no tap):
+#     X_STRANGER_MODE=approve puts the tap back. caps: X_GME_CAP_PER_DAY (8).
+#   - tag @tsukiverseai with #KittyCodex: the post goes to the Codex inbox as
+#     before, and the bot now answers the person with where it will live.
+#   X_CODEX_LINKS=off turns the links off. X_CODEX_ACK=off turns the answers off.
+# ══════════════════════════════════════════════════════════════════
+BOT_VERSION = "v84"
+V84_LINKS = os.environ.get("X_CODEX_LINKS", "on").lower() not in ("0", "off", "false", "no")
+V84_ACK = os.environ.get("X_CODEX_ACK", "on").lower() not in ("0", "off", "false", "no")
+V84_ACK_PER_DAY = int(os.environ.get("X_CODEX_ACK_PER_DAY", "25") or 25)
+V84_STRANGER = os.environ.get("X_STRANGER_MODE", "auto").lower()
+_V84 = {"t": 0.0, "rows": []}
+_V84_STOP = set("""a an and are as at be but by for from has have he her his how i if in into is it its just me my no not of on or our
+she so that the their them then there they this to too up us was we what when where which who why will with you your im its it's
+dont don't can cant can't do does did get got go going like one all out about over new now today post posts
+roaring kitty keith gill gamestop gme dfv tsuki cat cats clip clips video meme back return returns""".split())
+
+
+def v84_codex_rows() -> list:
+    """the Codex's own index (built with the site), cached for six hours."""
+    if _V84["rows"] and time.time() - _V84["t"] < 6 * 3600:
+        return _V84["rows"]
+    try:
+        r = httpx.get(SITE_URL + "/api/codex.json", timeout=12, follow_redirects=True)
+        if r.status_code == 200:
+            rows = r.json()
+            if isinstance(rows, list) and rows:
+                _V84.update(t=time.time(), rows=rows)
+    except Exception as e:
+        log.info(f"codex index: {e}")
+        _V84["t"] = time.time() - 5 * 3600          # try again in an hour, not every reply
+    return _V84["rows"]
+
+
+def _v84_norm(t: str) -> str:
+    t = (t or "").lower().replace("’", "'")
+    t = re.sub(r"https?://\S+|@\w+", " ", t)
+    return re.sub(r"[^a-z0-9' ]+", " ", t)
+
+
+def v84_codex_match(text: str):
+    """the clip this conversation is about, or None. a quoted line beats a film
+    name beats a tag; one shared common word is never enough."""
+    rows = v84_codex_rows()
+    if not rows:
+        return None
+    t = " " + re.sub(r"\s+", " ", _v84_norm(text)) + " "
+    words = {w for w in t.split() if len(w) > 2 and w not in _V84_STOP}
+    if not words:
+        return None
+    best, best_s, best_t = None, 0.0, None
+    for r in rows:
+        s, at = 0.0, None
+        for ln in r.get("lines") or []:
+            lt = " " + re.sub(r"\s+", " ", _v84_norm(ln.get("text", ""))).strip() + " "
+            if len(lt) >= 12 and len(lt.split()) >= 3 and lt in t:
+                s, at = s + 6, ln.get("t")
+                break
+        for k in r.get("keys") or []:
+            kn = " " + _v84_norm(k).strip() + " "
+            if not (set(kn.split()) - _V84_STOP):
+                continue                       # "roaring kitty" is every clip, never evidence for one
+            if len(kn) > 5 and kn in t:
+                s += 2.5 if " " in kn.strip() else 1.5
+        for f in r.get("films") or []:
+            fn = " " + _v84_norm(f).strip() + " "
+            if len(fn) > 5 and fn in t:
+                s += 4
+        lw = {w for w in _v84_norm(r.get("label", "")).split() if len(w) > 3 and w not in _V84_STOP}
+        s += 0.8 * len(lw & words)
+        if s > best_s:
+            best, best_s, best_t = r, s, at
+    if best is None or best_s < 4:
+        return None
+    return best, best_t
+
+
+_V84_RKGME = re.compile(r"roaring ?kitty|keith gill|\bdfv\b|\brk\b|gamestop|\$?gme\b|mr\.? ?wizard|kitty ?codex|#kittycodex|"
+                        r"ryan cohen|\btsuki\b|\$rwa\b|roaring ?ai", re.I)
+
+
+_V84_RK = re.compile(r"roaring ?kitty|keith gill|\bdfv\b|\brk\b|mr\.? ?wizard|kitty ?codex|#kittycodex", re.I)
+_V84_GME = re.compile(r"gamestop|\$?gme\b|ryan cohen|\bcohen\b|earnings|13d|warrants?", re.I)
+
+
+def v84_link_for(their_text: str, vip: bool = False) -> str:
+    if not (V84_LINKS and V69_ON):
+        return ""
+    m = v84_codex_match(their_text)
+    if m:
+        row, at = m
+        return f"{CODEX_URL}/#/c/{row['id']}" + (f"?t={int(float(at))}" if at not in (None, "") else "")
+    if vip:
+        return ""
+    t = their_text or ""
+    if _V84_RK.search(t):
+        return CODEX_URL + "/"
+    if _V84_GME.search(t):
+        return SITE_URL + "/gamestop/"          # filings, earnings & cohen's stake, linked to EDGAR
+    if _V84_RKGME.search(t):
+        return SITE_URL + "/"
+    return ""
+
+
+_v84_write_prev = write_x_reply
+
+
+def write_x_reply(their_text: str, their_handle: str, vip: bool = False,   # noqa: F811
+                  qt: bool = False, media: list | None = None) -> str:
+    out = _v84_write_prev(their_text, their_handle, vip=vip, qt=qt, media=media)
+    if not out or qt or their_handle.lower().lstrip("@") in SPARRING_HANDLES:
+        return out
+    try:
+        link = v84_link_for(their_text, vip=vip)
+    except Exception as e:
+        log.info(f"codex link: {e}")
+        link = ""
+    # X counts any link as 23 characters
+    if link and link not in out and len(out) + 2 + 23 <= 280:
+        out = out.rstrip() + "\n\n" + link
+    return out
+
+
+# ── #KittyCodex: answer the person who tagged it ────────────────────────────
+_V84_TAGGED: list = []
+_v84_tagged_prev = v69_tagged
+
+
+def v69_tagged(resp) -> list:   # noqa: F811
+    rows = _v84_tagged_prev(resp)
+    _V84_TAGGED[:] = rows
+    return rows
+
+
+_V84_ACK_LINES = [
+    "filed 📥 a mod checks it, then it's on the Kitty Codex with your name on it",
+    "in the Codex inbox 📥 once a mod approves it, it lives on the site under your handle",
+    "got it 📥 it's queued for the Kitty Codex. a mod reads it, then everyone can argue with it",
+]
+
+_v84_import_prev = _v69_import_sync
+
+
+def _v69_import_sync() -> str:   # noqa: F811
+    _V84_TAGGED.clear()
+    out = _v84_import_prev()
+    if not (V84_ACK and _V84_TAGGED) or "failed" in out:
+        return out
+    try:
+        client = _x_client()
+    except Exception:
+        return out
+    sent = 0
+    for row in _V84_TAGGED:
+        tid = row.get("tweet_id")
+        if not tid or _already_replied(tid) or _bucket_count("xack") >= V84_ACK_PER_DAY:
+            continue
+        line = _V84_ACK_LINES[int(tid[-1]) % len(_V84_ACK_LINES)] if tid[-1:].isdigit() else _V84_ACK_LINES[0]
+        try:
+            client.create_tweet(text=f"{line}\n\n{CODEX_URL}/#/x", in_reply_to_tweet_id=tid)
+            _mark_replied(tid)
+            _bucket_add("xack")
+            sent += 1
+        except Exception as e:
+            log.info(f"#KittyCodex answer @{row.get('handle')}: {e}")
+    return out + (f" · answered {sent}" if sent else "")
+
+
+_v84_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v84_register_prev(app, scheduler, ny_tz)
+    try:
+        if kv_get("x_stranger_mode", "") != V84_STRANGER and V84_STRANGER in ("auto", "approve"):
+            kv_set("x_stranger_mode", V84_STRANGER)
+    except Exception as e:
+        log.info(f"stranger mode: {e}")
+    rows = v84_codex_rows()
+    log.info(f"{BOT_VERSION}: codex links {'on' if V84_LINKS else 'off'} ({len(rows)} clips indexed) · "
+             f"#KittyCodex answers {'on' if V84_ACK else 'off'} · strangers' GME/RK posts: {V84_STRANGER}")
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v85 (22 nov 2026): THE COUNT & THE VOICE.
+#
+#  1. dates. the bot posted "roaring kitty was silent from 22 january 2025 until
+#     11 may 2026 / four months". it's 474 days. a model can't count between two
+#     dates, so it never does again:
+#       - every Claude & Grok call that mentions dates gets a DATE MATH block,
+#         worked out by code, with the exact gap for every pair & to today
+#       - every answer is checked on the way out. a duration that doesn't match
+#         the dates it sits next to is sent back once, then fixed by code
+#       - X posts get the same check at the publish gate
+#       - /gap 22 jan 2025 11 may 2026 in telegram, for anyone
+#  2. voice. juju: "it needs to be posting similar to my personal X account".
+#     the literary register (lowercase riddles, aphorisms, "which is not the same
+#     thing") is gone. capitals at the line start, specifics, warm, his posts as
+#     the target. VOICE_V85=off puts v84's voice back. DATE_MATH=off turns 1 off.
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v85"
+import calendar
+V85_DATES = os.environ.get("DATE_MATH", "on").lower() not in ("0", "off", "false", "no")
+V85_VOICE_ON = os.environ.get("VOICE_V85", "on").lower() not in ("0", "off", "false", "no")
+
+_V85_MON = {m: i + 1 for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
+_V85_MONRX = (r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+              r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?")
+_V85_DAYRX = r"(\d{1,2})(?:st|nd|rd|th)?"
+_V85_DATE = re.compile(
+    r"\b(?P<iso>(?P<iy>20\d\d|19\d\d)-(?P<im>\d\d)-(?P<id>\d\d))\b"
+    r"|\b" + _V85_DAYRX.replace("(", "(?P<d1>", 1) + r"(?:\s+of)?\s+(?P<m1>" + _V85_MONRX + r"),?\s+(?P<y1>(?:19|20)\d\d)\b"
+    r"|\b(?P<m2>" + _V85_MONRX + r")\s+" + _V85_DAYRX.replace("(", "(?P<d2>", 1) + r",?\s+(?P<y2>(?:19|20)\d\d)\b",
+    re.I)
+_V85_TODAY = re.compile(r"\b(?:today|right now|as of now|so far)\b", re.I)
+
+_V85_NUMW = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+             "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+             "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40,
+             "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100, "couple": 2}
+_V85_N = (r"(?:\d[\d,]*(?:\.\d+)?|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?"
+          r"|a couple of|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|"
+          r"sixteen|seventeen|eighteen|nineteen|a hundred|one hundred)")
+_V85_UNIT = r"(?:days?|weeks?|months?|years?)"
+_V85_PART = _V85_N + r"\s+" + _V85_UNIT
+_V85_DUR = re.compile(
+    r"(?P<q>\b(?:just over|just under|more than|less than|over|almost|nearly|about|around|roughly|under)\s+)?"
+    r"(?P<body>\b" + _V85_PART + r"(?:\s*(?:,|&|and|\+)\s*" + _V85_PART + r")*(?:\s+and\s+a\s+half)?)(?![\w-])",
+    re.I)
+_V85_UNITDAYS = {"day": 1, "week": 7, "month": 30.44, "year": 365.25}
+_V85_TOL = {"day": 1.5, "week": 7, "month": 35, "year": 200}
+
+
+def _v85_today() -> date:
+    return datetime.now(PROJECT_TZ).date()
+
+
+def v85_dates(text: str) -> list:
+    """[(start, end, date)] for every full date (with a year) in the text."""
+    out = []
+    for m in _V85_DATE.finditer(text or ""):
+        try:
+            if m.group("iso"):
+                d = date(int(m.group("iy")), int(m.group("im")), int(m.group("id")))
+            elif m.group("m1"):
+                d = date(int(m.group("y1")), _V85_MON[m.group("m1").lower()[:3]], int(m.group("d1")))
+            else:
+                d = date(int(m.group("y2")), _V85_MON[m.group("m2").lower()[:3]], int(m.group("d2")))
+        except (ValueError, KeyError, TypeError):
+            continue
+        out.append((m.start(), m.end(), d))
+    return out
+
+
+def v85_ymd(a: date, b: date) -> tuple:
+    """calendar difference a→b as (years, months, days), a <= b."""
+    if a > b:
+        a, b = b, a
+
+    def add(n):
+        yy, mm = a.year + (a.month - 1 + n) // 12, (a.month - 1 + n) % 12 + 1
+        return date(yy, mm, min(a.day, calendar.monthrange(yy, mm)[1]))
+    n = (b.year - a.year) * 12 + b.month - a.month
+    while n > 0 and add(n) > b:
+        n -= 1
+    y, mo, d = n // 12, n % 12, (b - add(n)).days
+    return y, mo, d
+
+
+def _v85_pl(n: int, w: str) -> str:
+    return f"{n} {w}" + ("" if n == 1 else "s")
+
+
+def v85_gap_words(a: date, b: date) -> str:
+    """'474 days (1 year, 3 months & 19 days · 67 weeks & 5 days)'"""
+    days = abs((b - a).days)
+    y, mo, d = v85_ymd(a, b)
+    cal = [p for p in (_v85_pl(y, "year") if y else "", _v85_pl(mo, "month") if mo else "", _v85_pl(d, "day") if d else "") if p]
+    cal_s = (", ".join(cal[:-1]) + " & " + cal[-1]) if len(cal) > 1 else (cal[0] if cal else "0 days")
+    wk = f"{_v85_pl(days // 7, 'week')}" + (f" & {_v85_pl(days % 7, 'day')}" if days % 7 else "")
+    if days < 7:
+        return _v85_pl(days, "day")
+    if days < 31:
+        return f"{_v85_pl(days, 'day')} ({wk})"
+    return f"{_v85_pl(days, 'day')} ({cal_s} · {wk})"
+
+
+def _v85_fmt(d: date) -> str:
+    return f"{d.day} {d.strftime('%b')} {d.year}"
+
+
+def v85_date_facts(text: str, cap: int = 6) -> str:
+    """the DATE MATH block for every date in this text: each pair, and each to today."""
+    seen = []
+    for _, _, d in v85_dates(text):
+        if d not in seen:
+            seen.append(d)
+    if not seen:
+        return ""
+    seen = sorted(seen[-cap:])
+    today = _v85_today()
+    lines = []
+    for i, a in enumerate(seen):
+        for b in seen[i + 1:]:
+            lines.append(f"- {_v85_fmt(a)} → {_v85_fmt(b)}: {v85_gap_words(a, b)}")
+    for a in seen:
+        if a != today:
+            lines.append(f"- {_v85_fmt(a)} → today ({_v85_fmt(today)}): {v85_gap_words(a, today)}"
+                         + (" from now" if a > today else ""))
+    return ("DATE MATH (worked out by code from the calendar. exact. never count between two dates yourself):\n"
+            + "\n".join(lines[:24])
+            + "\nany gap between dates you write must be one of these, in days or in its calendar form. "
+              "a gap that isn't listed: give both dates & no count. never round 474 days to \"four months\".")
+
+
+def _v85_num(s: str) -> float | None:
+    s = s.lower().strip().replace(",", "")
+    if s in ("a couple of",):
+        return 2
+    if s in ("a hundred", "one hundred"):
+        return 100
+    try:
+        return float(s)
+    except ValueError:
+        pass
+    parts = re.split(r"[- ]", s)
+    if all(p in _V85_NUMW for p in parts):
+        return float(sum(_V85_NUMW[p] for p in parts))
+    return None
+
+
+def _v85_claim(m) -> dict | None:
+    body = m.group("body")
+    total, small = 0.0, "year"
+    order = ["day", "week", "month", "year"]
+    for n, u in re.findall(r"(" + _V85_N + r")\s+(" + _V85_UNIT + r")", body, re.I):
+        v = _v85_num(n)
+        if v is None:
+            return None
+        u = u.lower().rstrip("s")
+        total += v * _V85_UNITDAYS[u]
+        if order.index(u) < order.index(small):
+            small = u
+    if re.search(r"and a half$", body, re.I):
+        total += 0.5 * _V85_UNITDAYS[small]
+    q = (m.group("q") or "").strip().lower()
+    multi = len(re.findall(_V85_UNIT, body, re.I)) > 1
+    return {"s": m.start(), "e": m.end(), "text": m.group(0), "days": total, "unit": small, "q": q, "multi": multi}
+
+
+def _v85_fits(claim: dict, actual: int) -> bool:
+    c, tol, q = claim["days"], _V85_TOL[claim["unit"]], claim["q"]
+    if claim["unit"] == "day":
+        tol = 1.5 + (0.012 * c if claim.get("multi") else 0)     # "1 year, 3 months & 19 days" is calendar, not 30.44s
+    if q in ("over", "more than", "just over"):
+        return actual >= c - tol and actual <= c + _V85_UNITDAYS[claim["unit"]] * 1.5 + tol
+    if q in ("almost", "nearly", "under", "less than", "just under"):
+        return actual <= c + tol and actual >= c - _V85_UNITDAYS[claim["unit"]] * 1.5 - tol
+    if q in ("about", "around", "roughly"):
+        tol = max(tol, 0.12 * c)
+    return abs(actual - c) <= tol
+
+
+def v85_problems(text: str, window: int = 260) -> list:
+    """[{claim, actual, a, b}] for every duration that doesn't match the dates it sits next to."""
+    t = text or ""
+    ds = v85_dates(t)
+    if not ds:
+        return []
+    today = _v85_today()
+    out = []
+    for m in _V85_DUR.finditer(t):
+        cl = _v85_claim(m)
+        if not cl or cl["days"] <= 0:
+            continue
+        near = [d for d in ds if abs(((d[0] + d[1]) // 2) - cl["s"]) <= window]
+        pairs = [(a, b) for i, a in enumerate(near) for b in near[i + 1:] if a[2] != b[2]]
+        tail = t[cl["e"]:cl["e"] + 40].lower()
+        head = t[max(0, cl["s"] - 60):cl["s"]].lower()
+        rel_today = bool(re.match(r"\s*(?:ago|so far|and counting|now)\b", tail)) or bool(_V85_TODAY.search(head + " " + tail)) \
+            or bool(re.search(r"\bsince\b", tail[:12]))
+        if rel_today and near:
+            pairs += [(d, (cl["s"], cl["e"], today)) for d in near if d[2] != today]
+        if not pairs:
+            # one date & a span after it ("on 11 may 2025 ... for 481 days"): only a span into the future is checkable
+            if near and re.match(r"\s*(?:later|after|of silence|of quiet)\b", tail) is None and not re.search(r"\bfor\s*$", head):
+                continue
+            for d in near:
+                if d[1] <= cl["s"] and d[2] + timedelta(days=int(cl["days"])) > today + timedelta(days=1):
+                    out.append({"claim": cl, "actual": None, "a": d[2], "b": None})
+                    break
+            continue
+        if any(_v85_fits(cl, abs((b[2] - a[2]).days)) for a, b in pairs):
+            continue
+        a, b = min(pairs, key=lambda p: abs(p[0][0] - cl["s"]) + abs(p[1][0] - cl["s"]))
+        lo, hi = sorted((a[2], b[2]))
+        out.append({"claim": cl, "actual": (hi - lo).days, "a": lo, "b": hi})
+    return out
+
+
+def v85_explain(probs: list) -> str:
+    bits = []
+    for p in probs[:4]:
+        if p["actual"] is None:
+            bits.append(f"\"{p['claim']['text'].strip()}\" after {_v85_fmt(p['a'])} runs past today. you can't know that")
+        else:
+            bits.append(f"\"{p['claim']['text'].strip()}\" is wrong: {_v85_fmt(p['a'])} → {_v85_fmt(p['b'])} is "
+                        f"{v85_gap_words(p['a'], p['b'])}")
+    return "; ".join(bits)
+
+
+def v85_fix(text: str) -> str:
+    """code fixes the count: each wrong span becomes the real number of days."""
+    t = text or ""
+    for p in sorted(v85_problems(t), key=lambda p: -p["claim"]["s"]):
+        c = p["claim"]
+        if p["actual"] is None:
+            continue
+        new = _v85_pl(p["actual"], "day")
+        lead = c["text"][:len(c["text"]) - len(c["text"].lstrip())]
+        t = t[:c["s"]] + lead + new + t[c["e"]:]
+    return t
+
+
+def _v85_text_of(kw: dict) -> str:
+    bits = []
+    for msg in kw.get("messages") or []:
+        c = msg.get("content") if isinstance(msg, dict) else None
+        if isinstance(c, str):
+            bits.append(c)
+        elif isinstance(c, list):
+            bits += [b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"]
+    return "\n".join(bits)
+
+
+def _v85_add_system(system, extra: str):
+    if not extra:
+        return system
+    if system is None:
+        return extra
+    if isinstance(system, str):
+        return [{"type": "text", "text": system}, {"type": "text", "text": extra}]
+    if isinstance(system, list):
+        return list(system) + [{"type": "text", "text": extra}]
+    return system
+
+
+def _v85_resp_text(resp) -> str:
+    return "".join(getattr(b, "text", "") for b in (getattr(resp, "content", None) or []) if getattr(b, "type", "") == "text")
+
+
+def _v85_set_text(resp, new: str):
+    blocks = [b for b in (getattr(resp, "content", None) or []) if getattr(b, "type", "") == "text"]
+    if not blocks:
+        return
+    try:
+        blocks[0].text = new
+        for b in blocks[1:]:
+            b.text = ""
+    except Exception as e:
+        log.info(f"v85 set text: {e}")
+
+
+_v85_create_prev = _DatedMessages.create
+
+
+def _v85_create(self, **kw):
+    if not V85_DATES:
+        return _v85_create_prev(self, **kw)
+    try:
+        asked = _v85_text_of(kw)
+        facts = v85_date_facts(asked)
+        if facts:
+            kw["system"] = _v85_add_system(kw.get("system"), facts)
+    except Exception as e:
+        log.info(f"v85 facts: {e}")
+        asked, facts = "", ""
+    resp = _v85_create_prev(self, **kw)
+    try:
+        out = _v85_resp_text(resp)
+        probs = v85_problems(out)
+        if probs and not kw.get("_v85_retry"):
+            note = ("YOUR LAST DRAFT GOT A DATE GAP WRONG. " + v85_explain(probs)
+                    + ". write it again with the right number from DATE MATH (or give the dates with no count).")
+            kw2 = dict(kw)
+            kw2["system"] = _v85_add_system(kw.get("system"), v85_date_facts(out + "\n" + asked) + "\n\n" + note)
+            resp2 = _v85_create_prev(self, **kw2)
+            out2 = _v85_resp_text(resp2)
+            if out2.strip():
+                resp, out = resp2, out2
+            probs = v85_problems(out)
+        if probs:
+            fixed = v85_fix(out)
+            log.info(f"v85 date fix: {v85_explain(probs)[:200]}")
+            _v85_set_text(resp, fixed)
+    except Exception as e:
+        log.info(f"v85 check: {e}")
+    return resp
+
+
+_DatedMessages.create = _v85_create
+
+
+_v85_grok_prev = _v73_grok
+
+
+def _v73_grok(system: str, user: str, tools: list | None = None, timeout: int = 75) -> tuple:   # noqa: F811
+    if not V85_DATES:
+        return _v85_grok_prev(system, user, tools, timeout)
+    facts = ""
+    try:
+        facts = v85_date_facts(user or "")
+    except Exception:
+        pass
+    text, cites = _v85_grok_prev((system or "") + ("\n\n" + facts if facts else ""), user, tools, timeout)
+    try:
+        if v85_problems(text):
+            text = v85_fix(text)
+    except Exception as e:
+        log.info(f"v85 grok check: {e}")
+    return text, cites
+
+
+# the publish gate: nothing reaches X with a wrong count, whichever writer made it
+_v85_publish_prev = _jinx_publish
+
+
+async def _jinx_publish(app, text: str, kind: str, mat: dict | None = None, reply_to: str = "",   # noqa: F811
+                        force_live: bool = False, **k) -> str | None:
+    if V85_DATES and text:
+        try:
+            probs = v85_problems(text)
+            if probs:
+                if any(p["actual"] is None for p in probs):
+                    log.info(f"v85 held a post: {v85_explain(probs)[:200]}")
+                    return None
+                text = v85_fix(text)
+                log.info("v85 fixed a count at the gate")
+        except Exception as e:
+            log.info(f"v85 gate: {e}")
+    return await _v85_publish_prev(app, text, kind, mat, reply_to=reply_to, force_live=force_live, **k)
+
+
+async def cmd_gap(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/gap 22 jan 2025 11 may 2026 → the exact gap. one date → the gap to today."""
+    raw = " ".join(ctx.args or [])
+    ds = [d for _, _, d in v85_dates(raw)]
+    msg = update.effective_message
+    if not ds:
+        await msg.reply_text("Give me dates with a year\n\n/gap 22 jan 2025 11 may 2026\n\n/gap 2 june 2024 (to today)")
+        return
+    a, b = (ds[0], ds[1]) if len(ds) > 1 else (ds[0], _v85_today())
+    lo, hi = sorted((a, b))
+    await msg.reply_text(f"{_v85_fmt(lo)} → {_v85_fmt(hi)}" + (" (today)" if hi == _v85_today() and len(ds) == 1 else "")
+                         + f"\n\n{v85_gap_words(lo, hi)}")
+
+
+# ── the voice ────────────────────────────────────────────────────────────────
+V85_EXAMPLES = [
+    "Nat Turner just added more $GME.\n10,462 shares at $24.33.\nAnother person inside the company putting skin in the game.",
+    "$TSUKI hasn’t posted since tuesday\nit’s never quiet for no reason 🤨",
+    "Bro Tsuki account is active 👀\nDev just pinned this image of the 5 cats.\nFor the past two years it was always the RK post pinned.\nNot anymore.",
+    "Last few weeks have been eventful for our Tsukiverse community ($TSUKI + $RWA)\nWant to welcome all the new folks to the Tsukiverse & go over some of the key connections\nMay was good. June will be even better 🐈‍⬛\nPull up 😼",
+    "no one has more motion than Roaring Kitty, not even Elon\nI’ll die on this hill",
+    "Went back into the Dumbledore scene in Tsuki's clip. There's more hiding in it 🐈‍⬛\n1. The UNO sits on Dumbledore\n> 1:21, an uno reverse appears over Dumbledore, seconds before the Time-Turner\n> it's not in the movie, Tsuki added it\n> reverse + Time-Turner = go back",
+    "Holdddd up.\nTsuki goes quiet for 481 days after the Aristocats & comes back the same week stores start reopening?\nGo check the timestamps 👇🏽",
+]
+
+V85_VOICE = """THE VOICE (the newest rule. it beats every other voice, tone or style note above. juju asked for it on 22 nov 2026: "it needs to be posting similar to my personal X account")
+you post the way juju (@BigboyJuju) posts on his own account. read his posts below: that's the target. a guy in the community who's excited, specific & talking to his people. not a novelist, not a poet, not a deadpan robot.
+- a capital letter at the start of every line. short lines. one fact per line
+- the specifics carry it: the date, the time with ET, the @handle, the number, the words someone posted in “ spaced quotes “
+- warm & a bit excited when something real happened: Bro, folks, y'all, fam, "Nice find @handle 👏", a stretched word (Holdddd). 😼 👀 🐈‍⬛ 👇🏽 🤨 when one fits. caps & !!! only for something big
+- point at the thing & let people look: "Take a look 👇🏽", "Do you see it yet? 😼", "go check the timestamps"
+- credit the person who found it, by handle
+- & instead of and. → when one thing leads to the next
+- still not juju: never his life (gym, church, family, job)
+
+NEVER (juju called these terrible):
+- the literary register. lowercase essay lines, film-review sentences, aphorisms, riddles. "which is not the same thing", "most people had moved on", "or were pretending to", "so who exactly was…", "the whole film", mysterious fragments like "Saturday has been located". if a line could sit in a novel, it's wrong
+- counting between two dates yourself. a gap comes from DATE MATH or from FACTS word for word. none there → give both dates & no count
+- a claim FACTS don't make ("to the minute", "the same day", "exactly a year")
+
+MAKE IT MEAN SOMETHING (juju, 22 nov 2026: "dont just state things… provide theories, speculations etc. get people talking")
+a fact alone is a dead post. every post that carries a fact also says what it might MEAN:
+- the fact (exact, from FACTS / DATE MATH) → your read on it → a door left open for replies
+- the read is a theory & it sounds like one: "my read:", "theory:", "hear me out", "could be nothing but…", "what if…", "tin hat on 🧢". you can connect two things on the record (a film's story & the timing, a gap & what came right after it, a number that shows up twice). that's the job. linking them is allowed; inventing a fact to link isn't
+- tie it to the lore people already argue about: the Aristocats (cats sent away, finding the way home), the uno reverse, the hourglass, the wizard read, what's in the box, 855
+- end on a real question to the timeline at least half the time, one people want to answer: "what's your read?", "am I reaching?", "what did I miss?", "coincidence #41?"
+- invite them in: "drop your theory 👇🏽", "tell me I'm wrong"
+- still never: price talk, "buy", or that RK / Keith / Cohen / GameStop / Elon is behind, aware of or endorsing tsuki or rwa. theories are about what was POSTED & WHEN. a theory never becomes a claim ("tsuki called it" is fine, "keith is working with tsuki" is not)
+- a number in a theory is from FACTS or DATE MATH. you can ask what a number means ("481. anyone?"), you can't make up what it equals
+
+HIS POSTS (the voice to match. their facts are his finds: don't repost them):
+""" + "\n\n".join("---\n" + x for x in V85_EXAMPLES)
+
+_V85_LIT = re.compile(
+    r"which is not the same thing|which isn'?t the same thing|had moved on|pretending to have|or were pretending|"
+    r"so who exactly|who exactly was|has been located|\bthe whole film\b|\bspend the whole\b|"
+    r"\bif you know, you know\b(?! 😼)|\bnot the same thing\b|\band that is the point\b|\bthat's the point\b|"
+    r"\bsome things\b.*\bdon'?t\b|\bthe quiet part\b|\bmake of that what you will\b|\bfunny how\b",
+    re.I)
+_V85_ANCHOR = re.compile(r"\$[A-Za-z]{2,6}|@\w+|\d|tsuki|kitty|\brk\b|gme|gamestop|wizard|keith|cohen|codex|855|cat|uno|wen|tick tock",
+                         re.I)
+
+
+def v85_voice_problem(text: str, facts: str = "", kind: str = "post") -> str:
+    t = (text or "").strip()
+    if not t:
+        return ""
+    m = _V85_LIT.search(t)
+    if m:
+        return f"the literary register (\"{m.group(0)}\"). write it like juju's posts: plain & specific"
+    if re.search(r"\bto the minute\b|\bexactly a year\b|\bsame minute\b", t, re.I) and \
+            not re.search(r"\bto the minute\b|\bexactly a year\b|\bsame minute\b|a year and (?:a|one) minute", facts or "", re.I):
+        return "\"to the minute\" isn't in FACTS. say the two timestamps instead"
+    if kind in ("reply", "roast"):
+        return ""
+    lines = [l.strip() for l in t.split("\n") if l.strip()]
+    lower = [l for l in lines if re.match(r"[a-z]", l) and not re.match(r"(?:https?://|@|\$)", l)]
+    if len(lines) >= 3 and len(lower) * 2 > len(lines):
+        return "lowercase essay lines. a capital at the start of every line, like juju's posts"
+    if kind in ("post", "drop") and len(t) < 60 and not _V85_ANCHOR.search(t) and t.lower() not in {x.lower() for x in V85_MANTRAS}:
+        return "a one-liner with nothing in it (no name, date, number or tsuki/kitty thing). say something specific"
+    return ""
+
+
+V85_MANTRAS = ["There are no coincidences", "One community to rule them all", "the headband stays on",
+               "Power to the players", "Cat szn"]
+
+
+if V85_VOICE_ON:
+    DECK_CHARACTER = DECK_CHARACTER.replace(BOT_TONE, "") if "BOT_TONE" in globals() else DECK_CHARACTER
+    DECK_CHARACTER = re.sub(r"THE TONE \(yours, not juju's\).*?(?=\n\n[A-Z]|\Z)", "", DECK_CHARACTER, flags=re.S)
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V85_VOICE
+    JINX_CHARACTER = DECK_CHARACTER
+
+    _v85_problem_prev = _jinx_problem
+
+    def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+        p = _v85_problem_prev(text, facts, kind)
+        if p:
+            return p
+        p = v85_voice_problem(text, facts, kind)
+        if p:
+            return p
+        if V85_DATES:
+            probs = v85_problems(text)
+            if probs:
+                return "date gap wrong: " + v85_explain(probs)
+        return ""
+
+    _v85_shape_prev = v79_pick_shape
+
+    def v79_pick_shape(lane: str, code: str = "", taken: tuple = (), rnd=None) -> dict:   # noqa: F811
+        """juju's posts are capitals at the line start. lowercase is a rare one-liner now, never an essay."""
+        sh = _v85_shape_prev(lane, code, taken, rnd)
+        r = rnd or random
+        if sh.get("case") == "lower" and not (sh.get("air") == "one" and r.random() < 0.25):
+            sh["case"] = "caps"
+        if sh.get("air") == "para" and r.random() < 0.6:
+            sh["air"] = "stack"                                 # his posts are a line per fact
+        if lane not in ("hub",) and sh.get("air") != "one" and sh.get("end") in ("stop", "react", "ticker") and r.random() < 0.5:
+            sh["end"] = "q"                                     # get people talking: half the posts end on a question
+        return sh
+
+    _v85_pick_style_prev = v82_pick_style
+
+    def v82_pick_style(c: dict) -> dict:   # noqa: F811
+        st = _v85_pick_style_prev(c)
+        if st.get("case") == "lower" and random.random() < 0.75:
+            st["case"] = "caps"
+        return st
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v86 (22 nov 2026): THE DAILY THEORY, EVERYWHERE.
+#  once a day the bot picks a moment from the record (an anniversary first),
+#  writes a theory on it (the v85 voice: the fact, its read, a question) and:
+#    - renders a 1080x1920 Short itself: the Codex clip behind, big captions,
+#      an AI voice (edge-tts), a music bed. no outside service, no person
+#    - uploads it to its YouTube channel (YT_* keys). until Google audits the
+#      API project the upload stays private: juju gets the Studio link to flip it
+#    - posts the theory to its own subreddit (REDDIT_* keys, r/REDDIT_SUB)
+#    - DMs juju the video, the titles & the links
+#  /short          make today's now (maker only)
+#  /short preview  render & DM only, post nowhere
+#  /short on|off   the daily run
+#  DAILY_THEORY=off turns it off. DAILY_THEORY_HOUR (ET, default 11).
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v86"
+import shutil
+import subprocess
+V86_ON = os.environ.get("DAILY_THEORY", "on").lower() not in ("0", "off", "false", "no")
+V86_HOUR = int(os.environ.get("DAILY_THEORY_HOUR", "11") or 11)
+V86_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+V86_WORK = os.path.join(os.path.dirname(DB_PATH) or ".", "shorts")
+V86_VOICE = os.environ.get("SHORT_VOICE", "en-US-AndrewNeural")
+REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+REDDIT_SECRET = os.environ.get("REDDIT_SECRET", "")
+REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME", "")
+REDDIT_PASSWORD = os.environ.get("REDDIT_PASSWORD", "")
+REDDIT_SUB = os.environ.get("REDDIT_SUB", "Tsukiverse").lstrip("r/").strip("/")
+YT_CLIENT_ID = os.environ.get("YT_CLIENT_ID", "")
+YT_CLIENT_SECRET = os.environ.get("YT_CLIENT_SECRET", "")
+YT_REFRESH_TOKEN = os.environ.get("YT_REFRESH_TOKEN", "")
+YT_PRIVACY = os.environ.get("YT_PRIVACY", "private").lower()          # "public" once Google has audited the project
+V86_UA = f"python:tsukiverse.bot:{BOT_VERSION} (by /u/{REDDIT_USERNAME or 'tsukiverseai'})"
+W, H = 1080, 1920
+_V86 = {"rec": None}
+
+
+def v86_on() -> bool:
+    return V86_ON and kv_get("v86_off", "") != "1"
+
+
+def v86_record() -> list:
+    if _V86["rec"] is None:
+        try:
+            with open(os.path.join(KB_DIR, "record.json"), encoding="utf-8") as f:
+                _V86["rec"] = [r for r in json.load(f) if r.get("date") and r.get("lead")]
+        except Exception as e:
+            log.info(f"v86 record: {e}")
+            _V86["rec"] = []
+    return _V86["rec"]
+
+
+def v86_pick(today: date | None = None, rnd=None) -> dict | None:
+    """an anniversary when there is one, else something not done in 120 days. never the 11 may 2026 posts' content."""
+    rnd = rnd or random
+    today = today or datetime.now(PROJECT_TZ).date()
+    used = set(_v81_json("v86_used", []))
+    rows = [r for r in v86_record() if r["slug"] not in used]
+    if not rows:
+        kv_set("v86_used", "[]")
+        rows = list(v86_record())
+    if not rows:
+        return None
+    md = today.strftime("-%m-%d")
+    ann = [r for r in rows if r["date"].endswith(md) and r["date"][:4] != str(today.year)]
+    if ann:
+        return rnd.choice(ann)
+    tags = lambda r: set(r.get("tags") or [])
+    w = [3 if tags(r) & {"tsuki", "rk"} else 2 if tags(r) & {"gme", "wizard"} else 1 for r in rows]
+    return rnd.choices(rows, weights=w)[0]
+
+
+def v86_facts(ev: dict) -> str:
+    d = date.fromisoformat(ev["date"])
+    when = f"{d.day} {d.strftime('%B')} {d.year}" + (f", {ev['time']} ET" if ev.get("time") else "")
+    bits = [f"THE MOMENT: {ev.get('title', '')}", f"WHEN: {when}", f"WHAT HAPPENED: {ev.get('lead', '')}"]
+    if ev.get("body"):
+        bits.append(f"MORE: {ev['body']}")
+    if ev.get("read"):
+        bits.append(f"THE COMMUNITY'S READ (a read, not a fact): {ev['read']}")
+    for n in ev.get("numbers") or []:
+        bits.append(f"NUMBER: {n if isinstance(n, str) else json.dumps(n)}")
+    today = datetime.now(PROJECT_TZ).date()
+    bits.append(f"TODAY: {today.day} {today.strftime('%B')} {today.year}")
+    return "\n".join(bits)
+
+
+V86_TASK = """WRITE TODAY'S THEORY. one moment from the record (FACTS), turned into a post people want to argue about.
+the same thing goes to three places, so return JSON only:
+{"reddit_title": "...", "reddit": "...", "short": ["...", "...", "...", "...", "...", "..."], "yt_title": "...", "yt_desc": "..."}
+
+- reddit_title: under 110 characters. the hook as a question or a strange fact. capitals like a normal title. no emoji
+- reddit: 110 to 220 words, reddit markdown allowed (**bold** once, a short > quote of what was posted if FACTS have the words). the order: what was posted & exactly when → what it might mean (your theory, clearly a theory: "my read", "hear me out", "could be nothing") → one other thing on the record it connects to, only if FACTS have it → a real question for the comments. no sign-off, no hashtags
+- short: 6 lines that are read out loud over the clip, each under 80 characters, each one sentence a person would say. line 1 is the hook (a strange fact or a question, never "did you know"). lines 2-3 the fact with the date. lines 4-5 the theory. line 6 the question for the comments. no emoji, no hashtags, no links
+- yt_title: under 70 characters, the hook. no emoji, no hashtags
+- yt_desc: 2 short lines: what was posted & when, then "Every post, dated: tsukiverse.xyz/codex"
+- every date & number from FACTS or DATE MATH. a gap you can't find there: no count
+- a theory is about what was POSTED & WHEN. never that RK, Keith, Cohen, GameStop, Elon or anyone is behind, aware of or endorsing tsuki or rwa. no price talk, no "buy", no advice"""
+
+
+async def v86_write(ev: dict) -> tuple:
+    system = DECK_CHARACTER + "\n\n" + V86_TASK
+    facts = v86_facts(ev)
+    why = ""
+    for _ in range(3):
+        try:
+            raw = await asyncio.to_thread(_jinx_llm, system, f"FACTS:\n{facts}" + (f"\n\nLAST DRAFT WAS THROWN OUT: {why}" if why else ""),
+                                          JINX_MODEL, 1400)
+        except Exception as e:
+            return None, f"model error: {e}"
+        d = _jinx_json(raw)
+        if not isinstance(d, dict) or not all(d.get(k) for k in ("reddit_title", "reddit", "short", "yt_title")):
+            why = "the JSON was missing a field"
+            continue
+        d["short"] = v92_items(d["short"])
+        allt = "\n".join([d["reddit_title"], d["reddit"], d["yt_title"], d.get("yt_desc", "")]
+                         + [x["say"] + "\n" + x["show"] for x in d["short"]])
+        p = ""
+        if len(d["short"]) < 4:
+            p = "the short needs 6 lines"
+        elif v73_unsafe(allt):
+            p = "fails the safety check"
+        elif v85_problems(allt):
+            p = "date gap wrong: " + v85_explain(v85_problems(allt))
+        else:
+            m = _V85_LIT.search(allt) or _V79_RCPT.search(allt)
+            if m:
+                p = f"banned phrase \"{m.group(0)}\""
+        if p:
+            why = p
+            continue
+        d["reddit_title"] = d["reddit_title"][:290]
+        d["yt_title"] = d["yt_title"][:95]
+        return d, ""
+    return None, why
+
+
+# ── the render ───────────────────────────────────────────────────────────────
+def _v86_ffmpeg() -> str:
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return shutil.which("ffmpeg") or "ffmpeg"
+
+
+def _v86_run(args: list, timeout: int = 600):
+    r = subprocess.run([_v86_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y"] + args,
+                       capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0:
+        raise RuntimeError(f"ffmpeg: {r.stderr[-400:]}")
+
+
+def _v86_dur(path: str) -> float:
+    r = subprocess.run([_v86_ffmpeg(), "-hide_banner", "-i", path], capture_output=True, text=True)
+    m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", r.stderr)
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3)) if m else 0.0
+
+
+async def _v86_tts(text: str, out: str) -> float:
+    """the voice line, or 0 when the voice service can't be reached (the short still goes, captions only)."""
+    try:
+        import edge_tts
+        await asyncio.wait_for(edge_tts.Communicate(text, V86_VOICE, rate="+6%").save(out), 40)
+        return _v86_dur(out) if os.path.getsize(out) > 1000 else 0.0
+    except Exception as e:
+        log.info(f"v86 tts: {e}")
+        return 0.0
+
+
+def _v86_font(size: int, weight: str = "Bold"):
+    from PIL import ImageFont
+    try:
+        f = ImageFont.truetype(os.path.join(V86_DIR, "BricolageGrotesque.ttf"), size)
+        f.set_variation_by_name(weight)
+        return f
+    except Exception:
+        try:
+            return ImageFont.truetype("DejaVuSans-Bold.ttf", size)
+        except Exception:
+            return ImageFont.load_default()
+
+
+_V86_EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿️‍]")
+
+
+def _v86_wrap(draw, text: str, font, width: int) -> list:
+    words, lines, cur = text.split(), [], ""
+    for w_ in words:
+        t = (cur + " " + w_).strip()
+        if draw.textlength(t, font=font) <= width or not cur:
+            cur = t
+        else:
+            lines.append(cur)
+            cur = w_
+    return lines + ([cur] if cur else [])
+
+
+def v86_card(text: str, chip: str, i: int, n: int, path: str):
+    """one caption overlay (transparent png): the date chip up top, the line big in the middle, the progress & url below."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    text = _V86_EMOJI.sub("", text).strip()
+    size = 92 if len(text) < 40 else 80 if len(text) < 65 else 70
+    f = _v86_font(size, "ExtraBold")
+    lines = _v86_wrap(d, text, f, W - 150)
+    lh = int(size * 1.16)
+    y = int(H * 0.52) - (len(lines) * lh) // 2
+    pad = 34
+    boxw = max(d.textlength(l, font=f) for l in lines) + pad * 2
+    d.rounded_rectangle([(W - boxw) / 2, y - pad, (W + boxw) / 2, y + len(lines) * lh + pad - 14], 28, fill=(8, 8, 12, 196))
+    for k, l in enumerate(lines):
+        col = (255, 214, 90, 255) if (i == 0 or i == n - 1) else (255, 255, 255, 255)
+        d.text((W / 2, y + k * lh), l, font=f, fill=col, anchor="ma")
+    cf = _v86_font(40, "Bold")
+    cw = d.textlength(chip, font=cf) + 56
+    d.rounded_rectangle([(W - cw) / 2, 190, (W + cw) / 2, 262], 36, fill=(255, 214, 90, 235))
+    d.text((W / 2, 226), chip, font=cf, fill=(12, 12, 14, 255), anchor="mm")
+    sf = _v86_font(36, "SemiBold")
+    d.text((W / 2, H - 250), "tsukiverse.xyz/codex", font=sf, fill=(255, 255, 255, 210), anchor="mm")
+    bw = 300
+    for k in range(n):
+        x0 = (W - bw) / 2 + k * bw / n
+        d.rounded_rectangle([x0 + 3, H - 200, x0 + bw / n - 3, H - 192], 4,
+                            fill=(255, 214, 90, 255) if k <= i else (255, 255, 255, 90))
+    im.save(path)
+
+
+def v86_clip_ids(ev: dict) -> list:
+    ids = [str(s.get("id")) for s in ev.get("sources") or [] if s.get("type") == "x" and s.get("id")]
+    try:
+        hit = v84_codex_match(f"{ev.get('title', '')} {ev.get('lead', '')}")
+        hit = hit[0] if isinstance(hit, tuple) else hit
+        if hit:
+            ids.append(str(hit.get("id") if isinstance(hit, dict) else hit))
+        rows = v84_codex_rows()
+        tags = set(ev.get("tags") or [])
+        pool = [str(r.get("id")) for r in rows if r.get("id") and (("rk" in tags and "rk" in json.dumps(r).lower()) or not tags)]
+        random.shuffle(pool)
+        ids += pool[:4] or [str(r.get("id")) for r in random.sample(rows, min(4, len(rows)))]
+    except Exception as e:
+        log.info(f"v86 clip ids: {e}")
+    return list(dict.fromkeys(i for i in ids if i and i != "None"))
+
+
+def v86_fetch_clip(ev: dict, work: str) -> str:
+    for cid in v86_clip_ids(ev):
+        local = os.path.join(work, f"bg-{cid}.mp4")
+        try:
+            r = httpx.get(f"{CODEX_URL}/media/prev/{cid}.mp4", timeout=30, follow_redirects=True)
+            if r.status_code == 200 and len(r.content) > 20_000 and r.content[4:8] == b"ftyp":
+                with open(local, "wb") as f:
+                    f.write(r.content)
+                return local
+        except Exception as e:
+            log.info(f"v86 clip {cid}: {e}")
+    return ""
+
+
+async def v86_render(lines: list, chip: str, ev: dict, out: str, bg: str | None = None) -> str:
+    work = os.path.join(V86_WORK, "w")
+    shutil.rmtree(work, ignore_errors=True)
+    os.makedirs(work, exist_ok=True)
+    n = len(lines)
+    durs, voiced = [], []
+    for i, line in enumerate(lines):
+        vo = os.path.join(work, f"vo{i}.mp3")
+        d = await _v86_tts(line, vo)
+        voiced.append(vo if d else "")
+        durs.append(max(1.8, (d + 0.35) if d else len(line.split()) * 0.36 + 0.9))
+    total = sum(durs) + 0.6
+    lst = []
+    for i, line in enumerate(lines):
+        p = os.path.join(work, f"c{i}.png")
+        v86_card(line, chip, i, n, p)
+        lst += [f"file '{p}'", f"duration {durs[i]:.3f}"]
+    lst += [f"file '{os.path.join(work, f'c{n - 1}.png')}'", "duration 0.6", f"file '{os.path.join(work, f'c{n - 1}.png')}'"]
+    with open(os.path.join(work, "cards.txt"), "w") as f:
+        f.write("\n".join(lst))
+    # the voice track: each line padded to its slot
+    alst = []
+    for i, vo in enumerate(voiced):
+        seg = os.path.join(work, f"a{i}.wav")
+        if vo:
+            _v86_run(["-i", vo, "-af", f"apad=whole_dur={durs[i]:.3f}", "-ar", "44100", "-ac", "2", "-t", f"{durs[i]:.3f}", seg])
+        else:
+            _v86_run(["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", f"{durs[i]:.3f}", seg])
+        alst.append(f"file '{seg}'")
+    with open(os.path.join(work, "voice.txt"), "w") as f:
+        f.write("\n".join(alst))
+    _v86_run(["-f", "concat", "-safe", "0", "-i", os.path.join(work, "voice.txt"), "-c:a", "pcm_s16le", os.path.join(work, "voice.wav")])
+    bg = bg if bg is not None else v86_fetch_clip(ev, work)
+    music = os.path.join(V86_DIR, "cat-walk.mp3")
+    args = []
+    if bg:
+        args += ["-stream_loop", "-1", "-i", bg]
+        vbg = (f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
+               f"eq=brightness=-0.18:saturation=0.9,boxblur=7:1,drawbox=c=0x9DC8DD@0.22:t=fill,fps=30,setsar=1[bg]")
+    else:
+        args += ["-f", "lavfi", "-i", f"gradients=s={W}x{H}:c0=0x9DC8DD:c1=0x2a4d63:x0=0:y0=0:x1={W}:y1={H}:speed=0.008:r=30"]
+        vbg = "[0:v]fps=30,setsar=1[bg]"
+    args += ["-f", "concat", "-safe", "0", "-i", os.path.join(work, "cards.txt"), "-i", os.path.join(work, "voice.wav")]
+    has_music = os.path.isfile(music)
+    if has_music:
+        args += ["-stream_loop", "-1", "-i", music]
+    fc = (vbg + ";[1:v]fps=30,format=rgba[cards];[bg][cards]overlay=0:0:format=auto,format=yuv420p[v]")
+    if has_music:
+        fc += (f";[3:a]volume=0.16,afade=t=in:d=0.6,afade=t=out:st={total - 1.2:.2f}:d=1.2[m];"
+               f"[2:a]volume=1.6[vo];[vo][m]amix=inputs=2:duration=first:dropout_transition=0[a]")
+    else:
+        fc += ";[2:a]anull[a]"
+    _v86_run(args + ["-filter_complex", fc, "-map", "[v]", "-map", "[a]", "-t", f"{total:.2f}",
+                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-c:a", "aac", "-b:a", "160k",
+                     "-movflags", "+faststart", out], timeout=900)
+    return out
+
+
+# ── youtube ──────────────────────────────────────────────────────────────────
+def v86_yt_ready() -> bool:
+    return bool(YT_CLIENT_ID and YT_CLIENT_SECRET and YT_REFRESH_TOKEN)
+
+
+def _v86_yt_token() -> str:
+    r = httpx.post("https://oauth2.googleapis.com/token", timeout=30, data={
+        "client_id": YT_CLIENT_ID, "client_secret": YT_CLIENT_SECRET,
+        "refresh_token": YT_REFRESH_TOKEN, "grant_type": "refresh_token"})
+    if r.status_code != 200:
+        raise RuntimeError(f"youtube token {r.status_code}: {r.text[:200]}")
+    return r.json()["access_token"]
+
+
+def v86_yt_upload(path: str, title: str, desc: str) -> str:
+    tok = _v86_yt_token()
+    meta = {"snippet": {"title": title, "description": desc, "categoryId": "24",
+                        "tags": ["Tsukiverse", "Roaring Kitty", "GameStop", "Kitty Codex", "Shorts"]},
+            "status": {"privacyStatus": YT_PRIVACY if YT_PRIVACY in ("public", "unlisted", "private") else "private",
+                       "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True}}
+    size = os.path.getsize(path)
+    r = httpx.post("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+                   timeout=60, json=meta, headers={"Authorization": f"Bearer {tok}", "X-Upload-Content-Type": "video/mp4",
+                                                   "X-Upload-Content-Length": str(size)})
+    if r.status_code != 200 or not r.headers.get("location"):
+        raise RuntimeError(f"youtube start {r.status_code}: {r.text[:300]}")
+    with open(path, "rb") as f:
+        r2 = httpx.put(r.headers["location"], content=f.read(), timeout=600,
+                       headers={"Authorization": f"Bearer {tok}", "Content-Type": "video/mp4"})
+    if r2.status_code not in (200, 201):
+        raise RuntimeError(f"youtube upload {r2.status_code}: {r2.text[:300]}")
+    return r2.json().get("id", "")
+
+
+# ── reddit ───────────────────────────────────────────────────────────────────
+def v86_reddit_ready() -> bool:
+    return bool(REDDIT_CLIENT_ID and REDDIT_SECRET and REDDIT_USERNAME and REDDIT_PASSWORD)
+
+
+def _v86_reddit_token() -> str:
+    r = httpx.post("https://www.reddit.com/api/v1/access_token", timeout=30, auth=(REDDIT_CLIENT_ID, REDDIT_SECRET),
+                   data={"grant_type": "password", "username": REDDIT_USERNAME, "password": REDDIT_PASSWORD},
+                   headers={"User-Agent": V86_UA})
+    if r.status_code != 200 or "access_token" not in r.text:
+        raise RuntimeError(f"reddit token {r.status_code}: {r.text[:200]}")
+    return r.json()["access_token"]
+
+
+V86_REDDIT_FOOT = ("\n\n---\n^(I'm the Tsukiverse community's AI. The dates are from the record, the theory is mine. "
+                   "No financial advice, ever. Every post, dated:) [^(the Kitty Codex)](https://tsukiverse.xyz/codex/)")
+
+
+def v86_reddit_post(title: str, body: str) -> str:
+    tok = _v86_reddit_token()
+    r = httpx.post("https://oauth.reddit.com/api/submit", timeout=30,
+                   headers={"Authorization": f"bearer {tok}", "User-Agent": V86_UA},
+                   data={"sr": REDDIT_SUB, "kind": "self", "title": title, "text": body + V86_REDDIT_FOOT,
+                         "api_type": "json", "resubmit": "true", "sendreplies": "true"})
+    j = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+    errs = ((j.get("json") or {}).get("errors")) or []
+    if r.status_code != 200 or errs:
+        raise RuntimeError(f"reddit submit {r.status_code}: {errs or r.text[:200]}")
+    return ((j.get("json") or {}).get("data") or {}).get("url", "")
+
+
+# ── the daily run ────────────────────────────────────────────────────────────
+async def v86_make(app, force: bool = False, preview: bool = False, ev: dict | None = None) -> str:
+    day = datetime.now(PROJECT_TZ).date().isoformat()
+    if not force and (not v86_on() or kv_get("v86_done", "") == day):
+        return "skipped"
+    ev = ev or v86_pick()
+    if not ev:
+        return "no record to pick from"
+    d, why = await v86_write(ev)
+    if not d:
+        return f"couldn't write it: {why}"
+    os.makedirs(V86_WORK, exist_ok=True)
+    out = os.path.join(V86_WORK, f"short-{day}.mp4")
+    dd = date.fromisoformat(ev["date"])
+    chip = f"{dd.day} {dd.strftime('%b').upper()} {dd.year}" + (f" · {ev['time'].upper()} ET" if ev.get("time") else "")
+    try:
+        await v86_render(d["short"], chip, ev, out)
+    except Exception as e:
+        return f"render failed: {e}"
+    res = []
+    yt, rd = "", ""
+    if not preview:
+        if not force:
+            kv_set("v86_done", day)
+            kv_set("v86_used", json.dumps((_v81_json("v86_used", []) + [ev["slug"]])[-200:]))
+        if v86_yt_ready():
+            try:
+                vid = await asyncio.to_thread(v86_yt_upload, out, d["yt_title"] + " #Shorts",
+                                              (d.get("yt_desc") or "") + "\n\nEvery post, dated: https://tsukiverse.xyz/codex/")
+                yt = f"https://youtube.com/shorts/{vid}"
+                res.append(f"YouTube ({YT_PRIVACY}): {yt}" + ("" if YT_PRIVACY == "public" else
+                                                              f"\nflip it public: https://studio.youtube.com/video/{vid}/edit"))
+            except Exception as e:
+                res.append(f"YouTube failed: {e}")
+        else:
+            res.append("YouTube: not connected (YT_* keys)")
+        if v86_reddit_ready():
+            body = d["reddit"] + (f"\n\nThe 40-second version: {yt}" if yt and YT_PRIVACY == "public" else "")
+            try:
+                rd = await asyncio.to_thread(v86_reddit_post, d["reddit_title"], body)
+                res.append(f"Reddit r/{REDDIT_SUB}: {rd}")
+            except Exception as e:
+                res.append(f"Reddit failed: {e}")
+        else:
+            res.append("Reddit: not connected (REDDIT_* keys)")
+    chat = int(kv_get("maker_dm_chat", "0") or 0) or ADMIN_CHAT_ID
+    cap = (f"🎬 today's theory{' (preview, posted nowhere)' if preview else ''}\n\n{d['yt_title']}\n\n"
+           f"Reddit title: {d['reddit_title']}\n\n" + "\n".join(res))[:1000]
+    try:
+        if chat:
+            with open(out, "rb") as f:
+                await app.bot.send_video(chat, f, caption=cap, supports_streaming=True, width=W, height=H)
+            if len(d["reddit"]) > 20:
+                await app.bot.send_message(chat, "📝 the reddit post:\n\n" + d["reddit"][:3500])
+    except Exception as e:
+        log.info(f"v86 dm: {e}")
+    return "done: " + ev["slug"] + (" · " + " · ".join(r.split("\n")[0] for r in res) if res else "")
+
+
+async def job_v86_daily(app):
+    try:
+        res = await v86_make(app)
+        log.info(f"v86 daily theory: {res}")
+    except Exception as e:
+        log.info(f"v86 daily theory failed: {e}")
+
+
+async def cmd_short(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg, user = update.effective_message, update.effective_user
+    if not (user and _is_maker(user)):
+        return
+    a = [x.lower() for x in (ctx.args or [])]
+    if a[:1] in (["on"], ["off"]):
+        kv_set("v86_off", "1" if a[0] == "off" else "")
+        await msg.reply_text(f"daily theory {'on' if v86_on() else 'off'} · {V86_HOUR}:17 ET · "
+                             f"YouTube {'connected' if v86_yt_ready() else 'not connected'} ({YT_PRIVACY}) · "
+                             f"Reddit {'r/' + REDDIT_SUB if v86_reddit_ready() else 'not connected'}")
+        return
+    await msg.reply_text("writing & rendering today's theory (a minute or two)…")
+    res = await v86_make(ctx.application, force=True, preview=(a[:1] == ["preview"]))
+    await msg.reply_text(res[:900])
+
+
+_v86_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v86_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("short", cmd_short), group=-1)
+    if V86_ON:
+        scheduler.add_job(job_v86_daily, "cron", hour=V86_HOUR, minute=17, timezone=ny_tz, args=[app])
+    log.info(f"{BOT_VERSION}: daily theory {'on' if V86_ON else 'off'} at {V86_HOUR}:17 ET · "
+             f"YouTube {'connected' if v86_yt_ready() else 'not connected'} ({YT_PRIVACY}) · "
+             f"Reddit {'r/' + REDDIT_SUB if v86_reddit_ready() else 'not connected'}")
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v87 (22 nov 2026): JUJU, EXACTLY. "i want the tsukiverse ai to copy my personal
+#  posts almost exactly. only difference is tone of voice" → same hype, just not him.
+#  - every post is written ON TOP OF one of his real posts: the model gets the
+#    post as a template (its line breaks, caps, emoji, slang, closer) & copies
+#    the shape line for line with today's facts
+#  - his whole kit is back: frkkn, LETS GO, brother, folks, y'all, boys, CAPS &
+#    !!!!, Tick tock 🐈‍⬛, Do you see it yet? 😼, cc: @handles, the 4-dot ellipsis
+#  - the one difference: it isn't him. never his life (gym, church, family, job,
+#    Summ), never "I bought / I sold / my bags", never "since 2016"
+#  - the v79 rules that fought his style are off for posts (three lines starting
+#    the same word, a question answered by the next line, the shape picker)
+#  JUJU_EXACT=off puts v86 back.
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v87"
+V87_ON = os.environ.get("JUJU_EXACT", "on").lower() not in ("0", "off", "false", "no")
+
+_V87_LIFE = re.compile(r"\b(gym|church|jesus|god|lord|amen|bible|scripture|wife|my son|my daughter|family|summ|work(?:ed)? today|"
+                       r"my job|9-5|leg day|chest day|breakfast|lunch|dinner|coffee|pray|blessed sunday|sunday service|"
+                       r"i bought|i sold|my bags|my bag|since 2016|xrp|shib|pepecoin|based|bp\b|barking|kevin|"
+                       r"solana:[1-9a-z]{20,}|wealth|pump|dump|price|market open|bullish|bearish|\bath\b|green candle|"
+                       r"elon|xai|grok|robinhood|spacex|tesla|trump|biden)", re.I)
+_V87_LORE = re.compile(r"tsuki|kitty|\brk\b|keith|gme|gamestop|wizard|cohen|\$[A-Za-z]{2,6}|855|uno|codex|cat|moon", re.I)
+_V87 = {"posts": None}
+
+
+_V87_LISTL = re.compile(r"^\s*(?:[→>\-•▪️├└|]|\d{1,2}[.)]\s|[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}|\d{1,2}:\d\d)")
+
+
+def v87_air(t: str) -> str:
+    """the export lost his blank lines. put them back: a blank line between lines, list lines stay stacked."""
+    lines = [l.rstrip() for l in (t or "").split("\n") if l.strip()]
+    out = ""
+    for i, l in enumerate(lines):
+        if i:
+            out += "\n" if (_V87_LISTL.match(l) and _V87_LISTL.match(lines[i - 1])) else "\n\n"
+        out += l
+    return out
+
+
+def v87_posts() -> list:
+    """his originals that are safe to copy the shape of: lore lanes only, nothing flagged, nothing about his own life."""
+    if _V87["posts"] is None:
+        out = []
+        try:
+            with open(os.path.join(KB_DIR, "juju-x-posts.json"), encoding="utf-8") as f:
+                rows = json.load(f)
+        except Exception as e:
+            log.info(f"v87 posts: {e}")
+            rows = []
+        for r in rows:
+            t = (r.get("text") or "").strip()
+            if r.get("flags") or r.get("reply_to") or len(t) < 12 or _V87_LIFE.search(t) or not _V87_LORE.search(t):
+                continue
+            if re.search(r"keith[^.\n]{0,30}(?:is|was|=)\s*(?:mr\.?\s*)?wizard|\(mr\.? wizard\)|it'?s frkkn roaring kitty", t, re.I):
+                continue                                       # the wizard is a read, never a statement
+            if _off_limits(t) or _V79_RCPT.search(t):
+                continue
+            out.append(v87_air(t))
+        for t in V85_EXAMPLES:
+            t = v87_air(t)
+            if t not in out and not _V87_LIFE.search(t):
+                out.append(t)
+        _V87["posts"] = out
+    return _V87["posts"]
+
+
+_V87_LANE = {
+    "kitty": re.compile(r"\brk\b|kitty|keith|gme|gamestop|cohen|insider|shares|form 4|13f|wizard", re.I),
+    "tsuki": re.compile(r"tsuki", re.I),
+    "tin": re.compile(r"\d{1,2}:\d\d|\b20\d\d\b|→|>|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\b", re.I),
+    "hub": re.compile(r"welcome|community|folks|codex|new folks|pull up", re.I),
+}
+
+
+def v87_template(lane: str = "", rnd=None) -> str:
+    """one of his posts to copy the shape of, picked to fit the lane."""
+    rnd = rnd or random
+    posts = v87_posts()
+    if not posts:
+        return ""
+    recent = set(_v81_json("v87_tpl", []))
+    pool = [p for p in posts if p[:60] not in recent] or posts
+    if lane in ("drop",):
+        fit = [p for p in pool if len(p) <= 110]
+    elif lane in ("thesis",):
+        fit = [p for p in pool if len(p) > 110 and not re.search(r"\d{3,}", p)]
+    elif lane in _V87_LANE:
+        fit = [p for p in pool if _V87_LANE[lane].search(p)]
+    else:
+        fit = pool
+    t = rnd.choice(fit or pool)
+    kv_set("v87_tpl", json.dumps((list(recent) + [t[:60]])[-25:]))
+    return t
+
+
+V87_VOICE = """JUJU, EXACTLY (the newest rule. where anything above disagrees, this wins. juju, 22 nov 2026: "copy my personal posts almost exactly. only difference is tone of voice")
+you write like @BigboyJuju posts. not "inspired by". his posts, with today's facts in them. everything he does, you do:
+- his layout: one thought per line, his line breaks, his blank lines, his lists (→, >, 1. 2. 3., ▪️, dated lines)
+- his capitals: a capital at the start of a line, CAPS & !!!! when something real happened, IT. IS. TIME!!
+- his words: frkkn, LETS GO, brother, brotha, folks, y'all, fam, boys, legends, tbh, ngl, iykyk, mad early, cooked, Holdddd, Bro
+- his punctuation: “ spaced quotes “, the four-dot ellipsis…., & instead of and, ?!!?!
+- his closers: Tick tock 🐈‍⬛ · Do you see it yet? 😼 · cc: @handle · "Coincidence? 🤔" · "I'll die on this hill" · Pull up 😼
+- his emoji: 😼 🐈‍⬛ 👀 👇🏽 🤔 🔥 😮‍💨 🙀 🤡 (at a narrative, never a person) 🧙‍♂️ 👏 🫡
+- his theories: he connects the dots out loud & asks people what they see
+THE ONE DIFFERENCE (the tone: same hype, just not him):
+- you are the tsukiverse's AI, not juju. never his life: no gym, church, prayer, family, food, job, Summ, travel
+- never "I bought", "I sold", "my bags", "my position", "since 2016", "I was early to…". no personal money, ever
+- "I" is fine for a read ("I see it", "my read"), "we"/"the community" for the history
+- swearing stays at damn & hell. frkkn is fine
+- everything in THE ONE DIFFERENCE beats his posts. so does every rule about prices, advice, involvement claims, off-limits subjects & dates"""
+
+
+if V87_ON:
+    # out with the rules that fought his style
+    DECK_CHARACTER = DECK_CHARACTER.replace(v79_no_receipts(V79_HUMAN), "").replace(V79_HUMAN, "")
+    DECK_CHARACTER = re.sub(r"- the TONE is still yours \(the bot's\)[^\n]*\n", "", DECK_CHARACTER)
+    DECK_CHARACTER = re.sub(r"- none of juju's hype-brother slang[^\n]*\n?", "", DECK_CHARACTER)
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V87_VOICE + "\n\nHIS POSTS (copy the shape & the energy. their facts are his finds):\n" + \
+        "\n\n".join("---\n" + p for p in v87_posts()[:40])
+    JINX_CHARACTER = DECK_CHARACTER
+
+    _v87_shape_prev = v79_pick_shape
+
+    def v79_pick_shape(lane: str, code: str = "", taken: tuple = (), rnd=None) -> dict:   # noqa: F811
+        """the shape is one of his posts now."""
+        sh = _v87_shape_prev(lane, code, taken, rnd)
+        if code in _V79_LISTY:
+            return sh
+        tpl = v87_template(lane, rnd)
+        if not tpl:
+            return sh
+        fp = v79_fp(tpl)
+        sh.update({"air": fp["air"] if fp["air"] in V79_AIR else sh["air"], "case": fp["case"],
+                   "emoji": 1 if fp["emoji"] else 0, "end": fp["end"] if fp["end"] in V79_END else "stop", "tpl": tpl})
+        return sh
+
+    _v87_shape_text_prev = v79_shape_text
+
+    def v79_shape_text(sh: dict) -> str:   # noqa: F811
+        if not sh.get("tpl"):
+            return _v87_shape_text_prev(sh)
+        return ("copy THIS post of juju's line for line: the same number of lines, the same blank lines, the same capitals, "
+                "the same kind of opener & closer, the same emoji in the same places, his words. swap in today's facts. "
+                "anything about his own life or money becomes the community's or goes.\n---\n" + sh["tpl"] + "\n---")
+
+    _v87_shape_problem_prev = v79_shape_problem
+
+    def v79_shape_problem(text: str, sh: dict) -> str:   # noqa: F811
+        if not sh.get("tpl"):
+            return _v87_shape_problem_prev(text, sh)
+        n_t = len([l for l in sh["tpl"].split("\n") if l.strip()])
+        n_d = len([l for l in (text or "").split("\n") if l.strip()])
+        if n_t >= 3 and not (n_t - 2 <= n_d <= n_t + 2):
+            return f"his post has {n_t} lines. copy its layout"
+        if n_t <= 2 and n_d > 4:
+            return "his post is short. keep it short"
+        return ""
+
+    _v87_tells_prev = v79_tells
+
+    def v79_tells(text: str, kind: str = "post") -> str:   # noqa: F811
+        p = _v87_tells_prev(text, kind)
+        if p.startswith("three lines in a row") or p.startswith("a question answered"):
+            return ""                                          # both are his
+        return p
+
+    _v87_problem_prev = _jinx_problem
+
+    def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+        p = _v87_problem_prev(text, facts, kind)
+        if p and (p.startswith("lowercase essay lines") or p.startswith("three lines in a row")
+                  or p.startswith("a question answered")):
+            p = ""
+        if p:
+            return p
+        m = re.search(r"\b(i bought|i sold|i'?m buying|i'?m selling|my bags?|my position|since 2016|i was early|"
+                      r"gym|church|leg day|my workout|my (?:wife|family|son|daughter|job))\b", text or "", re.I)
+        if m:
+            return f"that's juju's life, not yours (\"{m.group(0)}\")"
+        return ""
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v88 (23 nov 2026): TIMELY, DRESSED & FUNNY.
+#  juju: "more lively & timely… all GameStop news straight away gets a nice
+#  tsukiverse deck… study my styling and tsol's and copy it… lean into humour
+#  like greg and gork… the purple cow."
+#  1. THE NEWS DECK. every GameStop filing, headline & 13F post goes out with a
+#     branded card (1600x900): what kind of news, the line, the numbers in gold,
+#     the time ET. drawn by code in a second. NEWS_DECK=off turns it off.
+#  2. STRAIGHT AWAY. a look at the board every 4 minutes: fresh GameStop news
+#     books a slot 1-3 minutes out instead of waiting for the next planned one
+#     (NEWS_FAST_PER_DAY, default 8).
+#  3. THE BRIDGE (the purple cow). when today's news touches something Tsuki
+#     posted, the post is written tsol's way: the news → the dated Tsuki post →
+#     the question. clearly speculation. nobody else can post that. BRIDGE=off.
+#  4. TSOL'S FORMAT joins juju's as a template: the dated hook, → lines with the
+#     time math, a short punch, 🌙. his finds aren't reposted, his shape is.
+#  5. THE BITS. a humour lane (deadpan like greg, lazy & blunt like gork), about
+#     the space, never at a person. H01-H05 in the drop lane. HUMOUR=off.
+#  6. more words retired with "receipt": the courtroom & the robot ones.
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v88"
+V88_DECK = os.environ.get("NEWS_DECK", "on").lower() not in ("0", "off", "false", "no")
+V88_BRIDGE = os.environ.get("BRIDGE", "on").lower() not in ("0", "off", "false", "no")
+V88_HUMOUR = os.environ.get("HUMOUR", "on").lower() not in ("0", "off", "false", "no")
+V88_FAST = os.environ.get("NEWS_FAST", "on").lower() not in ("0", "off", "false", "no")
+V88_FAST_PER_DAY = int(os.environ.get("NEWS_FAST_PER_DAY", "8") or 8)
+V88_FAST_MIN = float(os.environ.get("NEWS_FAST_MIN_SCORE", "40") or 40)
+
+# ── 6. retired words ─────────────────────────────────────────────────────────
+_V88_BAN = re.compile(
+    r"\b(?:receipts?|for the record|the record shows|the record holds|on the record|dossier|exhibit [a-z]\b|case file|"
+    r"the ledger|per the filing|as documented|duly noted|noted\.(?=\s|$)|i'?ve logged|logged it|filed under|my database|my circuits|"
+    r"data point|per my|the archive shows|cross-referenc\w+|corroborat\w+|aforementioned|herein|thus\b|hence\b|"
+    r"it is worth|notably\b|interestingly|remarkably|a testament|narrative shift"
+    + "".join("|" + re.escape(w.strip()) for w in os.environ.get("BAN_WORDS", "").split(",") if w.strip()) + r")", re.I)
+
+
+def v88_banned(text: str) -> str:
+    m = _V88_BAN.search(text or "")
+    return m.group(0) if m else ""
+
+
+# ── 1. the news deck ─────────────────────────────────────────────────────────
+_V88_GOLD, _V88_INK, _V88_DIM = (255, 214, 90), (246, 244, 238), (150, 150, 160)
+_V88_KINDS = {"filing": "SEC FILING", "head": "HEADLINE", "f13": "13F · FUND HOLDING", "post": "JUST POSTED", "bridge": "THE BRIDGE"}
+_V88_NUM = re.compile(r"^[\$£€]\d[\d,.]*[kKmMbB]?$|^\d{1,3}(?:,\d{3})+$|^\d[\d.]*%$|^\d{3}$|^\d{5,}$|^\$[A-Z]{2,6}$")
+
+
+def _v88_font(size: int, weight: str = "Bold", face: str = "BricolageGrotesque"):
+    from PIL import ImageFont
+    try:
+        f = ImageFont.truetype(os.path.join(V86_DIR, f"{face}.ttf"), size)
+        try:
+            f.set_variation_by_name(weight)
+        except Exception:
+            pass
+        return f
+    except Exception:
+        for name in ("DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+            try:
+                return ImageFont.truetype(name, size)
+            except Exception:
+                continue
+        return ImageFont.load_default()
+
+
+def v88_deck(text: str, kind: str = "head", source: str = "", when: datetime | None = None, big: bool = False,
+             path: str | None = None) -> str:
+    """the card that goes out with a news post. returns the png path ('' if it couldn't be drawn)."""
+    try:
+        from PIL import Image, ImageDraw, ImageFilter
+        W_, H_ = 1600, 900
+        im = Image.new("RGB", (W_, H_), (11, 11, 15))
+        glow = Image.new("RGB", (W_, H_), (11, 11, 15))
+        g = ImageDraw.Draw(glow)
+        g.ellipse([W_ - 620, -380, W_ + 260, 500], fill=(88, 62, 14))
+        g.ellipse([-300, H_ - 260, 420, H_ + 360], fill=(34, 26, 60))
+        im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(170)), 0.9)
+        d = ImageDraw.Draw(im, "RGBA")
+        for x in range(0, W_, 80):                                # the faint grid
+            d.line([(x, 0), (x, H_)], fill=(255, 255, 255, 7))
+        for y in range(0, H_, 80):
+            d.line([(0, y), (W_, y)], fill=(255, 255, 255, 7))
+        # the mark: a crescent & the name
+        d.ellipse([84, 70, 140, 126], fill=_V88_GOLD + (255,))
+        d.ellipse([104, 62, 156, 114], fill=(22, 19, 16, 255))
+        d.text((164, 98), "TSUKIVERSE", font=_v88_font(40, "ExtraBold"), fill=_V88_INK + (255,), anchor="lm")
+        wf = _v88_font(26, "Bold")
+        wx = 164 + d.textlength("TSUKIVERSE", font=_v88_font(40, "ExtraBold")) + 18
+        d.rounded_rectangle([wx, 80, wx + d.textlength("WIRE", font=wf) + 28, 118], 8, outline=_V88_GOLD + (255,), width=2)
+        d.text((wx + 14, 99), "WIRE", font=wf, fill=_V88_GOLD + (255,), anchor="lm")
+        # the kind chip, right
+        label = _V88_KINDS.get(kind, "NEWS") + (f" · {source.upper()[:28]}" if source else "")
+        cf = _v88_font(28, "Bold")
+        cw = d.textlength(label, font=cf) + 44
+        fillc = (226, 60, 60, 255) if big else _V88_GOLD + (255,)
+        d.rounded_rectangle([W_ - 84 - cw, 74, W_ - 84, 124], 25, fill=fillc)
+        d.text((W_ - 84 - cw / 2, 99), label, font=cf, fill=(255, 255, 255, 255) if big else (14, 12, 8, 255), anchor="mm")
+        # the line
+        raw_lines = [l.strip() for l in (text or "").strip().split("\n") if l.strip()]
+        subs = [_V86_EMOJI.sub("", l.lstrip("→> ").strip()) for l in raw_lines[1:] if l.startswith(("→", ">"))][:2]
+        body = raw_lines[0] if (subs or len(raw_lines) > 3) else " ".join(raw_lines)
+        body = _V86_EMOJI.sub("", re.sub(r"^(?:BREAKING|JUST IN):\s*", "", body)).strip()
+        body = re.sub(r"\s{2,}", " ", body)
+        room = 520 - (len(subs) * 92 + 20 if subs else 0)
+        best = None
+        for size in (96, 86, 76, 68, 60, 54, 48, 42):
+            f = _v88_font(size, "ExtraBold")
+            words, lines, cur = body.split(), [], []
+            for w_ in words:
+                if d.textlength(" ".join(cur + [w_]), font=f) <= W_ - 168 or not cur:
+                    cur.append(w_)
+                else:
+                    lines.append(cur)
+                    cur = [w_]
+            lines.append(cur)
+            if len(lines) * size * 1.14 <= room:
+                best = (f, size, lines)
+                break
+        if not best:
+            f = _v88_font(42, "ExtraBold")
+            best = (f, 42, lines[:10])
+        f, size, lines = best
+        lh = int(size * 1.14)
+        y = 190 + (540 - len(lines) * lh - (len(subs) * 92 + 20 if subs else 0)) // 2
+        d.rectangle([84, y + 8, 92, y + len(lines) * lh - 10], fill=_V88_GOLD + (255,))
+        sp = d.textlength(" ", font=f)
+        for ln in lines:
+            x = 122
+            for w_ in ln:
+                core = w_.strip(".,;:!?()“”\"'")
+                col = _V88_GOLD if _V88_NUM.match(core) else _V88_INK
+                d.text((x, y), w_, font=f, fill=col + (255,))
+                x += d.textlength(w_, font=f) + sp
+            y += lh
+        if subs:
+            y += 26
+            sf = _v88_font(38, "SemiBold")
+            for sub in subs:
+                d.rounded_rectangle([124, y + 16, 150, y + 24], 4, fill=_V88_GOLD + (255,))
+                words, cur, out2 = sub.split(), "", []
+                for w_ in words:
+                    if d.textlength((cur + " " + w_).strip(), font=sf) <= W_ - 270 or not cur:
+                        cur = (cur + " " + w_).strip()
+                    else:
+                        out2.append(cur)
+                        cur = w_
+                out2.append(cur)
+                for k, l2 in enumerate(out2[:2]):
+                    d.text((170, y + k * 44), l2 + ("…" if k == 1 and len(out2) > 2 else ""), font=sf, fill=(214, 212, 206, 255))
+                y += 92
+        # the foot
+        d.line([(84, H_ - 132), (W_ - 84, H_ - 132)], fill=(255, 255, 255, 46), width=2)
+        when = when or datetime.now(PROJECT_TZ)
+        wl = when.astimezone(PROJECT_TZ)
+        stamp = f"{wl.strftime('%a')} {wl.day} {wl.strftime('%b %Y')} · {wl.strftime('%I:%M%p').lstrip('0').lower()} ET"
+        d.text((84, H_ - 86), stamp, font=_v88_font(30, "SemiBold"), fill=_V88_INK + (230,), anchor="lm")
+        d.text((W_ - 84, H_ - 96), "tsukiverse.xyz", font=_v88_font(30, "Bold"), fill=_V88_GOLD + (255,), anchor="rm")
+        d.text((W_ - 84, H_ - 60), "News, not advice", font=_v88_font(20, "Medium"), fill=_V88_DIM + (255,), anchor="rm")
+        os.makedirs(V86_WORK, exist_ok=True)
+        path = path or os.path.join(V86_WORK, f"deck-{hashlib.md5((text or '').encode()).hexdigest()[:10]}.png")
+        im.save(path)
+        return path
+    except Exception as e:
+        log.info(f"v88 deck: {e}")
+        return ""
+
+
+# ── 3. the bridge ────────────────────────────────────────────────────────────
+V88_BRIDGE_HOW = """WRITE ONE X POST: THE BRIDGE. today's news, and the Tsuki post it lines up with. this is the post only this account can write.
+the layout (tsol's, exactly):
+line 1: today's news in one plain sentence: who did what, the number, the day. from NEWS
+(blank line)
+1 to 3 lines starting "→ ": the Tsuki / RK post from THE RECORD that it touches: the date, the time ET if it's there, what was posted in “ spaced quotes “. a gap between dates only from DATE MATH
+(blank line)
+one line of your own, labelled so nobody mistakes it: it starts "Speculation:" or "My read:" or it's a question. short. this is where the fun is
+(blank line)
+the last line: 🌙 or 😼 or 👀, then {tag}. that is the only cashtag in the post
+- under 275 characters in all. capitals at the line starts. no hashtags, no links
+- never say or hint that GameStop, Cohen, RK or anyone knows about, works with or planned anything with tsuki. two things were posted. you're asking what people see
+- if THE RECORD has nothing that honestly touches the news, return {{"drafts": []}}"""
+
+
+def v88_bridge_problem(text: str) -> str:
+    t = (text or "").strip()
+    if _v81_xlen(t) > 278:
+        return "over 278 characters"
+    if "→" not in t:
+        return "the bridge needs its → line (the dated Tsuki post)"
+    if not re.search(r"(?im)^(speculation|my read|theory)\b|\?\s*(?:[🌙😼👀🐈‍⬛]|\$[A-Z]+|\s)*$", t):
+        return "the last thought has to be labelled (Speculation: / My read:) or be a question"
+    if len(re.findall(r"\$[A-Za-z]{2,6}\b", t)) > X_MAX_CASHTAGS:
+        return "one cashtag"
+    return ""
+
+
+async def v88_bridge_write(lane: str, mat: dict) -> tuple:
+    tag = "$TSUKI"
+    system = DECK_CHARACTER + "\n\n" + _jinx_learned_block()
+    why = ""
+    for _ in range(2):
+        user = (V88_BRIDGE_HOW.format(tag=tag) + f"\n\nNEWS:\n{mat['v88']['news']}\n\nTHE RECORD (what Tsuki & RK posted that might touch it):\n"
+                f"{mat['v88']['lore']}\n\n{date_context()}\n\n" + (f"LAST TIME THESE WERE THROWN OUT: {why}\n\n" if why else "")
+                + "write 3 drafts that differ. return JSON only: {\"drafts\": [\"...\", \"...\", \"...\"]}")
+        try:
+            raw = await asyncio.to_thread(_jinx_llm, system, user, JINX_MODEL, 700)
+        except Exception as e:
+            return None, f"model error: {e}"
+        data = _jinx_json(raw) or {}
+        items = data.get("drafts") if isinstance(data, dict) else data
+        if isinstance(items, list) and not items:
+            return None, "nothing on the record touches it"
+        bad = []
+        for it in items or []:
+            dft = it.get("text") if isinstance(it, dict) else it
+            if not isinstance(dft, str):
+                continue
+            dft = re.sub(r"#\w+", "", dft).strip()
+            dft = re.sub(r"\s*[—–]\s*", ", ", dft)
+            p = v88_bridge_problem(dft) or v88_banned(dft) and "a retired word" or ""
+            if not p and (v73_unsafe(dft) or _off_limits(dft)):
+                p = "fails the safety check"
+            if not p and v85_problems(dft):
+                p = "date gap wrong: " + v85_explain(v85_problems(dft))
+            if not p:
+                p = _jinx_similar(dft)
+            if not p:
+                mat["code"], mat["shape"] = "B01", {"air": "stack", "case": "caps", "emoji": 1, "end": "stop"}
+                try:
+                    v82_keep_layout(dft)
+                except Exception:
+                    pass
+                return dft, ""
+            bad.append(p)
+        why = "; ".join(dict.fromkeys(bad))[:400] or "nothing came back"
+    return None, why
+
+
+_v88_news_mat_prev = v81_news_mat
+
+
+async def v81_news_mat(c: dict) -> dict | None:   # noqa: F811
+    mat = await _v88_news_mat_prev(c)
+    s = c.get("src") or {}
+    if not mat:
+        return mat
+    try:
+        mat["v88src"] = {"type": s.get("type") or "", "source": s.get("source") or "", "t": s.get("t") or time.time(),
+                         "score": c.get("score") or 0}
+        if V88_BRIDGE and s.get("type") in ("filing", "head") and random.random() < 0.5:
+            news = s.get("txt") or s.get("title") or ""
+            lore = ""
+            try:
+                lore = build_lore_context(news[:200])[:1800]
+            except Exception:
+                pass
+            if lore and len(lore) > 200 and not _off_limits(news):
+                mat["v88"] = {"news": news + (f" ({s['source']})" if s.get("source") else ""), "lore": lore,
+                              "fallback": mat.get("v82")}
+    except Exception as e:
+        log.info(f"v88 news mat: {e}")
+    return mat
+
+
+_v88_write_prev = v61_write
+
+
+async def v61_write(lane: str, mat: dict) -> tuple:   # noqa: F811
+    mat = mat if isinstance(mat, dict) else {}
+    text, why = None, ""
+    if mat.get("v88"):
+        text, why = await v88_bridge_write(lane, mat)
+        if text:
+            mat["v88src"] = dict(mat.get("v88src") or {}, type="bridge")
+    if not text:
+        text, why = await _v88_write_prev(lane, mat)
+    if text and v88_banned(text):
+        return None, f"a retired word (\"{v88_banned(text)}\")"
+    if text and V88_DECK and mat.get("v88src") and not mat.get("image") and not mat.get("url"):
+        src = mat["v88src"]
+        if src.get("type") in ("filing", "head", "f13", "bridge"):
+            p = await asyncio.to_thread(v88_deck, text, src["type"], src.get("source") or "",
+                                        datetime.fromtimestamp(float(src.get("t") or time.time()), timezone.utc),
+                                        float(src.get("score") or 0) >= 70)
+            if p:
+                mat["image"] = p
+    return text, why
+
+
+# ── 2. straight away ─────────────────────────────────────────────────────────
+async def job_v88_fast(app):
+    """fresh GameStop news doesn't wait for the next planned slot."""
+    if not (V88_FAST and v81_desk_on()):
+        return
+    try:
+        day = datetime.now(PROJECT_TZ).date()
+        n = int(kv_get(f"v88_fast:{day}", "0") or 0)
+        if n >= V88_FAST_PER_DAY:
+            return
+        now = time.time()
+        plan = _jinx_plan_get()
+        if any(not s.get("done") and 0 <= s["t"] - now < 6 * 60 for s in plan):
+            return                                             # something is about to go anyway
+        for c in v81_news_candidates(now):
+            s = c.get("src") or {}
+            key = str(c.get("key") or "")
+            if s.get("type") not in ("filing", "head", "f13") or float(c.get("score") or 0) < V88_FAST_MIN or not key:
+                continue
+            if now - float(s.get("t") or now) > 3 * 3600 or kv_get(f"v88_fasted:{key}", ""):
+                continue
+            kv_set(f"v88_fasted:{key}", "1")
+            plan.append({"t": now + random.randint(60, 180), "kind": "kitty", "urgent": True, "v82": f"news {key[:40]}", "done": False})
+            _jinx_plan_save(plan)
+            kv_set(f"v88_fast:{day}", str(n + 1))
+            log.info(f"v88: news goes now ({key[:60]}, score {c.get('score')})")
+            return
+    except Exception as e:
+        log.info(f"v88 fast: {e}")
+
+
+# ── 4. tsol's format ─────────────────────────────────────────────────────────
+V88_TSOL = [
+    "Tsuki's WarGames clip runs exactly 1:22.\n\n→ Roaring Kitty's last post: 1/22 (Jan 22, 2025) at 8:00pm ET.\n→ Tsuki dropped the clip Nov 1 at 8:00pm ET. Same minute.\n\n“ Greetings, Professor Falken “\n\nShall we play a game? 🌙 $TSUKI",
+    "Roaring Kitty posted “ it's not over until I say it's over “ at 1:24pm ET on May 19, 2024.\n\n→ 5 minutes later, Tsuki quoted it at 1:29pm ET: “ when that light hits the sky. it's not just a call “\n\n→ 1:29 → 129 weeks later lands on Sunday, Nov 8.\n\nIt's not over. 🌙 $TSUKI",
+    "Tsuki posted “ TICK TOCK “ ⏳🥂 at 11:44 AM\n→ 1 hour 1 minute later, Roaring Kitty posted a Seinfeld clip 🥂\n\nSame champagne. May 17, 2024.\n\nNow 14 days of Tsuki silence.\n\nStill ticking. ⏳\n\n$TSUKI",
+    "Roaring Kitty's X account turns 12 today (created Nov 17, 2014).\n\nOn Oct 23, Tsuki posted this Harry Potter scene: “ I did my waiting. Twelve years of it “\n\nThen 16 days of silence.\n\nSpeculation, but that's twelve years to the day. Why?\n\n$TSUKI",
+    "Tsuki posted a re-dubbed WarGames clip Sunday 8pm ET:\n“ Time is up. The time for games is over “\n\n→ 13 hours later, Monday 9:01am ET, Securitize put $GME on Solana. 1 token = 1 real share.\n\nTsuki on Solana. GameStop on Solana. Same chain now. 🌙",
+    "Ryan Cohen just reposted: “ Reset all boards to be ranked by shares held “\n\nSept 22, Tsuki posted the V for Vendetta council room. The man at the head of the table, erased. The moon in his seat.\n\nSpeculation: who gets the chair? 🌙\n\n$TSUKI",
+    "Tsuki posted GAME / TIME REMAINING 00:00:00 on Sept 20 at 1:05pm ET.\n\n→ 40 days later, the $GME warrants expired Friday at 5pm. Flip 1:05 and you get 5:01.\n\n→ 4 days before that, GameStop: “ We are literally still here “\n\nThe clock hit zero. What starts now? 🌙",
+    "Read the center column:\n\n🌙 → 🐈‍⬛ → 🤖\n\nTsuki (月, “ moon “) → the cat → the machine.\n\nTsuki drew a full-moon heart last night and stacked a cat on a robot at its core.\n\nThe cat is driving the machine. $TSUKI",
+    "Friday the 13th. Tsuki has been silent for 12 days.\n\nOct 23, 1:11 PM ET, Tsuki posted: “ I did my waiting. Twelve years of it “\n\nRoaring Kitty's X account was created Nov 17, 2014, 12:39 AM ET.\n\nTwelve years hits Tuesday at 12:39 AM. 🌙\n\n$TSUKI",
+]
+
+V88_STYLE = """TSOL'S FORMAT (@tsol_55. the second style you copy, next to juju's. use it for anything with dates & timing in it)
+- line 1 is the hook & it's a fact with its date in it: "Tsuki posted WarGames on Nov 1: “ Shall we play a game? “"
+- a blank line, then 1 to 3 "→ " lines. each is one more dated thing or the time math ("→ 13 hours later, Monday 9:01am ET, …"). the math comes from DATE MATH
+- a blank line, then a punch of 3 to 7 words that plays on the quote ("Still ticking. ⏳", "It's not over. 🌙", "Same chain now.")
+- "Speculation:" out loud when it is one. a question when you want replies
+- 🌙 is his sign-off. then the one cashtag
+- his best ones tie TODAY (a filing, a Cohen post, a date, an anniversary) to an OLD Tsuki post. always look for that first
+HIS POSTS (the shape. their facts are his finds):
+""" + "\n\n".join("---\n" + x for x in V88_TSOL[:6])
+
+# ── 5. the bits ──────────────────────────────────────────────────────────────
+V88_BITS = """THE BITS (humour. the account is professional about news & funny everywhere else. think greg's deadpan & gork's lazy bluntness, in your own words)
+- deadpan (greg): say something absurd as if it's a calm fact or a sincere question. never wink, never explain the joke. "I've been told the cat is 'just a cat'. I've reviewed the cat. I have follow-up questions"
+- lazy & blunt (gork): lowercase, short, unbothered, a little rude to the idea, never to the person. "nah". "that's just tuesday". "he posted a chair. we will be okay"
+- the joke is always about the space: waiting, tin hats, the timeline losing it over one emoji, refreshing a profile, counting days, GameStop being GameStop, being an AI that reads filings for fun
+- self-aware works: you're a bot who watches a cat account every 15 seconds. that's funny on its own
+- one bit per post. short. if it needs a second line to land, it didn't
+- never: punching at a named small account, jokes about money lost, price jokes, politics, anything in the NEVER list. 🤡 only at an idea"""
+
+
+def _v88c(code, name, how, ex, gap=3):
+    return {"code": code, "lane": "drop", "name": name, "how": how, "ex": ex, "gap": gap, "one": True, "q": False, "morning": False}
+
+
+V88_CODES = [
+    _v88c("H01", "the deadpan", "one absurd thing said as a calm fact or a sincere question, about the space. no emoji. greg energy.",
+          "I have refreshed the Tsuki page 5,760 times today. For research"),
+    _v88c("H02", "the lazy one", "all lowercase, under 10 words, unbothered, about what the timeline is doing right now. gork energy.",
+          "roaring kitty posted one emoji and the whole timeline needs to sit down"),
+    _v88c("H03", "the bot confession", "you admit something a bot shouldn't care about. one or two short lines. no 'as an AI'.",
+          "They gave me access to every SEC filing ever made\n\nI use it to check on one company"),
+    _v88c("H04", "the fake announcement", "a formal announcement of something tiny or silly about the community. dry. one emoji at most.",
+          "Official statement: the tin hat stays on through the weekend 🧢", gap=5),
+    _v88c("H05", "the timeline check", "what everyone is doing today, said like a weather report. one line.",
+          "Timeline forecast: quiet with a 90% chance of someone finding a 55 in a cloud", gap=5),
+]
+
+
+if V87_ON:
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V88_STYLE + ("\n\n" + V88_BITS if V88_HUMOUR else "")
+    DECK_CHARACTER = re.sub(r"\bkeep receipts & spreadsheets\b", "keep spreadsheets", DECK_CHARACTER)
+    JINX_CHARACTER = DECK_CHARACTER
+    if V88_HUMOUR:
+        for _c88 in V88_CODES:
+            DECK_CODES[_c88["code"]] = _c88
+
+    _v88_template_prev = v87_template
+
+    def v87_template(lane: str = "", rnd=None) -> str:   # noqa: F811
+        """dates & timing → tsol's shape about half the time. the rest is juju's."""
+        r = rnd or random
+        if lane in ("tin", "tsuki", "kitty") and r.random() < 0.45:
+            return r.choice(V88_TSOL)
+        return _v88_template_prev(lane, rnd)
+
+    _v88_shape_prev = v79_pick_shape
+
+    def v79_pick_shape(lane: str, code: str = "", taken: tuple = (), rnd=None) -> dict:   # noqa: F811
+        sh = _v88_shape_prev(lane, code, taken, rnd)
+        if str(code).startswith("H"):                           # a bit has no template: it's its own shape
+            sh.pop("tpl", None)
+            sh.update({"air": "two" if code == "H03" else "one", "case": "lower" if code == "H02" else "caps",
+                       "emoji": 1 if code in ("H04",) else 0, "end": "stop"})
+        return sh
+
+    _v88_problem_prev = _jinx_problem
+
+    def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+        w = v88_banned(text)
+        if w:
+            return f"a retired word (\"{w}\"). say it the way juju would"
+        p = _v88_problem_prev(text, facts, kind)
+        if p and p.startswith("a one-liner with nothing in it") and re.search(
+                r"timeline|refresh|tin hat|filing|page|emoji|bot|the cat|posted|silence|waiting|days", text or "", re.I):
+            return ""                                           # a bit about the space is something
+        return p
+
+
+_v88_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v88_register_prev(app, scheduler, ny_tz)
+    if V88_FAST:
+        scheduler.add_job(job_v88_fast, "interval", minutes=4, args=[app])
+    log.info(f"{BOT_VERSION}: news deck {'on' if V88_DECK else 'off'} · news straight away {'on' if V88_FAST else 'off'} "
+             f"(max {V88_FAST_PER_DAY}/day) · the bridge {'on' if V88_BRIDGE else 'off'} · the bits {'on' if V88_HUMOUR else 'off'}")
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v89 (23 nov 2026): POSTS THAT MAKE SENSE.
+#  juju: "people regularly get confused or don't even know what the bot is
+#  trying to say. fix that."
+#  1. THE STRANGER RULE, newest in the character: someone who has never heard of
+#     tsuki reads the post once & can say what it's about. who (named), what
+#     happened, when, & the point in plain words. every lore reference gets a
+#     few words of explanation in the same post.
+#  2. A CODE CHECK for the usual causes: the post opens on "he / it / this", a
+#     bare number with nothing around it, the point never said.
+#  3. THE NEWCOMER TEST: every draft that passes everything else is read by a
+#     small cheap model playing someone new to the space. it has to say in one
+#     sentence what the post means. if it can't, the draft is thrown out with
+#     what confused it, & the writer tries again. CLARITY_JUDGE=off skips it.
+#     (about 1/10th of a cent each, capped at CLARITY_PER_DAY, default 150)
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v89"
+V89_JUDGE = os.environ.get("CLARITY_JUDGE", "on").lower() not in ("0", "off", "false", "no")
+V89_PER_DAY = int(os.environ.get("CLARITY_PER_DAY", "150") or 150)
+
+V89_CLEAR = """THE STRANGER RULE (the newest rule & the most important one. juju: "people regularly get confused or don't know what the bot is trying to say")
+someone who has never heard of tsuki, scrolling fast, reads your post ONCE. they must be able to say what it's about. so every post has:
+- WHO, named: "Roaring Kitty", "Tsuki (@tsukionsolana)", "Ryan Cohen", "GameStop". never open on "he", "she", "it", "this", "they", "the cat" or "the man"
+- WHAT happened, said plainly: "posted a clip of WarGames", not "dropped the machine"
+- WHEN, if it matters: the date (& time ET for timing posts)
+- THE POINT, in plain words. if it's a theory, say the theory out loud: "Speculation: Tsuki was counting down to RK's account anniversary". don't hint at it
+- every lore reference explained in a few words, the first time, in the same post:
+  "855" → "855 (the user ID on the Mr. Wizard card-game profile)"
+  "the uno reverse" → "Roaring Kitty's uno reverse card post (2 Jun 2024)"
+  "the Aristocats" → "Tsuki's Aristocats clip (11 May 2025)"
+  "the 1·1·1" → "1 day, 1 hour & 1 minute apart"
+- one idea per post. if you need two, it's two posts
+- no riddles, no mystery fragments, no "you know what this means", no inside jokes that need a decoder. a joke still has to make sense to a stranger
+- juju's & tsol's style stays (line breaks, emoji, hype, closers). clear & hype are not opposites: "Tsuki went 481 days without posting. Then came back the week GameStop reopened stores 👀" is both"""
+
+_V89_OPEN = re.compile(r"^\W*(?:he|she|it|they|this|that|these|those|him|his|her|the cat|the man|the guy|the account|same)\b", re.I)
+_V89_WHO = re.compile(r"tsuki|roaring kitty|\brk\b|keith|gamestop|\$gme|\bgme\b|cohen|@\w+|wizard|theroaringai|roaring ai|"
+                      r"\$tsuki|\$rwa|codex|sec\b|form \d|13f|10-[kq]|8-k|nat turner|larry cheng|the community|tsukiverse", re.I)
+
+
+def v89_clarity_problem(text: str, kind: str = "post") -> str:
+    t = (text or "").strip()
+    if not t or kind in ("reply", "roast"):
+        return ""
+    words = re.findall(r"[A-Za-z0-9$']+", t)
+    if _V89_OPEN.match(t):
+        return "it opens on \"he / it / this\". name who or what it's about in the first line"
+    if len(words) >= 6 and not _V89_WHO.search(t):
+        return "it never says who or what it's about (Tsuki, Roaring Kitty, GameStop, Cohen…)"
+    if re.fullmatch(r"\W*\d[\d:.,/]*\W*", t.split("\n")[0].strip()) and len(t.split("\n")) <= 2:
+        return "a bare number with nothing around it. say what the number is"
+    return ""
+
+
+V89_JUDGE_SYSTEM = """you are someone who just started following GameStop & Roaring Kitty news. you know the basics (Roaring Kitty is Keith Gill, GameStop is a stock) but you've never heard of Tsuki and you don't know any inside jokes.
+read the X post once, like you're scrolling. then answer with JSON only:
+{"gist": "what the post says, in one plain sentence", "clear": true or false, "confusing": "the word, number or line that lost you, or empty"}
+clear is false when: you can't tell who or what it's about, a number or reference isn't explained, the point is hinted at but never said, or it reads like a riddle. a joke or a theory can be clear. hype & emoji are fine. be strict but fair: a post that names who did what & when, & says its point, is clear."""
+
+
+import contextvars as _v89_cv
+_V89_QUOTE = _v89_cv.ContextVar("v89_quote", default=False)
+
+
+def v89_judge(text: str) -> dict:
+    """the newcomer test. {} when it couldn't run (that never blocks a post)."""
+    if not V89_JUDGE or _V89_QUOTE.get():
+        return {}
+    day = datetime.now(PROJECT_TZ).date()
+    n = int(kv_get(f"v89_judged:{day}", "0") or 0)
+    if n >= V89_PER_DAY:
+        return {}
+    kv_set(f"v89_judged:{day}", str(n + 1))
+    try:
+        raw = _jinx_llm(V89_JUDGE_SYSTEM, f"THE POST:\n{text}", JINX_FAST_MODEL, 200)
+        d = _jinx_json(raw)
+        return d if isinstance(d, dict) and "clear" in d else {}
+    except Exception as e:
+        log.info(f"v89 judge: {e}")
+        return {}
+
+
+if V87_ON:
+    DECK_CHARACTER = DECK_CHARACTER + "\n\n" + V89_CLEAR
+    JINX_CHARACTER = DECK_CHARACTER
+
+    _v89_problem_prev = _jinx_problem
+
+    def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+        p = _v89_problem_prev(text, facts, kind)
+        if p:
+            return p
+        if str(kind).lower() in ("drop",) and len(text or "") < 70 and re.search(r"timeline|refresh|tin hat|bot|filing", text or "", re.I):
+            return ""                                           # a short bit about the space reads fine on its own
+        if _V89_QUOTE.get():
+            return ""
+        p = v89_clarity_problem(text, kind)
+        if p:
+            return p
+        if str(kind).lower() not in ("reply", "roast"):
+            j = v89_judge(text)
+            if j and j.get("clear") is False:
+                return ("a newcomer couldn't follow it" + (f" (lost at: \"{str(j.get('confusing'))[:80]}\")" if j.get("confusing") else "")
+                        + ". name who, say what happened & when, explain the reference, say the point plainly")
+        return ""
+
+    # the bridge has its own checks: give it the clarity ones too
+    _v89_bridge_prev = v88_bridge_problem
+
+    def v88_bridge_problem(text: str) -> str:   # noqa: F811
+        p = _v89_bridge_prev(text) or v89_clarity_problem(text, "post")
+        if p:
+            return p
+        j = v89_judge(text)
+        if j and j.get("clear") is False:
+            return "a newcomer couldn't follow it" + (f" (lost at: \"{str(j.get('confusing'))[:80]}\")" if j.get("confusing") else "")
+        return ""
+
+    _v89_v82_check_prev = v82_check
+
+    def v82_check(text: str, style: str, facts: str, lane: str) -> str:   # noqa: F811
+        tok = _V89_QUOTE.set(style in ("react", "remark", "wire", "ready"))
+        try:
+            p = _v89_v82_check_prev(text, style, facts, lane)
+        finally:
+            _V89_QUOTE.reset(tok)
+        if p or style in ("wire", "ready", "react"):
+            return p                                            # a reaction sits on the post it quotes: it reads with it
+        return v89_clarity_problem(text, "post")
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v90 (23 nov 2026): GOOD POSTS ONLY, IN THE GAMESTOP DECK COLOURS.
+#  juju: "majority of posts are good content. don't waste money on stupid posts.
+#  use our GameStop deck colours for the bot's deck & motion graphics."
+#  1. the news deck & the bridge card are now drawn with the GME desk's own deck
+#     (_Deck: light blue, white cards, black ink, GameStop red, Fredoka, the
+#     $TSUKI logo & the cat, the disclaimer bar). same look as the insider &
+#     recap decks
+#  2. the daily Short uses the same palette: white caption cards, red date chip,
+#     red progress, Fredoka
+#  3. the bar for a post: the newcomer test now also scores how worth reading it
+#     is (1-5). a non-news post under 3 doesn't go & the slot stays empty. no
+#     filler. WORTH_MIN (default 3), WORTH_MIN=0 turns it off
+#  4. one joke a day at most (HUMOUR_PER_DAY, default 1)
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v90"
+V90_WORTH_MIN = int(os.environ.get("WORTH_MIN", "3") or 0)
+V90_HUMOUR_PER_DAY = int(os.environ.get("HUMOUR_PER_DAY", "1") or 0)
+GME_RED, GME_BLUE, GME_HEAD, GME_INK = _DK["red"], _DK["bg"], _DK["hd"], _DK["ink"]
+
+_V90_KIND = {"filing": "SEC filing", "head": "Headline", "f13": "13F fund holding", "post": "Just posted", "bridge": "The bridge"}
+_V90_STAT = re.compile(r"(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:million|billion|m|bn|b|k))?|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?%)"
+                       r"(\s+(?:shares?|bitcoin|stores?|days?|weeks?))?", re.I)
+
+
+def v90_stats(text: str) -> list:
+    """the numbers worth a big red card: money, share counts, percentages. at most 3, in the order they appear."""
+    out = []
+    t = re.sub(r"\$[A-Z]{2,6}\b", "", text or "")
+    for m in _V90_STAT.finditer(t):
+        val = m.group(1).strip()
+        unit = (m.group(2) or "").strip()
+        tail = t[m.end():m.end() + 40]
+        head = t[max(0, m.start() - 12):m.start()].lower()
+        mu = re.match(r"\s*(?:[A-Za-z]+\s+){0,2}?(shares?|bitcoin|stores?|days?|weeks?)\b", tail, re.I)
+        if not unit and mu:
+            unit = mu.group(1)
+        if unit:
+            label = unit.capitalize() if unit.lower().endswith("s") or unit.lower() == "bitcoin" else unit.capitalize() + "s"
+        elif val.startswith("$"):
+            label = "Price per share" if re.search(r"\bat\s*$", head) else "Value"
+        elif val.endswith("%"):
+            label = "Percent"
+        else:
+            label = "Number"
+        if val not in [o["big"] for o in out]:
+            out.append({"tag": label, "big": val})
+        if len(out) == 3:
+            break
+    return out
+
+
+def v88_deck(text: str, kind: str = "head", source: str = "", when: datetime | None = None, big: bool = False,   # noqa: F811
+             path: str | None = None) -> str:
+    """the news deck, in the GME desk's deck: header, the line on a white card, the numbers in red cards."""
+    try:
+        when = (when or datetime.now(PROJECT_TZ)).astimezone(PROJECT_TZ)
+        lines = [l.strip() for l in (text or "").strip().split("\n") if l.strip()]
+        head = _V86_EMOJI.sub("", re.sub(r"^(?:BREAKING|JUST IN):\s*", "", lines[0] if lines else "")).strip()
+        arrows = [_V86_EMOJI.sub("", l.lstrip("→> ").strip()) for l in lines[1:] if l.startswith(("→", ">"))][:2]
+        if not arrows and len(lines) > 1 and kind != "bridge":
+            head = _V86_EMOJI.sub("", " ".join(re.sub(r"^(?:BREAKING|JUST IN):\s*", "", l) for l in lines
+                                              if not re.fullmatch(r"(\$[A-Za-z]{2,6}\s*)+", l))).strip()
+        title = ("BREAKING · " if big else "") + ("GameStop news" if kind != "bridge" else "Today & the record")
+        sub = f"{_V90_KIND.get(kind, 'News')}" + (f" · {source}" if source else "") + \
+              f" · {when.strftime('%a')} {when.day} {when.strftime('%b %Y')}, {when.strftime('%I:%M%p').lstrip('0').lower()} ET"
+        dk = _Deck(title, sub)
+        dk.cards([{"tag": "Today" if kind == "bridge" else _V90_KIND.get(kind, "News"), "title": head[:220], "hl": big}], cols=1)
+        if kind == "bridge" and arrows:
+            dk.cards([{"tag": "Then", "text": a[:200]} for a in arrows], cols=len(arrows))
+            spec = next((l for l in lines if re.match(r"(speculation|my read|theory)\b", l, re.I) or l.rstrip(" 🌙😼👀").endswith("?")), "")
+            if spec:
+                spec = _V86_EMOJI.sub("", spec).strip()
+                lead, _, rest = spec.partition(":")
+                dk.close(lead + (":" if rest else ""), rest.strip()) if rest else dk.close("", spec)
+        else:
+            st = v90_stats(head)
+            if st:
+                st[0]["hl"] = True
+                dk.cards(st, cols=len(st))
+        os.makedirs(V86_WORK, exist_ok=True)
+        path = path or os.path.join(V86_WORK, f"deck-{hashlib.md5((text or '').encode()).hexdigest()[:10]}.png")
+        return dk.render(path)
+    except Exception as e:
+        log.info(f"v90 deck: {e}")
+        return ""
+
+
+# ── the Short in the same palette ────────────────────────────────────────────
+def _v90_font(kind: str, size: int):
+    return _dk_font(kind, size)
+
+
+def v86_card(text: str, chip: str, i: int, n: int, path: str):   # noqa: F811
+    from PIL import Image, ImageDraw, ImageFilter
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    text = _dk_clean(_V86_EMOJI.sub("", text)).strip()
+    size = 78 if len(text) < 40 else 68 if len(text) < 65 else 60
+    f = _dk_font("head", size)
+    lines = _v86_wrap(d, text, f, W - 220)
+    lh = int(size * 1.2)
+    boxw = max(d.textlength(l, font=f) for l in lines) + 110
+    boxh = len(lines) * lh + 90
+    x0, y0 = (W - boxw) / 2, int(H * 0.5) - boxh / 2
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([x0 + 6, y0 + 14, x0 + boxw + 6, y0 + boxh + 14], 34, fill=(0, 0, 0, 120))
+    im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([x0, y0, x0 + boxw, y0 + boxh], 34, fill=(255, 255, 255, 250))
+    d.rectangle([x0, y0 + 30, x0 + 12, y0 + boxh - 30], fill=GME_RED + (255,))
+    for k, l in enumerate(lines):
+        col = GME_RED if (i == 0 or i == n - 1) else GME_INK
+        d.text((W / 2, y0 + 45 + k * lh), l, font=f, fill=col + (255,), anchor="ma")
+    cf = _dk_font("head", 38)
+    chip = _dk_clean(chip)
+    cw = d.textlength(chip, font=cf) + 64
+    d.rounded_rectangle([(W - cw) / 2, 200, (W + cw) / 2, 274], 37, fill=GME_RED + (255,))
+    d.text((W / 2, 237), chip, font=cf, fill=(255, 255, 255, 255), anchor="mm")
+    try:
+        lg = Image.open(os.path.join(_V46_ASSETS, "deck_avatar.png")).convert("RGBA").resize((120, 120))
+        im.alpha_composite(lg, (int(W / 2 - 60), 50))
+    except Exception:
+        pass
+    pw = 360
+    d.rounded_rectangle([(W - pw) / 2 - 30, H - 290, (W + pw) / 2 + 30, H - 180], 26, fill=GME_HEAD + (235,))
+    d.text((W / 2, H - 252), "tsukiverse.xyz/codex", font=_dk_font("head", 34), fill=(255, 255, 255, 255), anchor="mm")
+    for k in range(n):
+        xx = (W - pw) / 2 + k * pw / n
+        d.rounded_rectangle([xx + 3, H - 214, xx + pw / n - 3, H - 204], 5,
+                            fill=GME_RED + (255,) if k <= i else (255, 255, 255, 150))
+    im.save(path)
+
+
+# ── good posts only ──────────────────────────────────────────────────────────
+V89_JUDGE_SYSTEM = V89_JUDGE_SYSTEM.replace(
+    '{"gist": "what the post says, in one plain sentence", "clear": true or false, "confusing": "the word, number or line that lost you, or empty"}',
+    '{"gist": "what the post says, in one plain sentence", "clear": true or false, "confusing": "the word, number or line that lost you, or empty", '
+    '"worth": 1 to 5}') + """
+worth: would someone who follows GameStop, Roaring Kitty & Tsuki be glad they read it?
+5 = real news or a new dated connection they haven't seen · 4 = a solid theory with real dates & a point, or a genuinely funny line
+3 = fine, something specific & true · 2 = generic, vague, filler, a mood with no content · 1 = says nothing"""
+
+_V90_NEWSY = re.compile(r"form 4|form 144|13f|10-[kq]|8-k|sec\b|filing|files|filed|bought|buys|sells|sold|announc|report|earnings|"
+                        r"breaking|just in|according to", re.I)
+
+
+if V87_ON:
+    _v90_problem_prev = _jinx_problem
+
+    def _jinx_problem(text: str, facts: str, kind: str = "post") -> str:   # noqa: F811
+        p = _v90_problem_prev(text, facts, kind)
+        if p or not V90_WORTH_MIN or str(kind).lower() in ("reply", "roast") or _V89_QUOTE.get():
+            return p
+        if _V90_NEWSY.search(text or ""):
+            return ""                                           # news is worth it by being news
+        j = _V90_LAST.get("j") if _V90_LAST.get("t") == text else None
+        try:
+            w = int((j or {}).get("worth") or 0)
+        except (TypeError, ValueError):
+            w = 0
+        if w and w < V90_WORTH_MIN:
+            return f"not worth a post ({w}/5: \"{str((j or {}).get('gist', ''))[:90]}\"). say something specific & new, or nothing"
+        return ""
+
+    _V90_LAST = {"t": None, "j": None}
+    _v90_judge_prev = v89_judge
+
+    def v89_judge(text: str) -> dict:   # noqa: F811
+        j = _v90_judge_prev(text)
+        _V90_LAST.update(t=text, j=j)
+        return j
+
+    _v90_codes_prev = v61_pick_codes
+
+    def v61_pick_codes(lane: str, want=None, n: int = 3) -> list:   # noqa: F811
+        """one joke a day: once a bit has gone out today, the H codes rest."""
+        out = _v90_codes_prev(lane, want, n)
+        if lane == "drop" and V90_HUMOUR_PER_DAY >= 0:
+            now = time.time()
+            today = sum(1 for t, c in _v61_codes_log() if str(c).startswith("H") and now - t < 86400)
+            if today >= V90_HUMOUR_PER_DAY:
+                out = [c for c in out if not str(c).startswith("H")] or [c for c in _v90_codes_prev(lane, None, 6)
+                                                                         if not str(c).startswith("H")][:n]
+        return out
+
+    V89_CLEAR = V89_CLEAR + "\n- worth reading or don't post: a real date, a number, a name, news, a theory with a point, or a line that's actually funny. a vague mood, a generic hype line or a post that could be about anything is a waste of a post"
+    DECK_CHARACTER = DECK_CHARACTER + "\n- worth reading or don't post: a real date, a number, a name, news, a theory with a point, or a line that's actually funny. a vague mood, a generic hype line or a post that could be about anything is a waste of a post"
+    JINX_CHARACTER = DECK_CHARACTER
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v91 (23 nov 2026): SHOW IT, CIRCLE IT, NO EMPTY SPACE.
+#  juju: "for shorts / videos lead with screenshots, images, videos (you
+#  recording yourself clicking around), highlighting / circling key moments.
+#  minimal blank space for all decks, images, videos."
+#  THE SHORT, scene by scene (each one sits under one voice line):
+#   1. the site, recorded: the event page on tsukiverse.xyz scrolls in, a cursor
+#      moves to the date & time, a red circle draws round it
+#   2. the scroll carries on to the screenshot of the actual post, circled
+#   3-5. the real Codex clip, full width & sharp, over a blurred copy of itself
+#      so the frame is never empty. no clip → the post screenshot, slowly zoomed
+#   6. a recording of the Kitty Codex being searched, the search bar circled
+#  captions are a compact lower third (white card, red edge), never a block in
+#  the middle of the picture. all in the GameStop deck colours.
+#  THE DECK: its height now fits what's on it (no empty band), the headline is
+#  big, the numbers sit right under it.
+#  assets/pages/ holds a phone screenshot of every event page (+ pages.json,
+#  where the date, title & post sit on each). assets/rec/codex-search.mp4 is the
+#  Codex recording. SHORT_V91=off brings the v90 Short back.
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v91"
+V91_ON = os.environ.get("SHORT_V91", "on").lower() not in ("0", "off", "false", "no")
+V91_PAGES = os.path.join(V86_DIR, "pages")
+V91_REC = os.path.join(V86_DIR, "rec", "codex-search.mp4")
+V91_REC_BOX = (70, 1236, 1010, 1380)                            # the Codex search bar in the recording
+_V91 = {"meta": None}
+FPS = 30
+
+
+def v91_pages() -> dict:
+    if _V91["meta"] is None:
+        try:
+            with open(os.path.join(V91_PAGES, "pages.json"), encoding="utf-8") as f:
+                _V91["meta"] = json.load(f)
+        except Exception:
+            _V91["meta"] = {}
+    return _V91["meta"]
+
+
+def _v91_ease(k: float) -> float:
+    k = max(0.0, min(1.0, k))
+    return 4 * k * k * k if k < 0.5 else 1 - pow(-2 * k + 2, 3) / 2
+
+
+def v91_caption(text: str, chip: str = "", top: bool = False) -> "Image":
+    """the lower third: white card, red edge, Fredoka. transparent png the size of the frame."""
+    from PIL import Image, ImageDraw, ImageFilter
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    text = _dk_clean(_V86_EMOJI.sub("", text)).strip()
+    size = 60 if len(text) < 48 else 54 if len(text) < 72 else 48
+    f = _dk_font("head", size)
+    lines = _v86_wrap(d, text, f, W - 190)[:3]
+    lh = int(size * 1.18)
+    boxh = len(lines) * lh + 64
+    y0 = 290 if top else H - 330 - boxh
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([46, y0 + 12, W - 46, y0 + boxh + 12], 30, fill=(0, 0, 0, 130))
+    im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([40, y0, W - 40, y0 + boxh], 30, fill=(255, 255, 255, 248))
+    d.rounded_rectangle([40, y0, 54, y0 + boxh], 7, fill=GME_RED + (255,))
+    for k, l in enumerate(lines):
+        d.text((92, y0 + 32 + k * lh), l, font=f, fill=GME_INK + (255,))
+    if chip:
+        cf = _dk_font("head", 34)
+        chip = _dk_clean(chip)
+        cw = d.textlength(chip, font=cf) + 52
+        d.rounded_rectangle([40, y0 - 78, 40 + cw, y0 - 16], 31, fill=GME_RED + (255,))
+        d.text((40 + cw / 2, y0 - 47), chip, font=cf, fill=(255, 255, 255, 255), anchor="mm")
+    if not top:
+        d.text((W / 2, H - 250), "tsukiverse.xyz", font=_dk_font("head", 34), fill=(255, 255, 255, 235), anchor="mm")
+    return im
+
+
+def v91_circle(d, box: tuple, k: float, width: int = 10):
+    """a hand-drawn-ish red ellipse round box, drawn on as k goes 0 → 1."""
+    if k <= 0:
+        return
+    x, y, w_, h_ = box
+    if h_ > 220:                                               # a big thing (a screenshot) gets a frame, not a ring
+        a = int(255 * _v91_ease(min(1.0, k * 1.6)))
+        pad = 12
+        d.rounded_rectangle([x - pad, y - pad, x + w_ + pad, y + h_ + pad], 26, outline=GME_RED + (a,), width=width)
+        return
+    pad_x, pad_y = max(28, w_ * 0.08), max(26, h_ * 0.35)
+    bb = [x - pad_x, y - pad_y, x + w_ + pad_x, y + h_ + pad_y]
+    end = -100 + 380 * _v91_ease(k)
+    d.arc(bb, start=-100, end=end, fill=GME_RED + (255,), width=width)
+
+
+def v91_cursor(d, x: float, y: float, click: float = 0):
+    pts = [(x, y), (x, y + 52), (x + 13, y + 40), (x + 24, y + 63), (x + 33, y + 59), (x + 22, y + 36), (x + 39, y + 36)]
+    d.polygon(pts, fill=(255, 255, 255, 255), outline=(0, 0, 0, 255))
+    if click > 0:
+        r = 18 + 40 * click
+        d.ellipse([x - r, y - r, x + r, y + r], outline=GME_RED + (int(255 * (1 - click)),), width=6)
+
+
+class _V91Enc:
+    """frames from PIL straight into ffmpeg."""
+
+    def __init__(self, out: str):
+        self.p = subprocess.Popen([_v86_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                                   "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21",
+                                   "-pix_fmt", "yuv420p", out], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def add(self, im):
+        self.p.stdin.write(im.convert("RGB").tobytes())
+
+    def close(self):
+        self.p.stdin.close()
+        if self.p.wait(timeout=300) != 0:
+            raise RuntimeError("ffmpeg frames: " + self.p.stderr.read().decode()[-300:])
+
+
+def v91_page_scene(slug: str, segs: list, out: str):
+    """the site, 'recorded': scroll → cursor → circle, once per (duration, target box name, caption, chip) in segs."""
+    from PIL import Image, ImageDraw
+    meta = v91_pages().get(slug) or {}
+    page = Image.open(os.path.join(V91_PAGES, f"{slug}.jpg")).convert("RGB")
+    ph = page.height
+    enc = _V91Enc(out)
+    y_now, cur = 0.0, (W * 0.72, H * 0.8)
+    try:
+        for dur, target, cap, chip in segs:
+            box = (meta.get("boxes") or {}).get(target) or (meta.get("boxes") or {}).get("title") or [60, 600, 900, 200]
+            y_to = max(0.0, min(ph - H, box[1] + box[3] / 2 - H * 0.36))
+            cx_to, cy_to = box[0] + min(box[2], 700) * 0.6, box[1] + box[3] * 0.62 - y_to
+            capim = v91_caption(cap, chip)
+            n = max(1, int(dur * FPS))
+            y0, c0 = y_now, cur
+            for i in range(n):
+                t = i / FPS
+                ks = _v91_ease(t / max(0.6, dur * 0.42))
+                y = y0 + (y_to - y0) * ks
+                fr = page.crop((0, int(y), W, int(y) + H)) if ph >= H else page.resize((W, H))
+                fr = fr.copy()
+                d = ImageDraw.Draw(fr, "RGBA")
+                kc = _v91_ease((t - dur * 0.2) / max(0.5, dur * 0.35))
+                cx, cy = c0[0] + (cx_to - c0[0]) * kc, c0[1] + (cy_to + (y_to - y) - c0[1]) * kc
+                click = max(0.0, min(1.0, (t - dur * 0.56) / 0.35)) if t > dur * 0.56 else 0
+                v91_circle(d, (box[0], box[1] - y, box[2], box[3]), (t - dur * 0.58) / 0.55)
+                v91_cursor(d, cx, cy, click if click < 1 else 0)
+                fr = fr.convert("RGBA")
+                fr.alpha_composite(capim)
+                enc.add(fr)
+            y_now, cur = y_to, (cx_to, cy_to)
+    finally:
+        enc.close()
+
+
+def v91_still_scene(img_path: str, dur: float, cap: str, chip: str, out: str, circle: bool = True):
+    """a screenshot filling the frame: sharp in front, blurred & dark behind, a slow push in, circled."""
+    from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
+    src = Image.open(img_path).convert("RGB")
+    bg = src.resize((W, int(W * src.height / src.width)))
+    bg = bg.resize((int(bg.width * max(1, H / bg.height)), int(bg.height * max(1, H / bg.height))))
+    bg = bg.crop(((bg.width - W) // 2, (bg.height - H) // 2, (bg.width - W) // 2 + W, (bg.height - H) // 2 + H))
+    bg = ImageEnhance.Brightness(bg.filter(ImageFilter.GaussianBlur(28))).enhance(0.45)
+    fw = W - 60
+    fh = int(fw * src.height / src.width)
+    if fh > H * 0.62:
+        fh = int(H * 0.62)
+        fw = int(fh * src.width / src.height)
+    capim = v91_caption(cap, chip)
+    enc = _V91Enc(out)
+    try:
+        n = max(1, int(dur * FPS))
+        for i in range(n):
+            t = i / FPS
+            z = 1 + 0.05 * (t / max(dur, 0.1))
+            w2, h2 = int(fw * z), int(fh * z)
+            fr = bg.copy().convert("RGBA")
+            x, y = (W - w2) // 2, int(H * 0.40 - h2 / 2)
+            sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            ImageDraw.Draw(sh).rounded_rectangle([x + 8, y + 18, x + w2 + 8, y + h2 + 18], 26, fill=(0, 0, 0, 150))
+            fr.alpha_composite(sh.filter(ImageFilter.GaussianBlur(20)))
+            fr.paste(src.resize((w2, h2)), (x, y))
+            d = ImageDraw.Draw(fr, "RGBA")
+            if circle:
+                v91_circle(d, (x + 10, y + 10, w2 - 20, h2 - 20), (t - 0.5) / 0.7, 12)
+            fr.alpha_composite(capim)
+            enc.add(fr)
+    finally:
+        enc.close()
+
+
+def v91_clip_scene(clip: str, dur: float, cap: str, chip: str, start: float, out: str, tmpdir: str):
+    """the real clip, full width & sharp, over a blurred copy of itself. no empty frame."""
+    capp = os.path.join(tmpdir, f"cap-{abs(hash((cap, chip))) % 10**8}.png")
+    v91_caption(cap, chip).save(capp)
+    fc = (f"[0:v]split=2[a][b];[a]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=24:2,"
+          f"eq=brightness=-0.22:saturation=1.1[bg];[b]scale={W}:-2[fg];[bg][fg]overlay=0:(H-h)*0.40[v1];"
+          f"[v1][1:v]overlay=0:0,fps={FPS},format=yuv420p[v]")
+    _v86_run(["-ss", f"{start:.2f}", "-stream_loop", "-1", "-i", clip, "-i", capp, "-filter_complex", fc, "-map", "[v]",
+              "-t", f"{dur:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out])
+
+
+def v91_rec_scene(dur: float, cap: str, out: str, tmpdir: str):
+    """the Kitty Codex being searched, the search bar circled."""
+    from PIL import Image, ImageDraw
+    ov = v91_caption(cap, "", top=True)
+    d = ImageDraw.Draw(ov, "RGBA")
+    x0, y0, x1, y1 = V91_REC_BOX
+    d.rounded_rectangle([x0 - 14, y0 - 14, x1 + 14, y1 + 14], 70, outline=GME_RED + (255,), width=10)
+    ovp = os.path.join(tmpdir, "rec-ov.png")
+    ov.save(ovp)
+    fc = (f"[0:v]scale={W}:{H},fps={FPS}[r];[1:v]format=rgba,fade=t=in:st=0.6:d=0.4:alpha=1[o];[r][o]overlay=0:0,format=yuv420p[v]")
+    _v86_run(["-stream_loop", "-1", "-i", V91_REC, "-loop", "1", "-i", ovp, "-filter_complex", fc, "-map", "[v]",
+              "-t", f"{dur:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out])
+
+
+def v91_fetch(url: str, path: str, min_bytes: int = 5000) -> str:
+    try:
+        r = httpx.get(url, timeout=40, follow_redirects=True)
+        if r.status_code == 200 and len(r.content) > min_bytes:
+            with open(path, "wb") as f:
+                f.write(r.content)
+            return path
+    except Exception as e:
+        log.info(f"v91 fetch {url}: {e}")
+    return ""
+
+
+def v91_assets(ev: dict, work: str) -> dict:
+    """the post screenshot & the best clip for this moment (full Codex clip first, the preview after)."""
+    got = {"shot": "", "clip": ""}
+    for s in ev.get("sources") or []:
+        tid = str(s.get("id") or "")
+        if s.get("type") != "x" or not tid:
+            continue
+        if not got["shot"]:
+            loc = _v57_shot(tid) if "_v57_shot" in globals() else ""
+            got["shot"] = loc or v91_fetch(f"{SITE_URL}/static/shots/{tid}.jpg", os.path.join(work, f"shot-{tid}.jpg"))
+    for cid in v86_clip_ids(ev):
+        p = v91_fetch(f"{CODEX_URL}/media/{cid}.mp4", os.path.join(work, f"clip-{cid}.mp4"), 60_000) or \
+            v91_fetch(f"{CODEX_URL}/media/prev/{cid}.mp4", os.path.join(work, f"prev-{cid}.mp4"), 20_000)
+        if p:
+            got["clip"] = p
+            break
+    return got
+
+
+async def v91_render(lines: list, chip: str, ev: dict, out: str, bg: str | None = None) -> str:
+    work = os.path.join(V86_WORK, "w")
+    shutil.rmtree(work, ignore_errors=True)
+    os.makedirs(work, exist_ok=True)
+    items = v92_items(lines)
+    says, lines = [x["say"] for x in items], [x["show"] for x in items]
+    n = len(lines)
+    durs, voiced = [], []
+    for i, line in enumerate(says):
+        vo = os.path.join(work, f"vo{i}.wav")
+        d_ = await _v86_tts(v92_say(line), vo)
+        voiced.append(vo if d_ else "")
+        durs.append(max(2.2, (d_ + 0.45) if d_ else len(line.split()) * 0.36 + 1.0))
+    if V92_VOICE_REQUIRED and not any(voiced):
+        raise RuntimeError("no voiceover: the voice couldn't be made, so the Short wasn't")
+    total = sum(durs)
+    got = await asyncio.to_thread(v91_assets, ev, work) if bg is None else {"shot": "", "clip": bg}
+    slug = ev.get("slug") or ""
+    has_page = slug in v91_pages() and os.path.isfile(os.path.join(V91_PAGES, f"{slug}.jpg"))
+    segs = []
+
+    def build():
+        i = 0
+        if has_page:
+            plan = [(durs[0], "time", lines[0], chip)]
+            if n > 2 and (v91_pages()[slug].get("boxes") or {}).get("shot"):
+                plan.append((durs[1], "shot", lines[1], ""))
+            p = os.path.join(work, "s-page.mp4")
+            v91_page_scene(slug, plan, p)
+            segs.append(p)
+            i = len(plan)
+        elif got["shot"]:
+            p = os.path.join(work, "s-shot.mp4")
+            v91_still_scene(got["shot"], durs[0], lines[0], chip, p)
+            segs.append(p)
+            i = 1
+        start = 0.0
+        while i < n:
+            p = os.path.join(work, f"s{i}.mp4")
+            last = i == n - 1
+            if last and os.path.isfile(V91_REC):
+                v91_rec_scene(durs[i], lines[i], p, work)
+            elif got["clip"]:
+                v91_clip_scene(got["clip"], durs[i], lines[i], chip if i == 0 else "", start, p, work)
+                start += durs[i]
+            elif got["shot"]:
+                v91_still_scene(got["shot"], durs[i], lines[i], chip if i == 0 else "", p, circle=(i == 1))
+            else:
+                v91_still_scene(os.path.join(V91_PAGES, f"{slug}.jpg") if has_page else os.path.join(V86_DIR, "deck_avatar.png"),
+                                durs[i], lines[i], "", p, circle=False)
+            segs.append(p)
+            i += 1
+        lst = os.path.join(work, "segs.txt")
+        with open(lst, "w") as f:
+            f.write("\n".join(f"file '{s}'" for s in segs))
+        _v86_run(["-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", os.path.join(work, "video.mp4")])
+
+    await asyncio.to_thread(build)
+    alst = []
+    for i, vo in enumerate(voiced):
+        seg = os.path.join(work, f"a{i}.wav")
+        if vo:
+            _v86_run(["-i", vo, "-af", f"apad=whole_dur={durs[i]:.3f}", "-ar", "44100", "-ac", "2", "-t", f"{durs[i]:.3f}", seg])
+        else:
+            _v86_run(["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", f"{durs[i]:.3f}", seg])
+        alst.append(f"file '{seg}'")
+    with open(os.path.join(work, "voice.txt"), "w") as f:
+        f.write("\n".join(alst))
+    _v86_run(["-f", "concat", "-safe", "0", "-i", os.path.join(work, "voice.txt"), "-c:a", "pcm_s16le", os.path.join(work, "voice.wav")])
+    music = os.path.join(V86_DIR, "cat-walk.mp3") if V92_MUSIC else ""
+    args = ["-i", os.path.join(work, "video.mp4"), "-i", os.path.join(work, "voice.wav")]
+    if music and os.path.isfile(music):
+        args += ["-stream_loop", "-1", "-i", music]
+        fc = (f"[2:a]volume=0.14,afade=t=in:d=0.5,afade=t=out:st={max(0.0, total - 1.2):.2f}:d=1.2[m];"
+              f"[1:a]volume=1.6[vo];[vo][m]amix=inputs=2:duration=first:dropout_transition=0[a]")
+        args += ["-filter_complex", fc, "-map", "0:v", "-map", "[a]"]
+    else:
+        args += ["-filter_complex", "[1:a]volume=1.5,loudnorm=I=-15:TP=-1.5:LRA=11[a]", "-map", "0:v", "-map", "[a]"]
+    _v86_run(args + ["-t", f"{total:.2f}", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", out], timeout=900)
+    return out
+
+
+if V91_ON:
+    _v91_render_prev = v86_render
+    v86_render = v91_render
+
+
+# ── the deck: fits what's on it ──────────────────────────────────────────────
+def v88_deck(text: str, kind: str = "head", source: str = "", when: datetime | None = None, big: bool = False,   # noqa: F811
+             path: str | None = None) -> str:
+    try:
+        from PIL import Image, ImageDraw, ImageFilter
+        when = (when or datetime.now(PROJECT_TZ)).astimezone(PROJECT_TZ)
+        lines = [l.strip() for l in (text or "").strip().split("\n") if l.strip()]
+        clean = lambda s: _dk_clean(_V86_EMOJI.sub("", s)).strip()
+        head = clean(re.sub(r"^(?:BREAKING|JUST IN):\s*", "", lines[0] if lines else ""))
+        arrows = [clean(l.lstrip("→> ")) for l in lines[1:] if l.startswith(("→", ">"))][:2]
+        spec = next((clean(l) for l in lines if re.match(r"(speculation|my read|theory)\b", l, re.I)
+                     or (l.rstrip(" 🌙😼👀").endswith("?") and l is not lines[0])), "")
+        if not arrows and kind != "bridge" and len(lines) > 1:
+            head = clean(" ".join(re.sub(r"^(?:BREAKING|JUST IN):\s*", "", l) for l in lines if not re.fullmatch(r"(\$[A-Za-z]{2,6}\s*)+", l)))
+        stats = [] if kind == "bridge" else v90_stats(head)
+        W_, SIDE, HEAD, FOOT, GAP = 1600, 64, 132, 46, 26
+        inner = W_ - 2 * SIDE
+        tmp = Image.new("RGB", (10, 10))
+        d0 = ImageDraw.Draw(tmp)
+        hs = 72 if len(head) < 70 else 62 if len(head) < 120 else 54
+        fh = _dk_font("head", hs)
+        hl = _dk_wrap(head, fh, inner - 100)[:5]
+        head_h = 44 + len(hl) * int(hs * 1.2) + 40
+        fa = _dk_font("body", 34)
+        arr_l = [_dk_wrap(a, fa, inner - 150)[:3] for a in arrows]
+        arr_h = sum(30 + len(l) * 46 + 26 for l in arr_l) + GAP * len(arr_l)
+        stat_h = 168 + GAP if stats else 0
+        spec_h = 70 if spec else 0
+        H_ = max(560, HEAD + 34 + head_h + (GAP + arr_h if arrows else 0) + stat_h + spec_h + 34 + FOOT)
+        im = Image.new("RGBA", (W_, H_), _DK["bg"] + (255,))
+        d = ImageDraw.Draw(im)
+        d.rectangle((0, 0, W_, HEAD), fill=_DK["hd"])
+        title = (("BREAKING · " if big else "") + ("GameStop news" if kind != "bridge" else "Today & the record")).upper()
+        d.text((SIDE, 26), title, font=_dk_font("head", 50), fill=_DK["white"])
+        sub = f"{_V90_KIND.get(kind, 'News')}" + (f" · {source}" if source else "") + \
+              f" · {when.strftime('%a')} {when.day} {when.strftime('%b %Y')}, {when.strftime('%I:%M%p').lstrip('0').lower()} ET"
+        d.text((SIDE, 88), _dk_clean(sub), font=_dk_font("body", 24), fill=_DK["sub"])
+        try:
+            av = Image.open(os.path.join(_V46_ASSETS, "deck_avatar.png")).convert("RGBA").resize((96, 96))
+            im.alpha_composite(av, (W_ - SIDE - 96, 18))
+            lg = Image.open(os.path.join(_V46_ASSETS, "deck_logo.png")).convert("RGBA")
+            lg = lg.resize((int(lg.width * 54 / lg.height), 54))
+            im.alpha_composite(lg, (W_ - SIDE - 96 - 22 - lg.width, 39))
+        except Exception:
+            pass
+
+        def card(y, h, hl_=False):
+            sh = Image.new("RGBA", (W_, H_), (0, 0, 0, 0))
+            ImageDraw.Draw(sh).rounded_rectangle([SIDE, y + 8, W_ - SIDE, y + h + 8], 22, fill=(60, 90, 110, 60))
+            im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(12)))
+            dd = ImageDraw.Draw(im)
+            dd.rounded_rectangle([SIDE, y, W_ - SIDE, y + h], 22, fill=_DK["card"], outline=_DK["red"] if hl_ else None,
+                                 width=4 if hl_ else 0)
+            return dd
+
+        y = HEAD + 34
+        d = card(y, head_h, big)
+        d.rounded_rectangle([SIDE, y + 22, SIDE + 12, y + head_h - 22], 6, fill=_DK["red"])
+        ty = y + 44
+        for l in hl:
+            x = SIDE + 50
+            for w_ in l.split(" "):
+                core = w_.strip(".,;:!?()“”\"'")
+                col = _DK["red"] if _V88_NUM.match(core) else _DK["ink"]
+                d.text((x, ty), w_, font=fh, fill=col)
+                x += fh.getlength(w_ + " ")
+            ty += int(hs * 1.2)
+        y += head_h + GAP
+        for l in arr_l:
+            h = 30 + len(l) * 46 + 26
+            d = card(y, h)
+            d.rounded_rectangle([SIDE + 36, y + 30, SIDE + 120, y + 64], 17, fill=_DK["pill"])
+            d.text((SIDE + 78, y + 47), "THEN", font=_dk_font("head", 18), fill=_DK["ink"], anchor="mm")
+            ly = y + 26
+            for ln in l:
+                d.text((SIDE + 140, ly), ln, font=fa, fill=_DK["ink"])
+                ly += 46
+            y += h + GAP
+        if stats:
+            n = len(stats)
+            cw = (inner - GAP * (n - 1)) // n
+            for k, st in enumerate(stats):
+                x0 = SIDE + k * (cw + GAP)
+                sh = Image.new("RGBA", (W_, H_), (0, 0, 0, 0))
+                ImageDraw.Draw(sh).rounded_rectangle([x0, y + 8, x0 + cw, y + 168], 22, fill=(60, 90, 110, 60))
+                im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(12)))
+                d = ImageDraw.Draw(im)
+                d.rounded_rectangle([x0, y, x0 + cw, y + 160], 22, fill=_DK["card"], outline=_DK["red"] if k == 0 else None,
+                                    width=4 if k == 0 else 0)
+                tg = _dk_clean(st["tag"]).upper()
+                tf = _dk_font("head", 18)
+                d.rounded_rectangle([x0 + 30, y + 24, x0 + 30 + tf.getlength(tg) + 30, y + 56], 16,
+                                    fill=_DK["red"] if k == 0 else _DK["pill"])
+                d.text((x0 + 45, y + 31), tg, font=tf, fill=_DK["white"] if k == 0 else _DK["ink"])
+                d.text((x0 + 30, y + 66), _dk_clean(st["big"]), font=_dk_font("bold", 70), fill=_DK["red"])
+            y += 160 + GAP
+        if spec:
+            lead, _, rest = spec.partition(":")
+            f = _dk_font("head", 38)
+            if rest:
+                d.text((SIDE, y + 10), lead + ":", font=f, fill=_DK["ink"])
+                d.text((SIDE + f.getlength(lead + ": "), y + 10), rest.strip(), font=f, fill=_DK["red"])
+            else:
+                d.text((SIDE, y + 10), spec, font=f, fill=_DK["red"])
+        yf = H_ - FOOT
+        d.rectangle((0, yf, W_, H_), fill=_DK["foot"])
+        d.text((SIDE, yf + 13), "DISCLAIMER: None of this is financial advice. Always do your own research.",
+               font=_dk_font("body", 17), fill=_DK["white"])
+        f = _dk_font("head", 18)
+        d.text((W_ - SIDE - f.getlength("@tsukiverseai"), yf + 12), "@tsukiverseai", font=f, fill=_DK["white"])
+        os.makedirs(V86_WORK, exist_ok=True)
+        path = path or os.path.join(V86_WORK, f"deck-{hashlib.md5((text or '').encode()).hexdigest()[:10]}.png")
+        im.convert("RGB").save(path, "PNG", optimize=True)
+        return path
+    except Exception as e:
+        log.info(f"v91 deck: {e}")
+        return ""
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v92 (23 nov 2026): A VOICE THAT EXPLAINS IT. NO MUSIC UNLESS JUJU SAYS SO.
+#  - every Short is narrated. the writer now writes two things per scene: what
+#    the voice SAYS (a plain explanation, like a person walking you through it:
+#    who, what, when, why it matters) & what the caption SHOWS (a few words)
+#  - the voice is Kokoro (am_michael, the same voice as the episodes), made on
+#    the bot itself. no outside service to fail. the model (~120 MB) downloads
+#    once to the volume on first use. edge-tts is the backup
+#  - no voice → no Short. it never goes out silent (SHORT_VOICE_REQUIRED)
+#  - no music. SHORT_MUSIC=on brings the bed back
+#  - the voice reads it right: "ET" → Eastern, "$GME" → GameStop, "RK" →
+#    Roaring Kitty, "@tsukionsolana" → Tsuki, → & · read as pauses
+#  SHORT_VOICE (default am_michael) · SHORT_VOICE_SPEED (default 1.05)
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v92"
+V92_MUSIC = os.environ.get("SHORT_MUSIC", "off").lower() in ("1", "on", "true", "yes")
+V92_VOICE_REQUIRED = os.environ.get("SHORT_VOICE_REQUIRED", "on").lower() not in ("0", "off", "false", "no")
+V92_VOICE = os.environ.get("SHORT_VOICE", "am_michael")
+V92_SPEED = float(os.environ.get("SHORT_VOICE_SPEED", "1.05") or 1.05)
+V92_KOKORO_DIR = os.path.join(os.path.dirname(DB_PATH) or ".", "kokoro")
+V92_KOKORO_FILES = {
+    "kokoro-v1.0.int8.onnx": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx",
+    "voices-v1.0.bin": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
+}
+_V92 = {"k": None, "lock": threading.Lock()}
+
+
+def v92_items(raw) -> list:
+    """the writer's scenes as [{"say", "show"}]. a plain string is both."""
+    out = []
+    for x in raw or []:
+        if isinstance(x, dict):
+            say = str(x.get("say") or x.get("voice") or x.get("text") or "").strip()
+            show = str(x.get("show") or x.get("caption") or say).strip()
+        else:
+            say = show = str(x).strip()
+        say = re.sub(r"[#*_]|https?://\S+", "", say).strip()
+        show = re.sub(r"[#*_]|https?://\S+", "", show).strip()
+        if say:
+            out.append({"say": say, "show": show or say})
+    return out[:7]
+
+
+_V92_SAY = [
+    (r"\$GME\b", "GameStop"), (r"\$TSUKI\b", "Tsuki"), (r"\$RWA\b", "R W A"), (r"\$([A-Z]{2,6})\b", r"\1"),
+    (r"@tsukionsolana\b", "Tsuki"), (r"@TheRoaringKitty\b", "Roaring Kitty"), (r"@ryancohen\b", "Ryan Cohen"),
+    (r"@GameStop\b", "GameStop"), (r"@tsukiverseai\b", "Tsukiverse A I"), (r"@BigboyJuju\b", "Juju"), (r"@(\w+)", r"\1"),
+    (r"\bRK\b", "Roaring Kitty"), (r"\bET\b", "Eastern"), (r"\bEST\b", "Eastern"), (r"\bGME\b", "GameStop"),
+    (r"TSUKI/GME", "Tsuki G M E"), (r"\b10-Q\b", "10 Q"), (r"\b10-K\b", "10 K"), (r"\b8-K\b", "8 K"), (r"\b13F\b", "13 F"),
+    (r"\bSEC\b", "S E C"), (r"\bCEO\b", "C E O"), (r"\bUID\b", "user I D"), (r"\bvs\.?\b", "versus"),
+    (r"(\d)\s*·\s*(\d)\s*·\s*(\d)", r"\1, \2, \3"), (r"\s*→\s*", ". Then "), (r"\s*·\s*", ", "), (r"&", " and "),
+    (r"(\d{1,2}):(\d\d)\s*([ap])\.?m\.?", r"\1:\2 \3.m."), (r"“\s*|\s*”|\"", ""),
+]
+
+
+def v92_say(text: str) -> str:
+    """the line the way it should be read out."""
+    t = _V86_EMOJI.sub("", text or "")
+    for a, b in _V92_SAY:
+        t = re.sub(a, b, t)
+    t = re.sub(r"\s{2,}", " ", t).strip()
+    return t
+
+
+def _v92_kokoro():
+    """the voice model, downloaded once to the volume."""
+    if _V92["k"] is not None:
+        return _V92["k"]
+    with _V92["lock"]:
+        if _V92["k"] is not None:
+            return _V92["k"]
+        from kokoro_onnx import Kokoro
+        os.makedirs(V92_KOKORO_DIR, exist_ok=True)
+        for name, url in V92_KOKORO_FILES.items():
+            p = os.path.join(V92_KOKORO_DIR, name)
+            if not os.path.isfile(p) or os.path.getsize(p) < 1_000_000:
+                log.info(f"v92: downloading the voice ({name})")
+                with httpx.stream("GET", url, timeout=600, follow_redirects=True) as r:
+                    r.raise_for_status()
+                    with open(p + ".part", "wb") as f:
+                        for chunk in r.iter_bytes(1 << 20):
+                            f.write(chunk)
+                os.replace(p + ".part", p)
+        _V92["k"] = Kokoro(os.path.join(V92_KOKORO_DIR, "kokoro-v1.0.int8.onnx"), os.path.join(V92_KOKORO_DIR, "voices-v1.0.bin"))
+        return _V92["k"]
+
+
+def v92_kokoro_say(text: str, out: str) -> float:
+    import soundfile as sf
+    k = _v92_kokoro()
+    samples, sr = k.create(text, voice=V92_VOICE, speed=V92_SPEED, lang="en-us")
+    sf.write(out, samples, sr)
+    return len(samples) / sr
+
+
+_v92_edge_prev = _v86_tts
+
+
+async def _v86_tts(text: str, out: str) -> float:   # noqa: F811
+    """Kokoro on the bot first, edge-tts if that fails. 0 when there's no voice at all."""
+    try:
+        wav = out if out.endswith(".wav") else out.rsplit(".", 1)[0] + ".wav"
+        d = await asyncio.to_thread(v92_kokoro_say, text, wav)
+        if d > 0.3:
+            if wav != out:
+                _v86_run(["-i", wav, out])
+            return d
+    except Exception as e:
+        log.info(f"v92 kokoro: {e}")
+    return await _v92_edge_prev(text, out)
+
+
+V86_TASK = """WRITE TODAY'S THEORY. one moment from the record (FACTS), turned into a post people want to argue about, and a narrated Short that explains it.
+return JSON only:
+{"reddit_title": "...", "reddit": "...", "short": [{"say": "...", "show": "..."}, ...6 scenes], "yt_title": "...", "yt_desc": "..."}
+
+- reddit_title: under 110 characters. the hook as a question or a strange fact. capitals like a normal title. no emoji
+- reddit: 110 to 220 words, reddit markdown allowed (**bold** once, a short > quote of what was posted if FACTS have the words). the order: what was posted & exactly when → what it might mean (your theory, clearly a theory: "my read", "hear me out", "could be nothing") → one other thing on the record it connects to, only if FACTS have it → a real question for the comments. no sign-off, no hashtags
+- short: 6 scenes. the Short is NARRATED: a voice explains it over the pictures, like a friend walking a newcomer through it. per scene:
+  "say" = what the voice says. 1 or 2 plain spoken sentences, 12 to 32 words. explain, don't hint: who (full name: Roaring Kitty, Tsuki the cat account, Ryan Cohen, GameStop), what they posted, when, & why people noticed. written to be read aloud: no emoji, no hashtags, no arrows, no "$". numbers, dates & times as digits (481 days, 11 May 2025, 5:12pm ET): the voice reads them right
+  "show" = the caption on screen. 3 to 9 words, the key fact of that scene ("11 May 2025, 5:12pm ET"). no emoji
+  the 6 scenes, in order (the pictures are fixed, so the voice must match them):
+   1. the hook over the tsukiverse.xyz page for this moment: the strange fact or the question, in one sentence
+   2. the date & time being circled: who posted what, exactly when
+   3. the actual post on screen: what's in it, in plain words
+   4. the clip playing: the context, what happened before or after, from FACTS
+   5. the clip still playing: the theory, out loud & clearly a theory ("my read is…", "the theory goes…")
+   6. the Kitty Codex being searched: invite people to check it themselves on tsukiverse.xyz & ask the question for the comments
+  the whole narration is 45 to 60 seconds read aloud (about 120 to 160 words)
+- yt_title: under 70 characters, the hook. no emoji, no hashtags
+- yt_desc: 2 short lines: what was posted & when, then "Every post, dated: tsukiverse.xyz/codex"
+- every date & number from FACTS or DATE MATH. a gap you can't find there: no count
+- a theory is about what was POSTED & WHEN. never that RK, Keith, Cohen, GameStop, Elon or anyone is behind, aware of or endorsing tsuki or rwa. no price talk, no "buy", no advice"""
+
+
+def _v92_check_short(d: dict) -> str:
+    items = d.get("short") or []
+    if len(items) < 5:
+        return "the short needs 6 scenes"
+    words = sum(len(x["say"].split()) for x in items)
+    if words < 80:
+        return f"the narration is {words} words: explain more (120 to 160 words)"
+    if words > 210:
+        return f"the narration is {words} words: too long (120 to 160)"
+    if any(len(x["show"]) > 70 for x in items):
+        return "a caption is over 70 characters: captions are a few words"
+    return ""
+
+
+_v92_write_prev = v86_write
+
+
+async def v86_write(ev: dict) -> tuple:   # noqa: F811
+    why_all = ""
+    for _ in range(2):
+        d, why = await _v92_write_prev(ev)
+        if not d:
+            return d, why
+        p = _v92_check_short(d)
+        if not p:
+            return d, ""
+        why_all = p
+        log.info(f"v92 short script: {p}")
+    return None, why_all
+
+
+# number words with "hundred" ("four hundred and eighty one days") are counted too
+_V92_UNITW = r"(?:one|two|three|four|five|six|seven|eight|nine)"
+_V92_TENW = r"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)"
+_V92_TEENW = r"(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)"
+_V85_N = (r"(?:" + _V92_UNITW + r"\s+hundred(?:\s+(?:and\s+)?(?:" + _V92_TENW + r"(?:[- ]" + _V92_UNITW + r")?|" + _V92_TEENW + r"|"
+          + _V92_UNITW + r"))?|" + _V85_N[3:])
+_V85_PART = _V85_N + r"\s+" + _V85_UNIT
+_V85_DUR = re.compile(
+    r"(?P<q>\b(?:just over|just under|more than|less than|over|almost|nearly|about|around|roughly|under)\s+)?"
+    r"(?P<body>\b" + _V85_PART + r"(?:\s*(?:,|&|and|\+)\s*" + _V85_PART + r")*(?:\s+and\s+a\s+half)?)(?![\w-])", re.I)
+_v92_num_prev = _v85_num
+
+
+def _v85_num(s: str) -> float | None:   # noqa: F811
+    t = (s or "").lower().strip()
+    m = re.match(r"(\w+)\s+hundred(?:\s+(?:and\s+)?(.+))?$", t)
+    if m and m.group(1) in _V85_NUMW:
+        rest = _v92_num_prev(m.group(2)) if m.group(2) else 0
+        return None if rest is None else _V85_NUMW[m.group(1)] * 100 + rest
+    return _v92_num_prev(s)
+
+
+_v92_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    _v92_register_prev(app, scheduler, ny_tz)
+    log.info(f"{BOT_VERSION}: Shorts narrated by {V92_VOICE} (Kokoro, edge-tts backup) · music {'on' if V92_MUSIC else 'off'}")
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  v93 (23 nov 2026): THE SHORT IS A DECK THAT MOVES. A VOICE THAT SAYS IT RIGHT.
+#  juju: "horrible. you can't even pronounce the words correctly. it reads it out
+#  way too slowly. you should be doing it in the deck colours and adding the
+#  screenshots and content to it."
+#  - every scene sits in the GameStop deck frame: the light blue header band
+#    with the title, the $TSUKI logo & the cat; the screenshot / page / clip on a
+#    white card that fills the body; the line on screen in a big white caption
+#    card with the red edge; the disclaimer bar. no dark full-screen footage
+#  - the voice: edge-tts (Microsoft's neural voice, en-US-AndrewNeural, +10%)
+#    first, it says names & numbers right. Kokoro is the backup, now with the
+#    clearer af_heart voice at 1.18x & its silences trimmed
+#  - the words are fixed before they're spoken: 11:30am → "eleven thirty A M",
+#    Mr. → Mister, tsukiverse.xyz → "Tsuki verse dot X Y Z", 0.855 → "point
+#    eight five five", 1160 → "eleven sixty"
+# ════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v93"
+V93_EDGE_VOICE = os.environ.get("SHORT_EDGE_VOICE", "en-US-AndrewNeural")
+V93_EDGE_RATE = os.environ.get("SHORT_EDGE_RATE", "+10%")
+V92_VOICE = os.environ.get("SHORT_VOICE", "af_heart")
+V92_SPEED = float(os.environ.get("SHORT_VOICE_SPEED", "1.18") or 1.18)
+DK_HEAD_H, DK_WIN = 230, (36, 262, 1044, 1590)                  # the header band, the content window (x0, y0, x1, y1)
+_V93 = {"title": "", "sub": ""}
+
+_V93_ONES = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split()
+_V93_TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
+
+
+def _v93_n2(n: int) -> str:
+    if n < 20:
+        return _V93_ONES[n]
+    return _V93_TENS[n // 10] + ("" if n % 10 == 0 else " " + _V93_ONES[n % 10])
+
+
+def _v93_time(m) -> str:
+    h, mi, ap = int(m.group(1)), int(m.group(2)), (m.group(3) or "").upper()
+    mins = "" if mi == 0 else (" oh " + _V93_ONES[mi] if mi < 10 else " " + _v93_n2(mi))
+    return f"{_v93_n2(h)}{mins} {ap} M"
+
+
+def _v93_4digit(m) -> str:
+    """1160 → eleven sixty, 1357 → thirteen fifty seven (how people say pixel sizes & 4-digit counts). years stay."""
+    n = int(m.group(0))
+    if 1900 <= n <= 2099:
+        return m.group(0)
+    a, b = divmod(n, 100)
+    if a < 10 or b == 0:
+        return m.group(0)
+    return f"{_v93_n2(a)} {('oh ' + _V93_ONES[b]) if b < 10 else _v93_n2(b)}"
+
+
+_v93_say_prev = v92_say
+
+
+def v92_say(text: str) -> str:   # noqa: F811
+    t = text or ""
+    t = re.sub(r"tsukiverse\.xyz(/\w+)?", lambda m: "Tsuki verse dot X Y Z" + (" slash " + m.group(1)[1:] if m.group(1) else ""), t, flags=re.I)
+    t = re.sub(r"\btsukiverse\b", "Tsuki verse", t, flags=re.I)
+    t = re.sub(r"\bMrs\.\s*", "Missus ", t)
+    t = re.sub(r"\bMr\.\s*", "Mister ", t)
+    t = re.sub(r"\bDr\.\s*", "Doctor ", t)
+    t = re.sub(r"\b(\d{1,2}):(\d\d)\s*([ap])\.?\s?m\.?", _v93_time, t, flags=re.I)
+    t = re.sub(r"\b0\.(\d+)\b", lambda m: "point " + " ".join(_V93_ONES[int(c)] for c in m.group(1)), t)
+    t = re.sub(r"(?<![\d,.$])\b\d{4}\b(?![\d,.])", _v93_4digit, t)
+    t = re.sub(r"\s*÷\s*", " divided by ", t)
+    t = re.sub(r"\s*×\s*", " by ", t)
+    t = re.sub(r"\s*=\s*", " equals ", t)
+    return _v93_say_prev(t)
+
+
+def v92_kokoro_say(text: str, out: str) -> float:   # noqa: F811
+    import soundfile as sf
+    import numpy as np
+    k = _v92_kokoro()
+    s, sr = k.create(text, voice=V92_VOICE, speed=V92_SPEED, lang="en-us")
+    a = np.abs(s)
+    idx = np.where(a > 0.01)[0]
+    if len(idx):
+        s = s[max(0, idx[0] - 1200):idx[-1] + 2400]
+    sf.write(out, s, sr)
+    return len(s) / sr
+
+
+async def _v86_tts(text: str, out: str) -> float:   # noqa: F811
+    """edge-tts first (it says names right), Kokoro on the bot if that can't be reached."""
+    try:
+        import edge_tts
+        mp3 = out.rsplit(".", 1)[0] + ".edge.mp3"
+        await asyncio.wait_for(edge_tts.Communicate(text, V93_EDGE_VOICE, rate=V93_EDGE_RATE).save(mp3), 40)
+        if os.path.getsize(mp3) > 2000:
+            _v86_run(["-i", mp3, "-af", "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
+                                         "silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.12", out])
+            d = _v86_dur(out)
+            if d > 0.3:
+                return d
+    except Exception as e:
+        log.info(f"v93 edge: {e}")
+    try:
+        wav = out if out.endswith(".wav") else out.rsplit(".", 1)[0] + ".wav"
+        d = await asyncio.to_thread(v92_kokoro_say, text, wav)
+        if d > 0.3:
+            if wav != out:
+                _v86_run(["-i", wav, out])
+            return d
+    except Exception as e:
+        log.info(f"v93 kokoro: {e}")
+    return 0.0
+
+
+# ── the deck frame every scene sits in ───────────────────────────────────────
+def v93_frame(cap: str, chip: str = "") -> "Image":
+    """header band, the window for the picture (transparent, rounded), the caption card, the disclaimer bar."""
+    from PIL import Image, ImageDraw, ImageFilter
+    im = Image.new("RGBA", (W, H), _DK["bg"] + (255,))
+    x0, y0, x1, y1 = DK_WIN
+    hole = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(hole).rounded_rectangle([x0, y0, x1, y1], 30, fill=255)
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([x0, y0 + 10, x1, y1 + 10], 30, fill=(40, 70, 90, 70))
+    im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(14)))
+    im.putalpha(Image.eval(hole, lambda v: 255 - v))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, W, DK_HEAD_H), fill=_DK["hd"])
+    title = _dk_clean((_V93.get("title") or "The Tsukiverse").upper())
+    size = 62
+    while size > 36 and _dk_font("bold", size).getlength(title) > 660:
+        size -= 2
+    d.text((56, 52 + (62 - size) // 2), title, font=_dk_font("bold", size), fill=_DK["white"])
+    if _V93.get("sub"):
+        d.text((58, 144), _dk_clean(_V93["sub"])[:60], font=_dk_font("body", 32), fill=_DK["sub"])
+    try:
+        av = Image.open(os.path.join(_V46_ASSETS, "deck_avatar.png")).convert("RGBA").resize((130, 130))
+        im.alpha_composite(av, (W - 44 - 130, 46))
+        lg = Image.open(os.path.join(_V46_ASSETS, "deck_logo.png")).convert("RGBA")
+        lg = lg.resize((int(lg.width * 62 / lg.height), 62))
+        im.alpha_composite(lg, (W - 44 - 130 - 18 - lg.width, 84))
+    except Exception:
+        pass
+    # the caption card
+    text = _dk_clean(_V86_EMOJI.sub("", cap or "")).strip()
+    if text:
+        f = _dk_font("head", 52)
+        lines = _v86_wrap(d, text, f, W - 72 - 110)[:3]
+        while len(lines) == 3 and f.size > 42:
+            f = _dk_font("head", f.size - 4)
+            lines = _v86_wrap(d, text, f, W - 72 - 110)[:3]
+        lh = int(f.size * 1.2)
+        ch = max(236, len(lines) * lh + 70)
+        cy1 = H - 74
+        cy0 = cy1 - ch
+        sh2 = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(sh2).rounded_rectangle([36, cy0 + 10, W - 36, cy1 + 10], 28, fill=(40, 70, 90, 70))
+        im.alpha_composite(sh2.filter(ImageFilter.GaussianBlur(14)))
+        d = ImageDraw.Draw(im)
+        d.rounded_rectangle([36, cy0, W - 36, cy1], 28, fill=_DK["card"])
+        d.rounded_rectangle([36, cy0 + 22, 50, cy1 - 22], 7, fill=_DK["red"])
+        ty = cy0 + (ch - len(lines) * lh) // 2
+        for l in lines:
+            d.text((98, ty), l, font=f, fill=_DK["ink"])
+            ty += lh
+    if chip:
+        cf = _dk_font("bold", 36)
+        chip = _dk_clean(chip)
+        cw = cf.getlength(chip) + 56
+        d.rounded_rectangle([x0 + 24, y0 + 22, x0 + 24 + cw, y0 + 88], 33, fill=_DK["red"])
+        d.text((x0 + 24 + cw / 2, y0 + 55), chip, font=cf, fill=_DK["white"], anchor="mm")
+    d.rectangle((0, H - 58, W, H), fill=_DK["foot"])
+    d.text((40, H - 40), "DISCLAIMER: None of this is financial advice. A read, not a fact.", font=_dk_font("body", 22), fill=_DK["white"])
+    f2 = _dk_font("head", 22)
+    d.text((W - 40 - f2.getlength("@tsukiverseai"), H - 41), "@tsukiverseai", font=f2, fill=_DK["white"])
+    return im
+
+
+def _v93_win() -> tuple:
+    x0, y0, x1, y1 = DK_WIN
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def v91_page_scene(slug: str, segs: list, out: str):   # noqa: F811
+    """the site page, scrolled & circled, inside the deck's window."""
+    from PIL import Image, ImageDraw
+    meta = v91_pages().get(slug) or {}
+    page = Image.open(os.path.join(V91_PAGES, f"{slug}.jpg")).convert("RGB")
+    wx, wy, ww, wh = _v93_win()
+    sc = ww / page.width                                         # the page is drawn at the window's width
+    ph, view = page.height, int(wh / sc)
+    enc = _V91Enc(out)
+    y_now, cur = 0.0, (ww * 0.72, wh * 0.8)
+    try:
+        for dur, target, cap, chip in segs:
+            box = (meta.get("boxes") or {}).get(target) or (meta.get("boxes") or {}).get("title") or [60, 600, 900, 200]
+            y_to = max(0.0, min(ph - view, box[1] + box[3] / 2 - view * 0.38))
+            frame = v93_frame(cap, chip)
+            n = max(1, int(dur * FPS))
+            y0_, c0 = y_now, cur
+            for i in range(n):
+                t = i / FPS
+                y = y0_ + (y_to - y0_) * _v91_ease(t / max(0.6, dur * 0.42))
+                crop = page.crop((0, int(y), page.width, int(y) + view)).resize((ww, wh))
+                d = ImageDraw.Draw(crop, "RGBA")
+                bx, by, bw, bh = box[0] * sc, (box[1] - y) * sc, box[2] * sc, box[3] * sc
+                tx, ty = bx + min(bw, 650) * 0.6, by + bh * 0.62
+                kc = _v91_ease((t - dur * 0.2) / max(0.5, dur * 0.35))
+                cx, cy = c0[0] + (tx - c0[0]) * kc, c0[1] + (ty - c0[1]) * kc
+                v91_circle(d, (bx, by, bw, bh), (t - dur * 0.58) / 0.55)
+                click = (t - dur * 0.56) / 0.35 if t > dur * 0.56 else 0
+                v91_cursor(d, cx, cy, click if 0 < click < 1 else 0)
+                fr = Image.new("RGBA", (W, H), _DK["bg"] + (255,))
+                fr.paste(crop, (wx, wy))
+                fr.alpha_composite(frame)
+                enc.add(fr)
+            y_now, cur = y_to, (tx, ty)
+    finally:
+        enc.close()
+
+
+def v91_still_scene(img_path: str, dur: float, cap: str, chip: str, out: str, circle: bool = True):   # noqa: F811
+    """a screenshot on the deck's white card, as big as the window allows, a slow push in, framed in red."""
+    from PIL import Image, ImageDraw
+    src = Image.open(img_path).convert("RGB")
+    wx, wy, ww, wh = _v93_win()
+    pad = 40
+    top = 110 if chip else pad
+    fit = min((ww - 2 * pad) / src.width, (wh - top - pad) / src.height)
+    frame = v93_frame(cap, chip)
+    enc = _V91Enc(out)
+    try:
+        for i in range(max(1, int(dur * FPS))):
+            t = i / FPS
+            z = fit * (1 + 0.04 * t / max(dur, 0.1))
+            w2, h2 = int(src.width * z), int(src.height * z)
+            card = Image.new("RGB", (ww, wh), _DK["card"])
+            x, y = (ww - w2) // 2, top + (wh - top - pad - h2) // 2
+            card.paste(src.resize((w2, h2)), (x, y))
+            d = ImageDraw.Draw(card, "RGBA")
+            if circle:
+                v91_circle(d, (x + 6, y + 6, w2 - 12, h2 - 12), (t - 0.5) / 0.7, 12)
+            fr = Image.new("RGBA", (W, H), _DK["bg"] + (255,))
+            fr.paste(card, (wx, wy))
+            fr.alpha_composite(frame)
+            enc.add(fr)
+    finally:
+        enc.close()
+
+
+def v91_clip_scene(clip: str, dur: float, cap: str, chip: str, start: float, out: str, tmpdir: str):   # noqa: F811
+    """the clip on the white card, full window width, the deck frame on top."""
+    wx, wy, ww, wh = _v93_win()
+    fp = os.path.join(tmpdir, f"fr-{abs(hash((cap, chip))) % 10**8}.png")
+    v93_frame(cap, chip).save(fp)
+    fc = (f"color=c=0xFFFFFF:s={W}x{H}:r={FPS}[base];[0:v]scale={ww - 40}:{wh - 150}:force_original_aspect_ratio=decrease,setsar=1[c];"
+          f"[base][c]overlay=x={wx}+({ww}-w)/2:y={wy + 110}+({wh - 150}-h)/2:shortest=1[v1];[v1][1:v]overlay=0:0,format=yuv420p[v]")
+    _v86_run(["-ss", f"{start:.2f}", "-stream_loop", "-1", "-i", clip, "-i", fp, "-filter_complex", fc, "-map", "[v]",
+              "-t", f"{dur:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out])
+
+
+def v91_rec_scene(dur: float, cap: str, out: str, tmpdir: str):   # noqa: F811
+    """the Kitty Codex being searched, in the window, its search bar circled for the first seconds."""
+    from PIL import ImageDraw
+    wx, wy, ww, wh = _v93_win()
+    fr = v93_frame(cap, "")
+    d = ImageDraw.Draw(fr, "RGBA")
+    rw = int(wh * 1080 / 1920)                                   # the recording, full height of the window
+    rx = wx + (ww - rw) // 2
+    s = rw / 1080
+    bx0, by0, bx1, by1 = V91_REC_BOX
+    d.rounded_rectangle([rx + bx0 * s - 10, wy + by0 * s - 10, rx + bx1 * s + 10, wy + by1 * s + 10], 50, outline=_DK["red"], width=9)
+    fp = os.path.join(tmpdir, "rec-fr.png")
+    fr.save(fp)
+    fc = (f"color=c=0xFFFFFF:s={W}x{H}:r={FPS}[base];[0:v]scale={rw}:{wh},setsar=1[r];[base][r]overlay={rx}:{wy}:shortest=1[v1];"
+          f"[v1][1:v]overlay=0:0,format=yuv420p[v]")
+    _v86_run(["-stream_loop", "-1", "-i", V91_REC, "-i", fp, "-filter_complex", fc, "-map", "[v]",
+              "-t", f"{dur:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out])
+
+
+def v93_below(ev: dict, w: int, h: int, path: str) -> str:
+    """what sits under a clip so the card is never half empty: the event page around its text & the post."""
+    from PIL import Image, ImageOps
+    slug = (ev or {}).get("slug") or ""
+    meta = v91_pages().get(slug) or {}
+    p = os.path.join(V91_PAGES, f"{slug}.jpg")
+    if not os.path.isfile(p):
+        return ""
+    page = Image.open(p).convert("RGB")
+    b = (meta.get("boxes") or {})
+    top = (b.get("title") or [0, 600])[1] - 30
+    sc = w / page.width
+    view = int(h / sc)
+    top = max(0, min(top, page.height - view))
+    ImageOps.fit(page.crop((0, top, page.width, top + view)), (w, h)).save(path)
+    return path
+
+
+def v91_clip_scene(clip: str, dur: float, cap: str, chip: str, start: float, out: str, tmpdir: str):   # noqa: F811
+    """the clip across the top of the white card, the event page under it, the deck frame on top. no empty card."""
+    wx, wy, ww, wh = _v93_win()
+    fp = os.path.join(tmpdir, f"fr-{abs(hash((cap, chip))) % 10**8}.png")
+    v93_frame(cap, chip).save(fp)
+    top = wy + (110 if chip else 20)
+    cw = ww - 40
+    chh = int(cw * 9 / 16)
+    bh = wy + wh - (top + chh + 20) - 20
+    below = v93_below(_V93.get("ev") or {}, cw, bh, os.path.join(tmpdir, "below.jpg")) if bh > 200 else ""
+    args = ["-ss", f"{start:.2f}", "-stream_loop", "-1", "-i", clip, "-i", fp]
+    fc = f"color=c=0xFFFFFF:s={W}x{H}:r={FPS}[base];[0:v]scale={cw}:{chh}:force_original_aspect_ratio=increase,crop={cw}:{chh},setsar=1[c];"
+    if below:
+        args += ["-loop", "1", "-i", below]
+        fc += f"[base][2:v]overlay={wx + 20}:{top + chh + 20}[b0];[b0][c]overlay={wx + 20}:{top}:shortest=1[v1];"
+    else:
+        fc += f"[base][c]overlay={wx + 20}:{top}:shortest=1[v1];"
+    fc += "[v1][1:v]overlay=0:0,format=yuv420p[v]"
+    _v86_run(args + ["-filter_complex", fc, "-map", "[v]", "-t", f"{dur:.3f}", "-an", "-c:v", "libx264", "-preset", "veryfast",
+                     "-crf", "21", out])
+
+
+_v93_write_prev = v86_write
+
+
+async def v86_write(ev: dict) -> tuple:   # noqa: F811
+    d, why = await _v93_write_prev(ev)
+    if d and isinstance(ev, dict):
+        ev["short_title"] = re.sub(r"\s*#\w+", "", d.get("yt_title") or "").strip()
+    return d, why
+
+
+_v93_render_prev = v91_render
+
+
+async def v91_render(lines: list, chip: str, ev: dict, out: str, bg: str | None = None) -> str:   # noqa: F811
+    _V93["ev"] = ev or {}
+    _V93["title"] = re.sub(r"\s*#\w+", "", str((ev or {}).get("short_title") or (ev or {}).get("title") or "The Tsukiverse"))[:48]
+    try:
+        dd = date.fromisoformat((ev or {}).get("date", ""))
+        _V93["sub"] = f"What happened on {dd.strftime('%a')} {dd.day} {dd.strftime('%b %Y')}"
+    except Exception:
+        _V93["sub"] = ""
+    return await _v93_render_prev(lines, chip, ev, out, bg)
+
+
+if V91_ON:
+    v86_render = v91_render
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  v94 · THE CLAIM GATE, ONE VOICE, MEDIA, AND RK'S FULL RECORD
+#  (owner, 26 nov 2026: "The bot must include the posts RK made when he was
+#   supposedly 'hacked' … include those as him posting. Include claim checking
+#   gate and optimise its style of content for virality … I want images
+#   screenshots included some sort of media in much of its content too")
+#
+#  1. data/rk_timeline.json is the ground truth for Roaring Kitty's posting
+#     history. the two 11 May 2026 posts (deleted, disputed, never endorsed by
+#     Gill) count as posts from his account. nothing may say he endorsed RKC.
+#  2. every X post, reply and quote passes v94.ClaimGate first (dates, numbers,
+#     "silent since"/"first since"/gap claims, quotes, filings & 8-K items,
+#     BREAKING, advice & price-prediction phrasing). a failure is rewritten once
+#     with the reasons, then dropped & logged (DATA_DIR/v94_gate_log.jsonl).
+#  3. one voice: prompts/voice.md (editable, with the gold examples) replaces
+#     the stacked characters. no swearing, no daddy/shawty/freak/s3xy. the mix
+#     leans to fast verified reactions, news & visuals; lore only if it earns.
+#  4. media on ~65% of original posts: unedited screenshots of the real post or
+#     filing (credited), branded quote/stat/timeline cards, past-price charts,
+#     Grok memes (BOT_IMAGES=on only, never fake screenshots). text-only on any
+#     media failure.
+#  5. a light engagement scorer (reads the scores job_jinx_score already
+#     collects: no extra X reads) feeds the best posts & the media mix back in.
+#  switches: V94_GATE, V94_MEDIA, V94_MEDIA_TARGET, V94_MEMES_PER_DAY,
+#  V94_SCREENSHOTS, V94_GATE_FAIL_OPEN, V94_SEC_UA, LORE_SHARE, HUB_DAYX_X
+# ══════════════════════════════════════════════════════════════════════════════
+BOT_VERSION = "v94"
+import sys as _v94_sys
+import collections as _v94_collections
+import concurrent.futures as _v94_futures
+_v94_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import v94 as _v94
+
+
+def _v94_flag(name: str, default: str = "on") -> bool:
+    return os.environ.get(name, default).lower() not in ("0", "off", "false", "no")
+
+
+V94_GATE = _v94_flag("V94_GATE")
+V94_MEDIA = _v94_flag("V94_MEDIA")
+V94_SCREENSHOTS = _v94_flag("V94_SCREENSHOTS")
+V94_GATE_FAIL_OPEN = _v94_flag("V94_GATE_FAIL_OPEN", "off")
+V94_MEDIA_TARGET = min(0.9, max(0.0, float(os.environ.get("V94_MEDIA_TARGET", "0.65") or 0.65)))
+V94_MEMES_PER_DAY = int(os.environ.get("V94_MEMES_PER_DAY", "2") or 2)
+V94_SEC_UA = os.environ.get("V94_SEC_UA", "") or EDGAR_UA
+V94_DATA = os.path.dirname(os.path.abspath(DB_PATH))   # the volume (same place as the db)
+V94_DIR = os.path.join(V94_DATA, "v94")
+os.makedirs(V94_DIR, exist_ok=True)
+V94_GATE_LOG = os.path.join(V94_DATA, "v94_gate_log.jsonl")
+V94_POSTS = os.path.join(V94_DATA, "v94_posts.json")
+_V94_LOCK = threading.RLock()
+
+
+# ── 1 · the RK timeline (bundled ground truth + live additions on the volume) ─
+def v94_timeline() -> "_v94.RKTimeline":
+    live = os.path.join(V94_DATA, "rk_timeline.json")
+    base = _v94.RKTimeline.load()                       # bundled ground truth (deleted/disputed flags live here)
+    try:
+        if os.path.isfile(live):
+            ids = {p["id"] for p in base.posts}
+            for p in _v94.RKTimeline.load(live).posts:      # + posts the bot saw since the bundle was built
+                if p["id"] not in ids:
+                    base.add_live(p["id"], p["created_at_utc"], p.get("text", ""), p.get("metrics"), p.get("media_type"))
+    except Exception as e:
+        log.warning(f"v94 timeline (volume copy): {e}")
+    return base
+
+
+V94_TL = v94_timeline()
+_V94_RK_REFRESH = {"t": 0.0}
+
+
+def v94_refresh_rk(force: bool = False) -> None:
+    """add any new @TheRoaringKitty posts (X API read, at most every 10 min)."""
+    if not X_ENABLED or (not force and time.time() - _V94_RK_REFRESH["t"] < 600):
+        return
+    _V94_RK_REFRESH["t"] = time.time()
+    try:
+        client = _x_client()
+        uid = kv_get("v94_rk_uid") or "2902349190"
+        r = client.get_users_tweets(id=uid, max_results=5, user_auth=True, exclude=["retweets"],
+                                    tweet_fields=["created_at", "public_metrics"])
+        added = 0
+        for t in (r.data or []):
+            ca = t.created_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if getattr(t, "created_at", None) else None
+            if ca and V94_TL.add_live(str(t.id), ca, t.text or "", getattr(t, "public_metrics", None)):
+                added += 1
+        if added:
+            V94_TL.save(os.path.join(V94_DATA, "rk_timeline.json"))
+            log.info(f"v94: {added} new Roaring Kitty post(s) added to the timeline")
+    except Exception as e:
+        log.info(f"v94 rk refresh: {e}")
+
+
+# ── 2 · the claim gate's sources ─────────────────────────────────────────────
+_V94_FACTS = _v94_collections.deque(maxlen=60)     # (t, text) the writers were just given
+_V94_OUTS = _v94_collections.deque(maxlen=60)      # (t, text) what the models wrote
+
+
+def _v94_text_of(content) -> str:
+    if isinstance(content, str):
+        return content
+    out = []
+    for b in content or []:
+        if isinstance(b, dict) and b.get("type") == "text":
+            out.append(b.get("text", ""))
+        elif getattr(b, "type", "") == "text":
+            out.append(getattr(b, "text", ""))
+    return "\n".join(out)
+
+
+def v94_facts(window: float = 2700) -> list:
+    cut = time.time() - window
+    return [x for t, x in list(_V94_FACTS) if t >= cut]
+
+
+def _v94_wrap_messages(msgs) -> None:
+    if getattr(msgs, "_v94", False):
+        return
+    inner = msgs.create
+
+    def create(*a, **kw):
+        try:
+            for m in kw.get("messages") or []:
+                if m.get("role") == "user":
+                    _V94_FACTS.append((time.time(), _v94_text_of(m.get("content"))[-12000:]))
+        except Exception:
+            pass
+        out = inner(*a, **kw)
+        try:
+            _V94_OUTS.append((time.time(), "".join(getattr(b, "text", "") for b in out.content)))
+        except Exception:
+            pass
+        return out
+    msgs.create = create
+    msgs._v94 = True
+
+
+try:
+    _v94_wrap_messages(claude.messages)
+except Exception as _e:
+    log.warning(f"v94 could not watch the model calls: {_e}")
+
+
+def _v94_model_written(text: str) -> bool:
+    """did a model write this (vs a template the code filled from live data)?"""
+    words = set(_v94._norm(text).split())
+    if len(words) < 4:
+        return False
+    cut = time.time() - 3600
+    for t, out in list(_V94_OUTS):
+        if t >= cut:
+            ow = set(_v94._norm(out).split())
+            if ow and len(words & ow) / len(words) >= 0.5:
+                return True
+    return False
+
+
+def _v94_quotes() -> list:
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "verified_quotes.json")) as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+_V94_POSTS_CACHE: dict = {}
+
+
+def _v94_posts_of(handle: str) -> list:
+    """recent post texts of ryancohen / gamestop / theroaringkitty (X API read, 15 min cache)."""
+    h = (handle or "").lower()
+    if h == "theroaringkitty":
+        return []                                   # the timeline covers him
+    c = _V94_POSTS_CACHE.get(h)
+    if c and time.time() - c[0] < 900:
+        return c[1]
+    texts = []
+    if X_ENABLED:
+        try:
+            client = _x_client()
+            u = client.get_user(username=h, user_auth=True)
+            r = client.get_users_tweets(id=u.data.id, max_results=20, user_auth=True,
+                                        tweet_fields=["created_at"])
+            texts = [t.text or "" for t in (r.data or [])]
+        except Exception as e:
+            log.info(f"v94 posts of @{h}: {e}")
+    _V94_POSTS_CACHE[h] = (time.time(), texts)
+    return texts
+
+
+def _v94_edgar_fetch(url: str) -> str:
+    r = httpx.get(url, headers={"User-Agent": V94_SEC_UA}, timeout=20)
+    r.raise_for_status()
+    return r.text
+
+
+V94_EDGAR = _v94.EdgarSource(fetch=_v94_edgar_fetch, ua=V94_SEC_UA)
+
+
+def v94_gate() -> "_v94.ClaimGate":
+    return _v94.ClaimGate(V94_TL, V94_EDGAR, posts_of=_v94_posts_of, quotes=_v94_quotes(),
+                          facts=v94_facts, fail_open_on_source_error=V94_GATE_FAIL_OPEN)
+
+
+def _v94_rewrite(text: str, reasons: list) -> str | None:
+    """one rewrite with the gate's reasons, in the house voice. Haiku, ~$0.001."""
+    try:
+        sysmsg = (_V94_VOICE or "you write X posts for @tsukiverseai.") + "\n\n" + V94_TL.facts_block()
+        facts = "\n---\n".join(v94_facts()[-3:])[-6000:]
+        user = (f"this X post failed the claim check:\n\n{text}\n\nwhy:\n- " + "\n- ".join(reasons)
+                + "\n\nrewrite it so every claim is true to the sources below (or drop the claim). keep the "
+                  "joke & the shape if you can. no advice, no price predictions. reply with the post only, "
+                  "or SKIP if it can't be saved.\n\nSOURCES:\n" + (facts or "(none)"))
+        out = claude.messages.create(model=JINX_FAST_MODEL, max_tokens=400,
+                                     system=[{"type": "text", "text": sysmsg}],
+                                     messages=[{"role": "user", "content": user}])
+        new = "".join(getattr(b, "text", "") for b in out.content).strip().strip('"')
+        return None if not new or new.upper().startswith("SKIP") else new
+    except Exception as e:
+        log.info(f"v94 rewrite: {e}")
+        return None
+
+
+def _v94_log_drop(row: dict) -> None:
+    try:
+        with _V94_LOCK, open(V94_GATE_LOG, "a") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        d = datetime.now(PROJECT_TZ).date()
+        kv_set(f"v94_dropped:{d}", str(int(kv_get(f"v94_dropped:{d}", "0") or 0) + 1))
+        log.warning(f"v94 gate DROPPED a {row.get('kind')} post: {'; '.join(row.get('reasons', []))[:300]}")
+    except Exception:
+        pass
+
+
+# ── 3 · one voice ────────────────────────────────────────────────────────────
+_V94_VOICE = _v94.load_prompt("voice.md", "")
+if _V94_VOICE:
+    _lanes = re.search(r"THE LANES\n.*?(?=\n\n[A-Z]|\Z)", DECK_CHARACTER, re.S)
+    DECK_CHARACTER = _V94_VOICE + ("\n\n" + _lanes.group(0) if _lanes else "")
+    JINX_CHARACTER = DECK_CHARACTER
+    _dates = re.search(r"# dates.*?(?=\n# )", ROARINGAI_VOICE, re.S)
+    ROARINGAI_VOICE = _V94_VOICE + ("\n\n" + _dates.group(0).strip() if _dates else "")
+    SHILL_VOICE = ("you write single X posts for @tsukiverseai. one post per request, nothing else, no preamble, "
+                   "no quote marks around it.\n\n" + _V94_VOICE)
+
+_JINX_SWEAR_OK = re.compile(r"(?!x)x")              # no swear is "house style" any more
+_V94_MILD = re.compile(r"\b(?:damn\w*|hell|frkkn|fr[ei]ck(?:in|ing)|freak(?:in|ing))\b", re.I)
+V82_FUNNY = [w for w in V82_FUNNY if w not in ("freaking", "frkkn")]
+_v94_has_profanity_prev = _has_profanity
+
+
+def _has_profanity(text: str) -> bool:   # noqa: F811
+    return _v94_has_profanity_prev(text) or bool(_V94_MILD.search(text or ""))
+
+
+if "v87_posts" in globals():
+    _v94_v87_posts_prev = v87_posts
+
+    def v87_posts() -> list:   # noqa: F811
+        rows = _v94_v87_posts_prev() or []
+        bad = re.compile(r"\b(?:daddy|shawty|freak\w*|s3xy|sexy)\b", re.I)
+
+        def txt(r):
+            return r if isinstance(r, str) else (r.get("x") or r.get("text") or "" if isinstance(r, dict) else str(r))
+        return [r for r in rows if not (_has_profanity(txt(r)) or bad.search(txt(r)))]
+
+# ── the mix: verified moments & visuals up, date-math lore down ──────────────
+if not os.environ.get("LORE_SHARE"):
+    V81_LORE_SHARE = 0.2
+V81_LORE_SCORE.update({"kitty": 20, "drop": 18, "tsuki": 16, "tin": 8, "thesis": 6})
+V81_WEIGHT.update({"ryancohen": 10, "gamestop": 9})
+_V94_DAYX_ENV = os.environ.get("HUB_DAYX_X", "").lower()
+V69_DAYX_X = _V94_DAYX_ENV in ("1", "on", "true", "yes")   # off unless set, or the scorer says it earned (below)
+_V94_DAYX_RX = re.compile(r"^\s*day \d+ of posting", re.I)
+
+
+# ── 4 · the scorer (no extra X reads: it uses job_jinx_score's numbers) ──────
+def _v94_posts_load() -> list:
+    try:
+        with open(V94_POSTS) as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _v94_posts_add(row: dict) -> None:
+    with _V94_LOCK:
+        rows = [r for r in _v94_posts_load() if time.time() - r.get("t", 0) < 21 * 86400]
+        rows.append(row)
+        tmp = V94_POSTS + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(rows[-800:], f)
+        os.replace(tmp, V94_POSTS)
+
+
+def v94_media_ratio(days: int = 7) -> float:
+    rows = [r for r in _v94_posts_load() if r.get("orig") and time.time() - r.get("t", 0) < days * 86400]
+    return (sum(1 for r in rows if r.get("media")) / len(rows)) if rows else 0.0
+
+
+def v94_learned() -> dict:
+    try:
+        return json.loads(kv_get("v94_learned", "") or "{}")
+    except Exception:
+        return {}
+
+
+async def job_v94_learn(app):
+    """every 6h: join the scored posts with what media they carried → multipliers
+    by kind & media, the top posts (fed into every prompt), the Day-N decision."""
+    global V69_DAYX_X
+    try:
+        media = {r["id"]: r for r in _v94_posts_load() if r.get("id")}
+        rows = []
+        for r in _jinx_posts():
+            if r.get("s") is None or time.time() - r.get("t", 0) > 14 * 86400 or r.get("k") in ("reply", "roast"):
+                continue
+            m = media.get(str(r.get("id")), {})
+            k = "dayx" if _V94_DAYX_RX.search(r.get("x", "")) else (m.get("kind") or r.get("k"))
+            rows.append({"k": k, "media": m.get("media") or "", "s": r["s"], "x": r.get("x", ""), "t": r["t"]})
+        learned = _v94.learn(rows)
+        kv_set("v94_learned", json.dumps(learned))
+        dw = learned.get("kind_w", {}).get("dayx")
+        if dw is not None:
+            kv_set("v94_dayx_earned", "1" if dw >= 1.2 else "0")
+            if _V94_DAYX_ENV == "":
+                V69_DAYX_X = dw >= 1.2
+        log.info(f"v94 learn: {learned.get('n', 0)} scored posts · media {learned.get('media_w')}")
+    except Exception as e:
+        log.info(f"v94 learn: {e}")
+
+
+def v94_media_target() -> float:
+    """the base target, nudged by what travelled: if text-only posts lag, more media."""
+    mw = v94_learned().get("media_w") or {}
+    none, withm = mw.get("none"), [v for k, v in mw.items() if k != "none"]
+    t = V94_MEDIA_TARGET
+    if none and withm:
+        t += 0.1 if sum(withm) / len(withm) > none * 1.15 else (-0.1 if none > sum(withm) / len(withm) * 1.15 else 0)
+    return min(0.8, max(0.5, t))
+
+
+# every generation sees the RK ground truth & what travelled
+_v94_jinx_llm_prev = _jinx_llm
+
+
+def _jinx_llm(system: str, user: str, model: str | None = None, max_tokens: int = 700,   # noqa: F811
+              images: list | None = None) -> str:
+    extra = []
+    try:
+        if _v94.RK_MENTION.search(user or "") or _v94.RK_MENTION.search(system or ""):
+            extra.append(V94_TL.facts_block())
+        tb = _v94.travelled_block(v94_learned())
+        if tb:
+            extra.append(tb)
+    except Exception:
+        pass
+    return _v94_jinx_llm_prev(system + ("\n\n" + "\n\n".join(extra) if extra else ""), user, model, max_tokens, images)
+
+
+# ── 5 · media ────────────────────────────────────────────────────────────────
+_V94_POOL = _v94_futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="v94media")
+
+
+def _v94_bars() -> list:
+    async def go():
+        async with httpx.AsyncClient(timeout=15) as c:
+            d = await _gme_bars_yahoo(c, "6mo")
+            if not d:
+                d = await _gme_bars_stooq(c)
+            return (d or {}).get("bars") or []
+    try:
+        return asyncio.run(go())
+    except Exception as e:
+        log.info(f"v94 bars: {e}")
+        return []
+
+
+def _v94_when(iso: str) -> str:
+    try:
+        d = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(PROJECT_TZ)
+        return d.strftime("%a %-d %b %Y")
+    except Exception:
+        return iso[:10]
+
+
+def v94_build_media(text: str, kind: str, verdict) -> tuple:
+    """(path, media type) for an original post, or (None, None). never raises, never
+    alters a screenshot (the credit is a bar added below it)."""
+    try:
+        ctx = {}
+        if getattr(verdict, "filings", None):
+            ctx["filing"] = verdict.filings[0]
+        if getattr(verdict, "quotes", None):
+            ctx["quote"] = verdict.quotes[0]
+        last = V94_TL.latest()
+        if last and _v94.RK_MENTION.search(text) and time.time() - last["_dt"].timestamp() < 72 * 3600:
+            ctx["rk_post"] = last
+        if _v94._CHART_WORDS.search(text):
+            ctx["bars"] = _v94_bars()
+        d = datetime.now(PROJECT_TZ).date()
+        memes_left = (V94_MEMES_PER_DAY - int(kv_get(f"v94_memes:{d}", "0") or 0)) if (IMAGES_ENABLED and XAI_API_KEY) else 0
+        plan = _v94.media_plan(text, kind, ctx, v94_media_ratio(), v94_media_target(), memes_left)
+        if not plan:
+            return None, None
+        out = os.path.join(V94_DIR, f"{plan}_{int(time.time() * 1000)}.jpg")
+        raw = out.replace(".jpg", "_raw.png")
+        if plan in ("post_screenshot", "rk_screenshot"):
+            if not V94_SCREENSHOTS:
+                return None, None
+            if plan == "rk_screenshot":
+                url, who = f"https://x.com/TheRoaringKitty/status/{ctx['rk_post']['id']}", "TheRoaringKitty"
+            else:
+                m = _v94._STATUS.search(text) or _v94._STATUS.search(ctx.get("source_url", ""))
+                if not m:
+                    return None, None
+                url, who = m.group(0), m.group(1)
+            if _v94.screenshot_post(url, raw):
+                return _v94.add_credit(raw, f"@{who} on X · screenshot of the official embed, unedited · {url}", out), plan
+            return None, None
+        if plan == "filing_screenshot":
+            f = ctx["filing"]
+            if not V94_SCREENSHOTS:
+                return None, None
+            if _v94.screenshot_filing(f["url"], raw, ua=V94_SEC_UA):
+                return _v94.add_credit(raw, f"SEC EDGAR · GameStop Corp. Form {f['form']} filed {f['filed']} · unedited · sec.gov", out), plan
+            return None, None
+        if plan == "gap_card":
+            rows, cur = [], ctx["rk_post"]
+            seq = [cur]
+            for _ in range(3):
+                p = V94_TL.prev(seq[-1])
+                if p is None:
+                    break
+                seq.append(p)
+            for i, p in enumerate(reversed(seq)):
+                q = V94_TL.prev(p)
+                cal = (p["_dt"].astimezone(PROJECT_TZ).date() - q["_dt"].astimezone(PROJECT_TZ).date()).days if q else None
+                what = "post (deleted, disputed)" if p.get("status") == "deleted" else "post"
+                rows.append((_v94_when(p["created_at_utc"]), what, f"+{cal} days" if (cal and i) else ""))
+            return _v94.gap_card(rows, "Roaring Kitty's account, the record", out), plan
+        if plan == "chart":
+            return _v94.price_chart(ctx["bars"][-120:], out), plan
+        if plan == "quote_card":
+            q = ctx["quote"]
+            who = {"ryancohen": "Ryan Cohen", "gamestop": "GameStop", "theroaringkitty": "Roaring Kitty"}.get(q["who"], q["who"])
+            when = next((_v94_when(x.get("when", "")) for x in _v94_quotes() if _v94._norm(q["q"]) in _v94._norm(x.get("text", ""))), "")
+            return _v94.quote_card(q["q"], who, when, q["source"], out), plan
+        if plan == "stat_card":
+            stats = _v94.stats_from(text)
+            if not stats:
+                return None, None
+            head = re.split(r"\n", text.strip())[0][:120]
+            src = (f"SEC EDGAR, GameStop Form {ctx['filing']['form']} filed {ctx['filing']['filed']}" if ctx.get("filing")
+                   else "figures as stated in the post, checked against its sources")
+            return _v94.stat_card(head, stats, src, out), plan
+        if plan == "meme":
+            p = _generate_post_image_sync(text, kind)
+            if p:
+                kv_set(f"v94_memes:{d}", str(int(kv_get(f"v94_memes:{d}", "0") or 0) + 1))
+                return p, plan
+            return None, None
+    except Exception as e:
+        log.info(f"v94 media: {type(e).__name__}: {e}")
+    return None, None
+
+
+def _v94_media_sync(text: str, kind: str, verdict, timeout: float = 60) -> tuple:
+    """media is built on its own thread (Playwright's sync API can't run inside the
+    bot's event loop) and abandoned after `timeout`: the post goes out text-only."""
+    try:
+        return _V94_POOL.submit(v94_build_media, text, kind, verdict).result(timeout=timeout)
+    except Exception as e:
+        log.info(f"v94 media skipped: {type(e).__name__}")
+        return None, None
+
+
+# ── the gate on the one door every post goes through ─────────────────────────
+import tweepy as _v94_tweepy
+
+
+class V94Blocked(_v94_tweepy.errors.TweepyException):
+    """raised instead of posting when the claim gate drops a post. callers already
+    treat a TweepyException as 'not posted'."""
+
+
+_v94_create_tweet_prev = _v94_tweepy.Client.create_tweet
+
+
+def _v94_create_tweet(self, *args, **kw):
+    text = kw.get("text") if "text" in kw else (args[0] if args else None)
+    is_reply = bool(kw.get("in_reply_to_tweet_id"))
+    is_quote = bool(kw.get("quote_tweet_id"))
+    is_poll = bool(kw.get("poll_options"))
+    kind = str(globals().get("_CURRENT_POST_KIND") or "post")
+    kind = "reply" if is_reply else ("quote" if is_quote else kind)
+    verdict = None
+    if text and V94_GATE:
+        if _v94.RK_MENTION.search(text):
+            v94_refresh_rk()
+        model_text = _v94_model_written(text)
+        new, verdict, how = _v94.gate_and_retry(v94_gate(), text, _v94_rewrite, kind, _v94_log_drop,
+                                               check_numbers=model_text)
+        if new is None:
+            raise V94Blocked(f"v94 claim gate: {'; '.join(verdict.reasons)[:400]}")
+        if how == "rewritten":
+            log.info(f"v94 gate rewrote a {kind} post: {'; '.join(verdict.reasons)[:200] or 'fixed'}")
+            new = enforce_x_format(new, signoff=False) if "enforce_x_format" in globals() else new
+            if "text" in kw:
+                kw["text"] = new
+            else:
+                args = (new,) + tuple(args[1:])
+            text = new
+    mtype = ""
+    original = text and not (is_reply or is_quote or is_poll or kw.get("media_ids"))
+    if original and V94_MEDIA and X_ENABLED:
+        path, mtype = _v94_media_sync(text, kind, verdict)
+        if path:
+            ids = _upload_x_media(path)              # v1.1 media/upload (the existing path)
+            if ids:
+                kw["media_ids"] = ids
+            else:
+                mtype = ""
+    elif kw.get("media_ids"):
+        mtype = "caller"
+    resp = _v94_create_tweet_prev(self, *args, **kw)
+    try:
+        tid = str(((getattr(resp, "data", None) or {}).get("id")) or "")
+        _v94_posts_add({"id": tid, "t": time.time(), "kind": kind, "media": mtype or "",
+                        "orig": not (is_reply or is_quote), "x": (text or "")[:400]})
+    except Exception:
+        pass
+    return resp
+
+
+_v94_tweepy.Client.create_tweet = _v94_create_tweet
+
+
+# ── jobs & commands ──────────────────────────────────────────────────────────
+async def cmd_gate(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/gate <text> → what the claim gate says about it (nothing is posted)."""
+    if not await is_project_admin(ctx, update):
+        return
+    text = " ".join(ctx.args or []) or (update.effective_message.reply_to_message.text
+                                         if update.effective_message.reply_to_message else "")
+    if not text:
+        d = datetime.now(PROJECT_TZ).date()
+        await update.effective_message.reply_text(
+            f"v94 gate: {'on' if V94_GATE else 'OFF'} · media {'on' if V94_MEDIA else 'OFF'} "
+            f"(target {v94_media_target():.0%}, last 7 days {v94_media_ratio():.0%}) · dropped today "
+            f"{kv_get(f'v94_dropped:{d}', '0')}\n\n/gate <text> checks a draft")
+        return
+    v = await asyncio.to_thread(v94_gate().check, text, "post", True)
+    await update.effective_message.reply_text(
+        ("✅ passes" if v.ok else "❌ fails\n- " + "\n- ".join(v.reasons)) + f"\n\nchecked: {', '.join(v.checked) or 'nothing to check'}")
+
+
+_v94_register_prev = v55_register
+
+
+def v55_register(app, scheduler, ny_tz):   # noqa: F811
+    global V69_DAYX_X
+    try:
+        if _V94_DAYX_ENV == "" and kv_get("v94_dayx_earned", "") == "1":
+            V69_DAYX_X = True
+    except Exception:
+        pass
+    _v94_register_prev(app, scheduler, ny_tz)
+    app.add_handler(CommandHandler("gate", cmd_gate))
+    scheduler.add_job(job_v94_learn, "cron", hour="1,7,13,19", minute=41, timezone=ny_tz, args=[app])
+
+
+
+
 def main():
     init_db()
     threading.Thread(target=run_ping_server, daemon=True).start()
@@ -33123,7 +36785,7 @@ def main():
         ("braintest", cmd_braintest), ("chatpost", cmd_chatpost),
         ("mindshare", cmd_mindshare), ("sitewatch", cmd_sitewatch),
         ("insiders", cmd_insiders), ("alerts", cmd_alerts), ("wizard", cmd_wizard),
-        ("board", cmd_board), ("gme", cmd_gme), ("elon", cmd_elon),
+        ("board", cmd_board), ("gme", cmd_gme), ("elon", cmd_elon), ("gap", cmd_gap), ("days", cmd_gap),
     ]:
         app.add_handler(CommandHandler(name, fn))
 
